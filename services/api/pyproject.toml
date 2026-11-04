@@ -1,0 +1,16 @@
+[project]
+name = "eddy-api"
+version = "0.0.0"
+description = "Eddy domain API, learner model and tutor orchestration (ADR-0003)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "pyjwt[crypto]>=2.10",
+]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.12"]
+build-backend = "uv_build"

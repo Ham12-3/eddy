@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+  - workers/*
+  - infra
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
