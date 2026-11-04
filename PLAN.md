@@ -106,8 +106,8 @@ Deliverables:
 
 Definition of done:
 
-- [ ] `pnpm check` and `uv run pytest` pass locally and in CI. **Locally: yes. CI: not run yet (nothing pushed).**
-- [ ] The hello page passes axe with zero serious or critical violations; screenshots at 3 viewports saved as CI artifacts. **axe and screenshots: yes, locally. CI artifacts: not yet (nothing pushed).**
+- [x] `pnpm check` and `uv run pytest` pass locally and in CI. (CI run 41906393567 on 4f6e484: both jobs passed.)
+- [x] The hello page passes axe with zero serious or critical violations; screenshots at 3 viewports saved as CI artifacts. (CI artifact `e2e-artifacts`, 576 KB, run 41906393567.)
 - [x] A scripted test shows the PreToolUse guard denying each listed command and the Stop hook blocking on a deliberately failing test.
 
 ---
@@ -382,4 +382,4 @@ Environment: Windows 11, Node 22.15, Python 3.12.10, pnpm 10.6.5, uv 0.11.14, Do
 
 **Deviations**: ADR-0016 (S3Mock and ElasticMQ instead of LocalStack), ADR-0017 (TypeScript 5.9 and ESLint 9), ADR-0018 (the `system` role and route role lists).
 
-**Not yet proven**: CI has never run, because nothing has been pushed. Definition-of-done items 1 and 2 are met locally only.
+**CI**: the first run (41906393567, commit 4f6e484, PR #1) passed both jobs, "Lint, typecheck, unit tests, synth" and "Playwright E2E and axe", and uploaded the `e2e-artifacts` bundle (576 KB). Every M0 definition-of-done item is now met.
