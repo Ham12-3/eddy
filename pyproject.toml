@@ -1,0 +1,55 @@
+[project]
+name = "eddy-workspace"
+version = "0.0.0"
+description = "Virtual root of the Eddy Python workspace (not a package)."
+requires-python = ">=3.12,<3.13"
+dependencies = ["eddy-api", "eddy-maths-core"]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.8", "mypy>=1.13", "httpx2"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/api", "services/maths-core"]
+
+[tool.uv.sources]
+eddy-api = { workspace = true }
+eddy-maths-core = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "RUF", "PT"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["eddy_api", "eddy_maths_core"]
+
+[tool.ruff.lint.per-file-ignores]
+"services/*/tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+files = [
+  "services/api/src",
+  "services/api/tests",
+  "services/maths-core/src",
+  "services/maths-core/tests",
+]
+
+[[tool.mypy.overrides]]
+# SymPy ships no type information.
+module = ["sympy", "sympy.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["services/api/tests", "services/maths-core/tests"]
+addopts = "--import-mode=importlib -q"
