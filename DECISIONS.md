@@ -137,3 +137,26 @@ Status: Accepted (4 November 2026, during M0 review)
 - **Context:** SPEC.md section 6.2 lists the user roles `student`, `parent` and `admin`. The M0 hello page needs to call services/api with no signed-in user, and the security review flagged that an undefined `system` role, minted by a public page, could quietly gain trust later.
 - **Decision:** `system` is a service-token role for machine callers only (diagnostics now, scheduled jobs later). It is never stored on a user or given to a browser session. Every services/api route names the roles it accepts with `require_roles(...)`, so a role is trusted only where a route says so. The hello page's system check runs only in development or when `EDDY_SYSTEM_CHECK=1` (the E2E suite), never for production visitors. The signer checks role and subject at runtime as well as in types.
 - **Consequences:** Adding a route forces an explicit decision about who may call it. Jobs inside services/api do not need web-minted tokens at all.
+
+## ADR-0019: Contrast-safe "Paper and Ink" tokens
+
+Status: Accepted (4 November 2026, approved by Abdulhamid during M1)
+
+- **Context:** The M1 audit of every colour pairing found that the brief's palette fails WCAG 2.2 AA in several places. The light accent #D9480F fails as text (3.9:1) and behind white button text (4.3:1). The dark highlighter fails behind ink (4.0:1) and badly behind coloured text. The `--rule` hairline is too faint to edge an input (1.35:1 and 1.43:1). White text on the dark accent fails (2.6:1). Darkening the light accent until it passes (#B8400D) makes it almost identical to the misconception red, and the brief's dark accent and dark misconception colours (#FF7A3D and #FF7A66) were already only 20.6 CIELAB units apart.
+- **Decision:** The brand stays paper, ink and orange.
+  - Light accent: #F08C4A, a highlighter-marker orange, used only as a fill with ink text (6.5:1), never as text.
+  - Dark accent: #FFA552 with dark text (9.5:1).
+  - Both accents sit at least 30 CIELAB units from their theme's misconception red (31.3 and 32.0).
+  - New `--on-accent` token for text on the accent fill.
+  - New `--field-border` token for input and control edges (light #8A8473, dark #6B7380, at least 3:1). `--rule` stays for decorative lines only.
+  - Dark highlighter: #6B5410 (ink on it 5.9:1). Only ink text ever sits on a highlight.
+  - Dyslexia mode on a light theme uses cream paper #FBF4E2.
+- **Consequences:** `packages/ui/src/tokens/contrast-pairs.ts` lists every allowed pairing, and a test checks each in light, dark and dyslexia modes. The cliché lint bans raw colour values outside the token file, so new colours have to go through this test.
+
+## ADR-0020: Visual checks in M1 are screenshots for review plus axe, not pixel diffs
+
+Status: Accepted (4 November 2026, during M1)
+
+- **Context:** PLAN.md M1 asks for Playwright visual snapshots of every component in every mode. Pixel-diff baselines are platform specific: font rendering differs between the Windows dev machine and Linux CI, so baselines from one fail on the other.
+- **Decision:** `pnpm e2e:storybook` opens every story at 375, 768 and 1280 px in light, dark, reduced motion and dyslexia mode. For each it runs axe (zero serious or critical violations allowed) and saves a full-page screenshot, which CI uploads as an artifact. A gallery story puts every component on one page for review by eye. Pixel-diff regression (`toHaveScreenshot`) is deferred until baselines can be produced on the CI platform, for example in the Playwright Docker image.
+- **Consequences:** Visual regressions are caught by review and axe, not automatically. Revisit when the scene engine (M5) adds many more visuals.

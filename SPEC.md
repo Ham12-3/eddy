@@ -467,10 +467,19 @@ Additions:
 - MathLive is themed with our tokens; the student's input renders in `--student`. A custom Foundation virtual keyboard (digits, fraction, power, root, negative, π, decimal point, brackets, units).
 - KaTeX colours come from the scene colour roles.
 
-**Token issues found while writing this spec** (my WCAG calculations; the M1 contrast test is the final word):
+**Token issues found while writing this spec** were confirmed by a full audit in M1 and resolved with Abdulhamid's approval (ADR-0019):
 
-| Pair | Ratio | Requirement | Proposed fix |
-|---|---|---|---|
+| Issue | Resolution |
+|---|---|
+| Light `--accent` #D9480F fails as text (3.9:1) and behind white labels (4.3:1); darkening it makes it look like the misconception red | Light accent #F08C4A, a marker-orange fill with ink text (6.5:1), never used as text |
+| Dark accent #FF7A3D was nearly identical to dark misconception #FF7A66 (20.6 CIELAB units apart) | Dark accent #FFA552 with dark text (9.5:1); both accents now at least 30 units from the red |
+| Coloured text on `--highlight` fails in both themes; dark ink on dark highlight fails (4.0:1) | Only ink text sits on a highlight; dark highlight #6B5410 (5.9:1) |
+| `--rule` is too faint for input edges (1.35:1, 1.43:1) | New `--field-border` (light #8A8473, dark #6B7380); `--rule` is decorative only |
+| White text on the dark accent fails (2.6:1) | New `--on-accent` token |
+
+Every allowed pairing is listed in `packages/ui/src/tokens/contrast-pairs.ts` and tested in light, dark and dyslexia modes.
+
+---|---|---|---|
 | `--accent` #D9480F as text on `--paper` #F6F3EA | about 3.9:1 | 4.5:1 for body text | Accent only for large text and non-text UI. |
 | White label on `--accent` #D9480F button fill | about 4.3:1 | 4.5:1 (17px labels are not "large") | Add `--accent-strong` around #B8400D (about 5.6:1 with white) for fills. |
 | `--student` or `--misconception` text on light `--highlight` #F5C542 | about 3.5 to 3.8:1 | 4.5:1 | Highlight only behind `--ink` text; coloured text gets an underline or outline highlight instead. |
