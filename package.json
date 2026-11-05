@@ -27,6 +27,8 @@
     "evals": "node scripts/evals.mjs",
     "maths:coverage": "uv run pytest services/maths-core/tests --cov=eddy_maths_core --cov-report=term-missing --cov-fail-under=85",
     "maths:bench": "uv run --package eddy-maths-core python -m eddy_maths_core.bench",
+    "learner:coverage": "uv run pytest services/api/tests/test_learner_model.py services/api/tests/test_learner_scheduling.py services/api/tests/test_learner_simulation.py --cov=eddy_api.learner --cov-report=term-missing --cov-fail-under=85",
+    "learner:report": "uv run --package eddy-api python -m eddy_api.learner",
     "e2e:storybook": "pnpm --filter @eddy/ui storybook:build && playwright test -c playwright.storybook.config.ts",
     "storybook": "pnpm --filter @eddy/ui storybook"
   },

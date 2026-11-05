@@ -234,7 +234,11 @@ def _anchored(relation: sympy.Basic, item: Item | None) -> bool | None:
     if len(unknowns) != 1 or not (isinstance(item.answer, sympy.Expr) and item.answer.is_number):
         return None
     (unknown,) = unknowns
-    substituted = relation.subs(unknown, item.answer)
+    lhs = relation.lhs.subs(unknown, item.answer)
+    rhs = relation.rhs.subs(unknown, item.answer)
+    if lhs.is_extended_real is False or rhs.is_extended_real is False:
+        return False  # "0 < sqrt(-x)" at x = 4: not a real number, so it cannot hold
+    substituted = relation.func(lhs, rhs)
     if substituted in (sympy.true, sympy.false):
         return bool(substituted)  # SymPy settles some relations as soon as they are numbers
     return _holds(substituted)

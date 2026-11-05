@@ -190,18 +190,18 @@ Depends on: M2, M3. Estimate: 1 week.
 
 Deliverables:
 
-- [ ] BKT per node with aided-attempt weighting; prerequisite propagation; the two-failure prerequisite diagnostic.
-- [ ] Elo for items and per-strand student ability; target-band item selection.
-- [ ] FSRS scheduling with the `fsrs` package; rating from correctness, confidence, hints and time.
-- [ ] Misconception state machine; node selection; interleaving rules.
-- [ ] Synthetic student simulator (hidden mastery and hidden misconceptions).
+- [x] BKT per node with aided-attempt weighting; prerequisite propagation; the two-failure prerequisite diagnostic.
+- [x] Elo for items and per-strand student ability; target-band item selection.
+- [x] FSRS scheduling with the `fsrs` package; rating from correctness, confidence, hints and time.
+- [x] Misconception state machine; node selection; interleaving rules.
+- [x] Synthetic student simulator (hidden mastery and hidden misconceptions).
 
 Definition of done:
 
-- [ ] Simulated learnable students reach SECURE within a bounded number of attempts.
-- [ ] Simulated students with a persistent misconception are falsely marked SECURE less than 2% of the time.
-- [ ] Prerequisite fallback triggers correctly after 2 failures.
-- [ ] Coverage at least 85%.
+- [x] Simulated learnable students reach SECURE within a bounded number of attempts. (All 5,000 within 60; median 7.)
+- [x] Simulated students with a persistent misconception are falsely marked SECURE less than 2% of the time. (1.32% or less when the mistake shows on at least 80% of the items that could reveal it, on free answers and choice items; less consistent misconceptions are higher, see the evidence block and ADR-0026.)
+- [x] Prerequisite fallback triggers correctly after 2 failures. (Unit tests for the count, the session reset, explained failures and once per session; the simulator offers it in nearly every session to students who cannot learn.)
+- [x] Coverage at least 85%. (90.6%, gated in CI.)
 
 ---
 
@@ -491,3 +491,45 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Sy
 - MathLive's exact MathJSON for units and currency is not yet pinned against MathLive itself (M8). Clients must send numbers as `{"num": "<as typed>"}`.
 
 **CI**: the first run on this branch (42050023947, commit 6982bde, PR #4) passed all three jobs, including the new steps "Maths golden set (100% required)", "maths-core coverage (85% or more)" and "Verification latency (p95 under 150 ms)" on Linux.
+
+### M4: Learner model (5 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, fsrs 6.3.2 (MIT). Branch `m4-learner-model`, stacked on M3; no PR yet.
+
+**What landed**: `eddy_api.learner`, pure functions with no database access: BKT, node mastery and the two-failure diagnostic (`mastery.py`), Elo and item choice (`elo.py`), FSRS cards and ratings (`review.py`), the misconception state machine (`misconceptions.py`), node selection, interleaving and today's plan (`planner.py`), and the synthetic student simulator with its report (`simulator.py`, `pnpm learner:report`). The coverage gate `pnpm learner:coverage` runs in CI. ADR-0026 records every rule beyond SPEC.md and the evidence behind it. Two maths-core bugs found by M3's own fuzz and sampling tests during these runs are fixed (see the CHANGELOG).
+
+**Checks run (final run)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, Prettier, dash check (258 files), cliché lint, typecheck, Vitest (ui 98, web 9, infra 6 and the rest), 186 hook and lint-rule tests, ruff, mypy (71 files), 717 pytest tests (161 API, 556 maths-core). |
+| `pnpm learner:coverage` | 83 passed; coverage 90.6% (every module 99 to 100% except the report script). |
+| `pnpm learner:report` | The table below; seeded, so it repeats exactly. |
+| `pnpm evals`, `pnpm maths:bench`, `pnpm maths:coverage` | 300/300 golden items verified; p95 1.99 ms over 1,489 verifications; maths-core coverage 93.3%. |
+| `pnpm e2e` | 81 passed, axe zero serious or critical. M4 changes no page, so the screenshots are M3's. |
+
+**Synthetic students** (`pnpm learner:report`; free answers unless stated)
+
+| Population | Result |
+|---|---|
+| Learnable (learn 0.1 to 0.3), 5,000 | All SECURE within 60 attempts: median 7, 99th percentile 31, max 57. 1.00% secured by lucky guessing. |
+| Learnable, two-option items, 2,500 | All SECURE within 120: median 11, 99th percentile 66, max 101. 1.56% by lucky guessing. |
+| Already know it, two-option items, every slip on the distractor, 2,500 | 21.1% shown a scene for a slip (46% if every slip counted as a full match). |
+| Persistent misconception, 80% to 100% of revealing items | Falsely SECURE 1.32% at 80%, 0.20% at 90%, 0.00% at 100%; 0.40% on two-option and 1.32% on four-option items without confidence ratings. |
+| Persistent misconception, less consistent | Falsely SECURE 2.76% at 70%, 8.04% at 60%, 16.68% at 50%. |
+| Never learn the node | Falsely SECURE 21.64% when right by chance 1 time in 5, 2.96% at 1 in 10, 0.28% at 1 in 20, 8.08% on two-option items; the prerequisite diagnostic is offered in nearly every session. |
+
+**Fresh-context reviews**: `reviewer`, `pedagogy-critic`, then `reviewer` again on the fixes. Fixed:
+
+- High: with the real curriculum, 17 ancestor nodes have no item templates and would have locked most of the MVP. A root node falling due for review would also have locked everything after it. The gate now accepts secured nodes and looks through nodes without items to the practisable ones behind them; a test walks a perfect student through the real graph and templates. Also fixed: a review that had fallen due was cleared by any answer, even a wrong one.
+- High: every slip on a two-option item became a misconception (guessing now follows the number of options, and an unsure first pick is only a weak suspicion). Misconceptions no item can reveal blocked SECURE for ever. A diagnostic match confirmed a misconception on first sight, against SPEC.md 4.1. The two-failure diagnostic ran on noise across sessions and found nothing when every prerequisite was secure.
+- Medium: a well-practised node survived four wrong answers (BKT now caps at 0.99, and 2 unexplained wrong answers in a session lapse a node); old lucky answers supplied the 2-day spacing (now judged on the last 3); a misconception could be closed straight after its scene (one re-check must come in a later session); a guess or a helped answer could secure a node; UTC dates and naive datetimes; a new review card was due at once; weak matches counted as explained; `could_reveal` documented per template instead of per item; coverage codes stored on state that propagation would create without them.
+- Low: K described as halving; aided Elo updates only by convention; an untestable non-learner test; tie-breaks putting N10 before N2; the confident-and-wrong flag never cleared; the remediation queue ignoring the current node.
+
+**Recorded, not fixed in M4** (ADR-0026)
+
+- BKT with SPEC's starting parameters reads three correct answers in a row as learning, so a student who never learns but is right by chance 1 time in 5 is falsely secured about a fifth of the time over 12 days. Pilot data must refit p_guess and p_learn; until then the diagnostic and the first review are the safety net.
+- Persistent misconceptions are held under 2% only when the student makes the mistake on at least 80% of the items that could show it. Less consistent ones close too early until reviews favour items carrying misconceptions the student has had (M7).
+- The learner state has no columns yet; M7 needs a migration (ADR-0026 lists the fields).
+- For M7: coverage of each item family, a test-out route and onboarding evidence for coverage, matches that fade, more than one re-check a session, interleaving look-alike problem types, a worked example after a diagnostic that finds no gap, and a pre-exam review sweep.
+- The simulator models one node and one misconception at a time, with no forgetting, no confidence ratings and no planner.
