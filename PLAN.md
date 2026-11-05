@@ -166,21 +166,21 @@ Depends on: M0 (misconception codes from M2 are wired in as they land). Estimate
 
 Deliverables:
 
-- [ ] MathJSON validator and SymPy converter (allow-list, size and depth limits). No `eval`, `sympify` on strings or `parse_expr` anywhere near user input.
-- [ ] Equivalence engine: symbolic plus numeric sampling; answer-format rules (exact, dp, sf, units, simplest form).
-- [ ] Step checker for expressions and equations.
-- [ ] At least 3 item templates per MVP node, with parameter constraints that give clean numbers, command words, marks and calculator flags.
-- [ ] Distractor generation from misconception rules, and the reverse: wrong answer to matched misconceptions.
+- [x] MathJSON validator and SymPy converter (allow-list, size and depth limits). No `eval`, `sympify` on strings or `parse_expr` anywhere near user input.
+- [x] Equivalence engine: symbolic plus numeric sampling; answer-format rules (exact, dp, sf, units, simplest form).
+- [x] Step checker for expressions and equations.
+- [x] At least 3 item templates per MVP node, with parameter constraints that give clean numbers, command words, marks and calculator flags.
+- [x] Distractor generation from misconception rules, and the reverse: wrong answer to matched misconceptions.
 - [ ] Verification endpoints for scene specs and tutor messages (claims lists).
-- [ ] Golden set: 300 items in `evals/golden/maths`, with a hand-checked sample recorded.
-- [ ] Hypothesis property tests for every template; a fuzz test for the MathJSON converter.
+- [x] Golden set: 300 items in `evals/golden/maths`, with a hand-checked sample recorded.
+- [x] Hypothesis property tests for every template; a fuzz test for the MathJSON converter.
 
 Definition of done:
 
-- [ ] All property and fuzz tests pass; the converter never crashes and never executes input.
-- [ ] Golden set 100% verified.
-- [ ] p95 verification under 150 ms (benchmark output in the evidence block).
-- [ ] Coverage at least 85%.
+- [x] All property and fuzz tests pass; the converter never crashes and never executes input.
+- [x] Golden set 100% verified.
+- [x] p95 verification under 150 ms (benchmark output in the evidence block).
+- [x] Coverage at least 85%.
 
 ---
 
@@ -454,3 +454,36 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, PostgreSQL 16.15 i
 - N16 and G8 tiers follow two reviewers' reading of the DfE content; check them against the DfE PDF. The modern set texts are not yet checked against the board's current list (2024 additions).
 - The node page has no loading state: a route-level loading boundary would stream a 200 before an unknown code could answer 404. It blocks on one fast API call instead.
 - No `pip-audit` or `pnpm audit` step in CI yet (M10 hardening).
+
+### M3: Maths core (5 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, SymPy 1.14.0, Hypothesis and pytest-cov (dev). Branch `m3-maths-core`, stacked on M2. Not pushed yet, so no CI run exists for M2 or M3.
+
+**What landed**: the MathJSON converter and its limits; equivalence, answer formats (exact, decimal places, significant figures, fraction, decimal, mixed number, standard form, simplest form, units), step checking, and claim verification with an answer-leak check; 87 templates (every MVP node at least three times, every re-check family covered); 82 distractor rules and 2 structure rules, each matching the YAML and each with a hand-worked example; five HTTP routes behind the service token, with a byte-counted 64 KB limit and no public docs; the 300-item golden set with a 30-item hand check; the benchmark and coverage gate in CI; ADR-0025.
+
+**Checks run (final run)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, dash check (246 files), cliché lint, typecheck, Vitest (ui 98, web 9, infra 6 and the rest), 186 hook and lint-rule tests, ruff, strict mypy (59 files), 632 pytest tests (78 API, 554 maths-core). |
+| maths-core suite with coverage | 554 passed. Property tests: 40 seeds per template. Fuzz: 1,500 random JSON trees through the converter; 400 hostile maths trees and 200 towers of powers through answer checks, step checks and claims, each under 3 seconds. Coverage 92%. |
+| `pnpm evals` | maths golden set: 300/300 items verified (300 distinct items, 87 templates). |
+| `pnpm maths:bench` | 1,489 verifications including expansion, quadratic solving and symbolic claims: p50 1.19 ms, p95 2.49 ms, max 25.04 ms. |
+| `pnpm e2e` | 81 passed (the hello page, the curriculum browser with its gated production server, at 3 widths in light, dark and reduced motion; axe zero serious or critical). |
+
+**Hand check**: every tenth golden item (30) worked out by hand by Claude, 30 of 30 correct (`evals/golden/maths/HAND-CHECK.md`). The first hand check, before the review, passed a wrong rule (one third coded as n/10); the file records it, and every rule now has an independent worked example. Not yet checked by a person.
+
+**Fresh-context reviews**: `reviewer` and `security-reviewer`. Fixed:
+
+- High: wrong answers that crashed the API (recurring decimals, square roots of negatives); "one third is 0.3" coded as n/10; correct answers marked wrong (unsimplified probabilities, an unrounded grouped mean); requests that took seconds (nested powers, high-degree equations), and the security review's sharper version: a letter in a power that froze the service for tens of seconds. Powers must now be numbers, numbers stay under 400 digits, expressions under degree 12 with at most 3 letters and 4 roots, and only polynomial or rational equations are solved.
+- Medium: false givens and first steps came back verified (now checked against the answer); fixed public sample points and a 10^-9 tolerance on exact inputs (now fresh points and exact comparison for rational expressions); answer-leak bypasses; mixed numbers accepted in wrong forms; distractors not written in the answer's form; tests that could not fail (now a hand-worked example per rule); a benchmark that skipped the slow paths.
+- Low: the body limit trusted the header (now counted as bytes arrive); public `/docs`; a 500 on long decimals, nested tuples and wrapped relations; the cube root of a negative was complex; odd stems ("7/1", "+ 0", unsimplified fractions, unclear scales).
+
+**Recorded, not fixed in M3**
+
+- Verification endpoints for scene specs: the claims endpoint exists, but checking a SceneSpec's maths through it is wired in M5, so that box stays unticked.
+- No process sandbox with a hard time limit per verification yet (M10 hardening). The input limits are the only bound today; the fuzz tests hold every path under 3 seconds.
+- The leak check only sees the maths a tutor message lists; services/api must send the item every time and scan the prose (M7). On choice questions any mention of the answer counts, so the tutor uses a templated hint there.
+- Items with a `diagram` need the scene primitives (M5) before a student sees them.
+- Equivalence accepts a non-rational answer when two fresh sets of 20 points agree and `simplify` cannot decide (ADR-0025).
+- MathLive's exact MathJSON for units and currency is not yet pinned against MathLive itself (M8). Clients must send numbers as `{"num": "<as typed>"}`.
