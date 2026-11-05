@@ -1,0 +1,808 @@
+# Misconception library for the MVP nodes (SPEC.md sections 6.1 and 7).
+#
+# detect: the rule language (ADR-0022), run by maths-core (M3).
+#   - { type: distractor, rule: <name> }  the wrong answer equals rule(item params); every named
+#                                         rule must have an implementation in maths-core.
+#   - { type: classifier }                eligible for the Haiku fallback; can only make the
+#                                         misconception SUSPECTED, never CONFIRMED.
+# scene:   the scene template that remediates it (M5).
+# recheck: the item family a re-check item comes from (M3), a different surface, same idea.
+# evidence:
+#   brief-s2  docs/brief.md section 2, which draws on Eedi diagnostic question research, NCETM
+#             guidance, the EEF's maths guidance and examiner reports.
+#   practice  widely documented in UK maths teaching; to be confirmed against our own data.
+# student text is kind and plain: it names the slip, never the student.
+
+misconceptions:
+  # N1: ordering numbers
+  - code: NEG_ORDER_BY_DIGIT
+    node: N1
+    title: "Orders negative numbers by their digits"
+    student: "It is easy to compare negative numbers by their digits alone. On a number line, numbers get smaller as you go left, so the further a negative number is from zero, the smaller it is."
+    teacher: "Compares negative numbers by magnitude, ignoring the sign."
+    detect: [{ type: distractor, rule: neg_compare_by_magnitude }]
+    scene: number_line.compare_negatives
+    recheck: N1.order-negatives
+    evidence: brief-s2
+  - code: DEC_LONGER_IS_BIGGER
+    node: N1
+    title: "Thinks a decimal with more digits is bigger"
+    student: "More digits after the point does not mean a bigger number. Compare the tenths first, then the hundredths."
+    teacher: "Treats the digits after the point as a whole number, so 0.125 > 0.5."
+    detect: [{ type: distractor, rule: decimal_compare_by_length }]
+    scene: number_line.compare_decimals
+    recheck: N1.order-decimals
+    evidence: brief-s2
+  - code: DEC_SHORTER_IS_BIGGER
+    node: N1
+    title: "Thinks a decimal with fewer digits is bigger"
+    student: "A shorter decimal is not always bigger. Line up the decimal points, fill any gap with a zero, then compare the tenths first, then the hundredths."
+    teacher: 'Overcorrects with "fewer decimal places means bigger", so 0.4 > 0.45.'
+    detect: [{ type: distractor, rule: decimal_compare_shorter_bigger }]
+    scene: number_line.compare_decimals
+    recheck: N1.order-decimals
+    evidence: practice
+  - code: UNIT_FRACTION_BIGGER_DENOMINATOR
+    node: N1
+    title: "Thinks a bigger denominator means a bigger unit fraction"
+    student: "When the numerators are the same, a bigger denominator means the whole is cut into more pieces, so each piece is smaller."
+    teacher: "Compares unit fractions by denominator, so 1/8 > 1/5."
+    detect: [{ type: distractor, rule: unit_fraction_compare_by_denominator }]
+    scene: bar_model.compare_fractions
+    recheck: N1.order-fractions
+    evidence: practice
+
+  # N2: the four operations
+  - code: FRAC_ADD_NUM_DEN
+    node: N2
+    title: "Adds the numerators and adds the denominators"
+    student: "Adding the tops and adding the bottoms separately is a very common slip. Fractions need the same denominator before you add them."
+    teacher: "Treats numerator and denominator as separate whole numbers, so 1/2 + 1/3 becomes 2/5."
+    detect: [{ type: distractor, rule: frac_add_num_den }]
+    scene: bar_model.fraction_add
+    recheck: N2.fraction-add-unlike
+    evidence: brief-s2
+  - code: FRAC_SUB_NUM_DEN
+    node: N2
+    title: "Subtracts numerators and subtracts denominators"
+    student: "Taking the tops and the bottoms away separately does not work. Find a common denominator first."
+    teacher: "Subtracts across, so 3/4 - 1/2 becomes 2/2."
+    detect: [{ type: distractor, rule: frac_sub_num_den }]
+    scene: bar_model.fraction_subtract
+    recheck: N2.fraction-subtract-unlike
+    evidence: practice
+  - code: FRAC_DIV_FLIP_FIRST
+    node: N2
+    title: "Flips the first fraction when dividing"
+    student: "When dividing by a fraction, it is the second fraction (the divisor) that you turn upside down."
+    teacher: "Inverts the dividend instead of the divisor."
+    detect: [{ type: distractor, rule: frac_div_flip_first }]
+    scene: bar_model.fraction_divide
+    recheck: N2.fraction-divide
+    evidence: practice
+  - code: NEG_TWO_NEGATIVES_ADD_POSITIVE
+    node: N2
+    title: 'Applies "two negatives make a positive" to addition'
+    student: '"Two negatives make a positive" is a rule for multiplying and dividing. Adding a negative number moves you down the number line, so adding two negatives takes you further below zero.'
+    teacher: "Over-applies the sign rule for multiplication, so -3 + -4 = 7."
+    detect: [{ type: distractor, rule: neg_add_sign_rule_overapplied }]
+    scene: number_line.add_negatives
+    recheck: N2.add-negatives
+    evidence: brief-s2
+  - code: NEG_SUBTRACT_NEGATIVE
+    node: N2
+    title: "Treats subtracting a negative as subtracting a positive"
+    student: "Taking away a negative moves you up the number line, the same as adding."
+    teacher: "Ignores the double negative, so 5 - (-3) = 2."
+    detect: [{ type: distractor, rule: neg_sub_negative_as_sub }]
+    scene: number_line.subtract_negatives
+    recheck: N2.subtract-negatives
+    evidence: practice
+  - code: NEG_MULTIPLY_SIGN
+    node: N2
+    title: "Gives a negative product for two negatives"
+    student: "The slip is in the sign. Multiplying by a negative flips the sign, so flipping twice brings you back: a negative times a negative is positive."
+    teacher: "Keeps a negative sign when multiplying two negatives, so (-3) × (-4) = -12."
+    detect: [{ type: distractor, rule: neg_mult_sign_negative }]
+    scene: number_line.multiply_negatives
+    recheck: N2.multiply-negatives
+    evidence: practice
+  - code: DEC_ADD_RIGHT_ALIGNED
+    node: N2
+    title: "Lines up the last digits instead of the decimal points"
+    student: "When adding decimals, line up the decimal points so tenths add to tenths."
+    teacher: "Right-aligns digits, so 3.2 + 1.45 = 1.77."
+    detect: [{ type: distractor, rule: decimal_add_right_aligned }]
+    scene: place_value_slider.add_decimals
+    recheck: N2.add-decimals
+    evidence: brief-s2
+  - code: DEC_MULTIPLY_POINT_PLACE
+    node: N2
+    title: "Puts the decimal point in the wrong place when multiplying"
+    student: "A tenth of a tenth is a hundredth, so tenths times tenths gives hundredths. Count the decimal places in both numbers: the answer has that many in total."
+    teacher: "Keeps one decimal place, so 0.3 × 0.2 = 0.6."
+    detect: [{ type: distractor, rule: decimal_mult_point_count_wrong }]
+    scene: area_model.multiply_decimals
+    recheck: N2.multiply-decimals
+    evidence: practice
+  - code: MIXED_NUMBER_WHOLE_ONLY
+    node: N2
+    title: "Multiplies only the whole-number part of a mixed number"
+    student: "The fraction part of a mixed number has to be multiplied too."
+    teacher: "Multiplies the integer part only, so 2 1/2 × 3 = 6 1/2."
+    detect: [{ type: distractor, rule: mixed_mult_whole_only }]
+    scene: bar_model.multiply_mixed_number
+    recheck: N2.multiply-mixed-numbers
+    evidence: practice
+  - code: ORDER_OF_OPERATIONS_LEFT_TO_RIGHT
+    node: N3
+    title: "Works strictly left to right"
+    student: "Multiplication and division come before addition and subtraction, wherever they are in the line."
+    teacher: "Ignores precedence, so 3 + 4 × 2 = 14."
+    detect: [{ type: distractor, rule: left_to_right_evaluation }]
+    scene: area_model.order_of_operations
+    recheck: N3.order-of-operations
+    evidence: brief-s2
+
+  # N9: standard form
+  - code: SF_NEGATIVE_POWER_DIRECTION
+    node: N9
+    title: "Moves the digits the wrong way for a negative power"
+    student: "A negative power of 10 makes the number smaller, so the digits move to the right of the point."
+    teacher: "Treats 10 to a negative power as a large number, so 4.2 × 10⁻³ = 4200."
+    detect: [{ type: distractor, rule: sf_negative_power_wrong_direction }]
+    scene: place_value_slider.negative_power
+    recheck: N9.standard-form-to-ordinary
+    evidence: brief-s2
+  - code: SF_POWER_COUNTS_ZEROS
+    node: N9
+    title: "Uses the number of zeros as the power"
+    student: "The power tells you how many places the digits move, not how many zeros there are."
+    teacher: "Counts trailing zeros, so 3 200 000 = 3.2 × 10⁵."
+    detect: [{ type: distractor, rule: sf_power_counts_zeros }]
+    scene: place_value_slider.ordinary_to_standard
+    recheck: N9.ordinary-to-standard-form
+    evidence: practice
+  - code: SF_NOT_NORMALISED
+    node: N9
+    title: "Leaves the first number outside 1 to 10"
+    student: "In standard form, the first number must be at least 1 and less than 10."
+    teacher: "Writes 45 × 10³ for 45 000."
+    detect: [{ type: structure, rule: sf_not_normalised }]
+    scene: place_value_slider.ordinary_to_standard
+    recheck: N9.ordinary-to-standard-form
+    evidence: practice
+  - code: SF_POWER_ON_MANTISSA
+    node: N9
+    title: "Reads the power as applying to the first number"
+    student: "In standard form the power belongs to the 10 only. The number in front is multiplied by 10 that many times; it is not raised to that power."
+    teacher: "Reads 3.4 × 10⁵ as 3.4⁵."
+    detect: [{ type: distractor, rule: sf_power_applied_to_mantissa }]
+    scene: place_value_slider.standard_to_ordinary
+    recheck: N9.standard-form-to-ordinary
+    evidence: brief-s2
+  - code: SF_MULTIPLY_POWERS
+    node: N9
+    title: "Multiplies the powers when multiplying in standard form"
+    student: "When you multiply powers of 10, count all the 10s being multiplied together. That means adding the powers, not multiplying them."
+    teacher: "Multiplies indices, so (2 × 10³) × (3 × 10⁴) = 6 × 10¹²."
+    detect: [{ type: distractor, rule: sf_multiply_powers }]
+    scene: place_value_slider.multiply_standard_form
+    recheck: N9.multiply-standard-form
+    evidence: practice
+
+  # N10: fractions, decimals and percentages
+  - code: FDP_THIRD_AS_POINT_THREE
+    node: N10
+    title: "Thinks one third is 0.3"
+    student: "0.3 is three tenths, which is 3/10, and 3/10 is not the same as 1/3. To turn a fraction into a decimal, divide the numerator by the denominator."
+    teacher: "Equates 1/3 with 0.3."
+    detect: [{ type: distractor, rule: fdp_third_point_three }]
+    scene: number_line.fraction_to_decimal
+    recheck: N10.fraction-to-decimal
+    evidence: brief-s2
+  - code: FDP_DENOMINATOR_AS_DECIMAL
+    node: N10
+    title: "Writes the denominator as the decimal"
+    student: "A fraction is the numerator divided by the denominator. 1/2 is 1 divided by 2, which is 0.5, not 0.2. Do the same division for your fraction."
+    teacher: "Converts 1/n to 0.n."
+    detect: [{ type: distractor, rule: fdp_denominator_as_decimal }]
+    scene: number_line.fraction_to_decimal
+    recheck: N10.fraction-to-decimal
+    evidence: brief-s2
+  - code: FDP_PERCENT_DIGITS_ONLY
+    node: N10
+    title: "Turns a decimal into a percentage by copying the digits"
+    student: "Per cent means out of 100, so multiply the decimal by 100. For example, 0.1 is one tenth, which is 10 hundredths, so 10%, not 1%."
+    teacher: "Reads the digits after the point as the percentage, so 0.5 = 5%."
+    detect: [{ type: distractor, rule: fdp_percent_digits_only }]
+    scene: bar_model.decimal_to_percentage
+    recheck: N10.decimal-to-percentage
+    evidence: practice
+  - code: FDP_CONCATENATE
+    node: N10
+    title: "Joins the numerator and denominator to make a percentage"
+    student: "A percentage is a number out of 100, not the two numbers side by side. Make an equivalent fraction with 100 as the denominator by multiplying the numerator and denominator by the same number."
+    teacher: "Concatenates digits, so 3/5 = 35%."
+    detect: [{ type: distractor, rule: fdp_concatenate }]
+    scene: bar_model.fraction_to_percentage
+    recheck: N10.fraction-to-percentage
+    evidence: practice
+
+  # N11, N12, R9: fractions of amounts and percentages
+  - code: FRAC_OF_AMOUNT_DIVIDE_ONLY
+    node: N12
+    title: "Divides by the denominator but forgets the numerator"
+    student: "The denominator tells you how many equal parts to split the amount into. The numerator tells you how many of those parts to take, and that is not always just one."
+    teacher: "Finds a unit fraction only, so 3/4 of 20 = 5."
+    detect: [{ type: distractor, rule: frac_of_amount_divide_only }]
+    scene: bar_model.fraction_of_amount
+    recheck: N12.fraction-of-amount
+    evidence: practice
+  - code: PCT_DIVIDE_BY_PERCENT
+    node: N12
+    title: "Divides by the percentage"
+    student: "15% means 15 out of every 100. Find 1% or 10% first, then build up."
+    teacher: "Computes 80 / 15 for 15% of 80."
+    detect: [{ type: distractor, rule: pct_divide_by_percent }]
+    scene: bar_model.percentage_of_amount
+    recheck: N12.percentage-of-amount
+    evidence: practice
+  - code: PCT_CHANGE_ONLY
+    node: R9
+    title: "Gives the change instead of the new amount"
+    student: "Your working found the size of the change, and that part is right. Read the question again: does it ask for the change, or for the new amount?"
+    teacher: "Stops at the increase or decrease and does not combine it with the original."
+    detect: [{ type: distractor, rule: pct_change_only }]
+    scene: bar_model.percentage_increase
+    recheck: R9.percentage-change-amount
+    evidence: brief-s2
+  - code: PCT_REVERSE_APPLY_TO_NEW
+    node: R9
+    title: "Undoes a percentage change using the new value"
+    student: "The percentage was worked out from the original amount, not the new one. So the new amount is a percentage of the original. Work out which percentage first."
+    teacher: "Applies the percentage to the new value, so after a 20% decrease to £80 gives £80 + £16 = £96 instead of £100."
+    detect: [{ type: distractor, rule: pct_reverse_apply_to_new }]
+    scene: bar_model.reverse_percentage
+    recheck: R9.reverse-percentage
+    evidence: brief-s2
+  - code: PCT_SUCCESSIVE_ADD
+    node: R9
+    title: "Adds successive percentage changes"
+    student: "The second change applies to the new amount, so a 10% rise then a 20% rise is not a 30% rise."
+    teacher: "Adds the percentages, so a 10% rise then a 20% rise on £200 gives £260 instead of £264."
+    detect: [{ type: distractor, rule: pct_successive_add }]
+    scene: bar_model.successive_percentages
+    recheck: R9.successive-percentage-change
+    evidence: practice
+  - code: PCT_CHANGE_OVER_NEW
+    node: R9
+    title: "Divides the change by the new value"
+    student: "Percentage change compares the change with the original amount, the value before the change, not the new one."
+    teacher: "Uses the new value as the denominator, so 80 to 100 is given as a 20% increase instead of 25%."
+    detect: [{ type: distractor, rule: pct_change_over_new }]
+    scene: bar_model.percentage_change
+    recheck: R9.percentage-change-find
+    evidence: practice
+  - code: FRAC_IN_RATIO_WRONG_WHOLE
+    node: N11
+    title: "Uses one part as the whole when turning a ratio into a fraction"
+    student: "A ratio compares one part with another. For a fraction of the whole, add all the parts to get the total, then put one part over that total."
+    teacher: "Gives 2/3 as the fraction of the whole for the ratio 2 : 3."
+    detect: [{ type: distractor, rule: ratio_part_over_other_part }]
+    scene: bar_model.ratio_to_fraction
+    recheck: N11.ratio-to-fraction
+    evidence: brief-s2
+
+  # R4 to R7: ratio
+  - code: RATIO_DIVIDE_BY_EACH_PART
+    node: R5
+    title: "Divides the total by each number in the ratio"
+    student: "Divide the total by the number of parts altogether first. For example, in 2 : 3 there are 5 parts."
+    teacher: "Shares 45 in 2 : 3 as 45 / 2 and 45 / 3."
+    detect: [{ type: distractor, rule: ratio_divide_by_each_part }]
+    scene: bar_model.share_in_ratio
+    recheck: R5.share-in-ratio
+    evidence: brief-s2
+  - code: RATIO_DIVIDE_BY_ONE_PART
+    node: R5
+    title: "Divides by one part of the ratio"
+    student: "Each part is the total divided by the number of parts altogether, not by one side of the ratio."
+    teacher: "Divides the total by one number in the ratio and uses that as one part, so 30 shared in 2 : 3 gives 30 ÷ 3 = 10 and shares of 20 and 30, which add to 50, not 30."
+    detect: [{ type: distractor, rule: ratio_divide_by_one_part }]
+    scene: bar_model.share_in_ratio
+    recheck: R5.share-in-ratio
+    evidence: brief-s2
+  - code: RATIO_PART_TREATED_AS_TOTAL
+    node: R5
+    title: "Treats one share as the total"
+    student: "Check what the given number is: here it is one share, not the total. Use that share to find what one part is worth first."
+    teacher: "Divides a given share by the total number of parts."
+    detect: [{ type: distractor, rule: ratio_part_treated_as_total }]
+    scene: bar_model.ratio_from_one_share
+    recheck: R5.ratio-from-one-share
+    evidence: practice
+  - code: RATIO_ORDER_SWAPPED
+    node: R4
+    title: "Writes a ratio in the wrong order"
+    student: 'The order matters. In "cats to dogs", the number of cats comes first.'
+    teacher: "Reverses the order of the quantities."
+    detect: [{ type: distractor, rule: ratio_order_swapped }]
+    scene: bar_model.write_ratio
+    recheck: R4.write-ratio
+    evidence: practice
+  - code: RATIO_SIMPLIFY_ONE_PART
+    node: R4
+    title: "Divides only one side when simplifying"
+    student: "To simplify a ratio, divide both sides by the same number."
+    teacher: "Divides one part only, so 12 : 8 becomes 6 : 8."
+    detect: [{ type: distractor, rule: ratio_simplify_one_part }]
+    scene: bar_model.simplify_ratio
+    recheck: R4.simplify-ratio
+    evidence: practice
+  - code: RATIO_ADDITIVE_SCALING
+    node: R7
+    title: "Adds instead of scaling"
+    student: "Proportion is about multiplying, not adding. Find how many times bigger the new amount is, then multiply every quantity by that same number."
+    teacher: "Adds the same amount to each quantity, so a recipe for 4 with 6 eggs becomes 8 eggs for 6."
+    detect: [{ type: distractor, rule: ratio_additive_scaling }]
+    scene: bar_model.scale_recipe
+    recheck: R7.scale-quantities
+    evidence: brief-s2
+  - code: RATIO_FRACTION_WRONG_WAY_ROUND
+    node: R6
+    title: "Writes the fraction relationship the wrong way round"
+    student: 'Ask which amount is being compared with which. "A as a fraction of B" puts the amount of B on the bottom.'
+    teacher: "For a : b = 2 : 3, says b is 2/3 of a instead of 3/2 of a."
+    detect: [{ type: distractor, rule: ratio_fraction_inverted }]
+    scene: bar_model.ratio_relationship
+    recheck: R6.ratio-relationship
+    evidence: practice
+
+  # A17: linear equations
+  - code: EQ_WRONG_INVERSE
+    node: A17
+    title: "Does the same operation instead of the inverse"
+    student: "To get x on its own, do the opposite operation to both sides: undo adding by subtracting, and undo subtracting by adding."
+    teacher: "Applies the original operation, so x + 5 = 12 gives x = 17."
+    detect: [{ type: distractor, rule: eq_inverse_wrong_operation }]
+    scene: balance.one_step
+    recheck: A17.one-step
+    evidence: practice
+  - code: EQ_DIVIDE_ONE_TERM
+    node: A17
+    title: "Divides only one term"
+    student: "When you divide, divide every term on both sides by the same number, not just some of the terms."
+    teacher: "Divides one term, so 2x + 6 = 10 becomes x + 6 = 5."
+    detect: [{ type: distractor, rule: eq_divide_one_term }]
+    scene: balance.two_step
+    recheck: A17.two-step
+    evidence: brief-s2
+  - code: EQ_MOVE_WITHOUT_SIGN_CHANGE
+    node: A17
+    title: "Moves a term without changing its sign"
+    student: "A term cannot jump across the equals sign and keep its sign. To remove an x term from one side, subtract it from both sides, so the equation stays balanced."
+    teacher: '"Moves" a term across the equals sign keeping its sign, so 3x = 2x + 5 becomes 5x = 5.'
+    detect: [{ type: distractor, rule: eq_move_without_sign_change }]
+    scene: balance.unknown_both_sides
+    recheck: A17.unknown-both-sides
+    evidence: practice
+  - code: EQ_COEFFICIENT_SUBTRACTED
+    node: A17
+    title: "Subtracts the coefficient instead of dividing"
+    student: "The number in front of x multiplies it: 3x means 3 lots of x. To undo multiplying, divide both sides by that number."
+    teacher: "Subtracts the coefficient, so 3x = 12 gives x = 9."
+    detect: [{ type: distractor, rule: eq_coefficient_subtracted }]
+    scene: balance.one_step
+    recheck: A17.one-step-multiply
+    evidence: practice
+  - code: EQ_BRACKET_FIRST_TERM_ONLY
+    node: A17
+    title: "Multiplies only the first term in a bracket"
+    student: "The number outside the bracket multiplies everything inside it."
+    teacher: "Expands 3(x + 4) as 3x + 4 inside an equation."
+    detect: [{ type: distractor, rule: expand_first_term_only }]
+    scene: area_model.expand_bracket
+    recheck: A17.equation-with-brackets
+    evidence: brief-s2
+  - code: EQ_SIGN_CHANGED_NOT_MOVED
+    node: A17
+    title: "Changes the sign of a term without moving it"
+    student: "A term only changes sign when it moves to the other side, because you did the same thing to both sides. Changing its sign and leaving it where it is changes the equation."
+    teacher: "Flips a sign in place, so 5x + 3 = 2x + 9 becomes 5x - 3 = 2x + 9, giving x = 4 instead of 2."
+    detect: [{ type: distractor, rule: eq_sign_changed_not_moved }]
+    scene: balance.unknown_both_sides
+    recheck: A17.unknown-both-sides
+    evidence: brief-s2
+  - code: EQ_NEGATIVE_DIVISION_SIGN
+    node: A17
+    title: "Loses the sign when dividing by a negative"
+    student: "Watch the sign when you divide by a negative number. A positive divided by a negative gives a negative, the same rule as for multiplying."
+    teacher: "Drops the negative, so -2x = 8 gives x = 4."
+    detect: [{ type: distractor, rule: eq_sign_lost_dividing_negative }]
+    scene: balance.negative_coefficient
+    recheck: A17.negative-coefficient
+    evidence: practice
+
+  # A8, A9, A10: coordinates and straight lines
+  - code: COORDINATES_SWAPPED
+    node: A8
+    title: "Swaps the x and y coordinates"
+    student: "Coordinates give the x value first (across), then the y value (up or down): (x, y)."
+    teacher: "Plots or reads (x, y) as (y, x)."
+    detect: [{ type: distractor, rule: coordinates_swapped }]
+    scene: coordinate_grid.plot_point
+    recheck: A8.read-coordinates
+    evidence: brief-s2
+  - code: GRADIENT_RUN_OVER_RISE
+    node: A10
+    title: "Divides the change in x by the change in y"
+    student: "Gradient is how far up for each one across: change in y divided by change in x."
+    teacher: "Inverts the formula, so the line through (0, 1) and (2, 7) gets 2/6 instead of 3."
+    detect: [{ type: distractor, rule: gradient_run_over_rise }]
+    scene: coordinate_grid.gradient_triangle
+    recheck: A10.gradient-from-two-points
+    evidence: brief-s2
+  - code: GRADIENT_SIGN_DROPPED
+    node: A10
+    title: "Gives a positive gradient for a line going down"
+    student: "Check the direction as well as the steepness. A line going down from left to right has a negative gradient."
+    teacher: "Ignores direction when finding the gradient."
+    detect: [{ type: distractor, rule: gradient_sign_dropped }]
+    scene: coordinate_grid.gradient_triangle
+    recheck: A10.gradient-from-two-points
+    evidence: practice
+  - code: INTERCEPT_NOT_DIVIDED
+    node: A10
+    title: "Reads the intercept before making y the subject"
+    student: "You can read the y-intercept straight off only when the equation is in the form y = mx + c. If there is a number in front of y, divide every term by that number first."
+    teacher: "Reads c from a rearranged form, so 2y = 4x + 6 has intercept 6."
+    detect: [{ type: distractor, rule: intercept_not_divided }]
+    scene: coordinate_grid.line_from_equation
+    recheck: A10.intercept-from-equation
+    evidence: brief-s2
+  - code: GRADIENT_IGNORES_SCALE
+    node: A10
+    title: "Counts squares without reading the axis scales"
+    student: "Use the numbers on the axes, not the number of squares, to measure the rise and run."
+    teacher: "Reads steepness visually, ignoring unequal scales."
+    detect: [{ type: distractor, rule: gradient_counts_squares }, { type: classifier }]
+    scene: coordinate_grid.gradient_triangle
+    recheck: A10.gradient-from-graph
+    evidence: brief-s2
+  - code: PARALLEL_BY_INTERCEPT
+    node: A9
+    title: "Thinks parallel lines share an intercept"
+    student: "Parallel lines have the same gradient. In y = mx + c that is m, the number in front of x once y is on its own."
+    teacher: "Matches lines on c rather than m."
+    detect: [{ type: distractor, rule: parallel_by_intercept }]
+    scene: coordinate_grid.parallel_lines
+    recheck: A9.parallel-lines
+    evidence: practice
+  - code: LINE_SUBSTITUTION_SWAPPED
+    node: A9
+    title: "Substitutes the y value for x when plotting"
+    student: "Put the x value into the equation to find y for each point."
+    teacher: "Swaps the roles of x and y when tabulating points."
+    detect: [{ type: distractor, rule: line_table_swapped }]
+    scene: coordinate_grid.table_of_values
+    recheck: A9.table-of-values
+    evidence: practice
+
+  # G3: angles
+  - code: ANGLES_LINE_SUM_360
+    node: G3
+    title: "Thinks angles on a straight line add to 360°"
+    student: "Angles on a straight line add to 180°. All the way round a point is 360°."
+    teacher: "Confuses angles on a line with angles at a point."
+    detect: [{ type: distractor, rule: angles_line_sum_360 }]
+    scene: angle_diagram.angles_on_line
+    recheck: G3.angles-on-a-line
+    evidence: practice
+  - code: ANGLES_TRIANGLE_SUM_360
+    node: G3
+    title: "Thinks the angles in a triangle add to 360°"
+    student: "360° is the total all the way round a point. The three angles inside any triangle add to 180°, half of that."
+    teacher: "Uses 360° as the triangle angle sum."
+    detect: [{ type: distractor, rule: triangle_sum_360 }]
+    scene: angle_diagram.triangle_sum
+    recheck: G3.triangle-angles
+    evidence: practice
+  - code: ANGLES_COINTERIOR_EQUAL
+    node: G3
+    title: "Thinks co-interior angles are equal"
+    student: "Co-interior angles (between the parallel lines, on the same side) add to 180°. Alternate and corresponding angles are the equal ones."
+    teacher: "Treats co-interior angles as equal, so 70° gives 70° instead of 110°."
+    detect: [{ type: distractor, rule: cointerior_as_equal }]
+    scene: angle_diagram.parallel_lines
+    recheck: G3.parallel-line-angles
+    evidence: practice
+  - code: ANGLES_ALTERNATE_CORRESPONDING_NAMES
+    node: G3
+    title: "Mixes up alternate and corresponding angles"
+    student: 'Alternate angles sit in a Z shape and corresponding angles in an F shape. In a reason, write the name, such as "alternate angles are equal", not "Z angles".'
+    teacher: "Gives the wrong reason even when the value is right; costs reasoning marks."
+    detect: [{ type: classifier }]
+    scene: angle_diagram.parallel_lines
+    recheck: G3.angle-reasons
+    evidence: brief-s2
+  - code: POLYGON_INTERIOR_N_TIMES_180
+    node: G3
+    title: "Uses n x 180° for the interior angle sum"
+    student: "A polygon with n sides splits into n - 2 triangles, so the interior angles add to (n - 2) × 180°."
+    teacher: "Uses n × 180°, so a hexagon's interior angles sum to 1080° instead of 720°."
+    detect: [{ type: distractor, rule: polygon_interior_n_times_180 }]
+    scene: angle_diagram.polygon_triangles
+    recheck: G3.polygon-interior-sum
+    evidence: brief-s2
+  - code: VERTICALLY_OPPOSITE_SUPPLEMENTARY
+    node: G3
+    title: "Thinks vertically opposite angles add to 180°"
+    student: "Vertically opposite angles are equal. It is angles next to each other on a line that add to 180°."
+    teacher: "Confuses vertically opposite with adjacent angles."
+    detect: [{ type: distractor, rule: vertically_opposite_as_supplementary }]
+    scene: angle_diagram.vertically_opposite
+    recheck: G3.vertically-opposite
+    evidence: practice
+
+  # G7: transformations
+  - code: ENLARGE_FROM_SHAPE
+    node: G7
+    title: "Enlarges from the shape instead of the centre"
+    student: "Measure every distance from the centre of enlargement, then multiply it by the scale factor."
+    teacher: "Scales the shape in place, ignoring the centre."
+    detect: [{ type: distractor, rule: enlarge_ignore_centre }]
+    scene: transformation_grid.enlarge_from_centre
+    recheck: G7.enlargement
+    evidence: brief-s2
+  - code: REFLECT_DIAGONAL_AS_AXIS
+    node: G7
+    title: "Reflects in y = x as if it were an axis"
+    student: "The mirror line y = x is the diagonal through (0, 0), (1, 1) and (2, 2), not an axis. Each point and its image are the same distance from it, on a line at right angles to it."
+    teacher: "Reflects in the x or y axis instead of the diagonal."
+    detect: [{ type: distractor, rule: reflect_line_as_axis }]
+    scene: transformation_grid.reflect_diagonal
+    recheck: G7.reflection
+    evidence: brief-s2
+  - code: ROTATE_ABOUT_ORIGIN
+    node: G7
+    title: "Ignores the centre of rotation"
+    student: "The shape turns around the given centre, which is not always the origin. Tracing paper helps."
+    teacher: "Rotates about the origin or a vertex instead of the stated centre."
+    detect: [{ type: distractor, rule: rotate_about_origin }]
+    scene: transformation_grid.rotate_about_centre
+    recheck: G7.rotation
+    evidence: brief-s2
+  - code: ROTATE_WRONG_DIRECTION
+    node: G7
+    title: "Rotates the wrong way"
+    student: "Clockwise is the way clock hands move. Check the direction before you turn."
+    teacher: "Swaps clockwise and anticlockwise."
+    detect: [{ type: distractor, rule: rotate_wrong_direction }]
+    scene: transformation_grid.rotate_about_centre
+    recheck: G7.rotation
+    evidence: practice
+  - code: TRANSLATE_COMPONENTS_SWAPPED
+    node: G7
+    title: "Swaps the parts of a translation vector"
+    student: "The top number moves across, the bottom number moves up or down."
+    teacher: "Applies the column vector components the wrong way round."
+    detect: [{ type: distractor, rule: translate_components_swapped }]
+    scene: transformation_grid.translate
+    recheck: G7.translation
+    evidence: practice
+
+  # G16, G17: area and perimeter
+  - code: AREA_PARALLELOGRAM_SLANT
+    node: G16
+    title: "Uses the slant side as the height"
+    student: "The height must be at right angles to the base. The slanted side is longer than the height."
+    teacher: "Multiplies base by slant length for a parallelogram."
+    detect: [{ type: distractor, rule: parallelogram_slant_height }]
+    scene: area_model.shear_parallelogram
+    recheck: G16.parallelogram-area
+    evidence: brief-s2
+  - code: AREA_TRIANGLE_NO_HALF
+    node: G16
+    title: "Forgets to halve for a triangle"
+    student: "A triangle is half of a rectangle with the same base and height, so halve base × height."
+    teacher: "Gives base x height for a triangle."
+    detect: [{ type: distractor, rule: triangle_no_half }]
+    scene: area_model.triangle_half_rectangle
+    recheck: G16.triangle-area
+    evidence: practice
+  - code: AREA_TRAPEZIUM_NO_HALF
+    node: G16
+    title: "Forgets to halve for a trapezium"
+    student: "Two copies of a trapezium make a parallelogram, so the area is half of (a + b) × h."
+    teacher: "Gives (a + b)h."
+    detect: [{ type: distractor, rule: trapezium_no_half }]
+    scene: area_model.trapezium_doubled
+    recheck: G16.trapezium-area
+    evidence: practice
+  - code: AREA_AS_PERIMETER
+    node: G16
+    title: "Gives the perimeter when asked for area"
+    student: "Perimeter is the distance around the edge; area is the space inside, in square units."
+    teacher: "Adds side lengths when area is asked for."
+    detect: [{ type: distractor, rule: area_as_perimeter }]
+    scene: area_model.area_versus_perimeter
+    recheck: G16.rectangle-area
+    evidence: practice
+  - code: AREA_UNITS_LINEAR_FACTOR
+    node: G16
+    title: "Converts square units with a length factor"
+    student: "Area is measured in squares, so a length conversion is used twice: once for the length and once for the width. Picture a 1 m square drawn in centimetres."
+    teacher: "Uses 1 m² = 100 cm²."
+    detect: [{ type: distractor, rule: area_units_linear_factor }]
+    scene: area_model.unit_square_grid
+    recheck: G16.area-units
+    evidence: brief-s2
+  - code: CIRCLE_AREA_AS_CIRCUMFERENCE
+    node: G17
+    title: "Mixes up area and circumference of a circle"
+    student: "Circumference is the distance round (2πr); area is the space inside (πr²), in square units."
+    teacher: "Uses 2πr or πd for area, or πr² for circumference."
+    detect: [{ type: distractor, rule: circle_area_as_circumference }]
+    scene: area_model.unroll_circle
+    recheck: G17.circle-area
+    evidence: brief-s2
+  - code: CIRCLE_DIAMETER_AS_RADIUS
+    node: G17
+    title: "Uses the diameter as the radius"
+    student: "The radius is half the diameter. Check which one the question gives you."
+    teacher: "Substitutes d for r."
+    detect: [{ type: distractor, rule: circle_diameter_as_radius }]
+    scene: area_model.radius_and_diameter
+    recheck: G17.circle-area-from-diameter
+    evidence: brief-s2
+  - code: COMPOSITE_PERIMETER_INNER_EDGES
+    node: G17
+    title: "Counts inner edges in the perimeter of a composite shape"
+    student: "The perimeter is only the outside edge; lines inside the shape do not count."
+    teacher: "Adds edges shared between the parts of a composite shape."
+    detect: [{ type: distractor, rule: composite_perimeter_includes_inner }]
+    scene: area_model.composite_perimeter
+    recheck: G17.composite-perimeter
+    evidence: practice
+
+  # G20: Pythagoras
+  - code: PYTH_ADD_FOR_SHORTER_SIDE
+    node: G20
+    title: "Adds the squares when finding a shorter side"
+    student: "The hypotenuse is the longest side, so its square is the biggest. The other two squares add up to it. To find a shorter side, subtract the smaller square from the bigger one."
+    teacher: "Uses a² + b² when the hypotenuse is known."
+    detect: [{ type: distractor, rule: pythagoras_add_for_leg }]
+    scene: pythagoras_squares.find_shorter_side
+    recheck: G20.pythagoras-shorter-side
+    evidence: brief-s2
+  - code: PYTH_NO_SQUARE_ROOT
+    node: G20
+    title: "Forgets the square root"
+    student: "a² + b² gives the area of the biggest square. Take the square root to get the length."
+    teacher: "Stops at c²."
+    detect: [{ type: distractor, rule: pythagoras_no_root }]
+    scene: pythagoras_squares.find_hypotenuse
+    recheck: G20.pythagoras-hypotenuse
+    evidence: practice
+  - code: PYTH_ADD_SIDES
+    node: G20
+    title: "Adds the side lengths"
+    student: "Pythagoras adds the squares of the sides, not the sides themselves."
+    teacher: "Gives a + b for the hypotenuse."
+    detect: [{ type: distractor, rule: pythagoras_add_sides }]
+    scene: pythagoras_squares.find_hypotenuse
+    recheck: G20.pythagoras-hypotenuse
+    evidence: practice
+  - code: PYTH_WRONG_HYPOTENUSE
+    node: G20
+    title: "Treats a shorter side as the hypotenuse"
+    student: "The hypotenuse is always opposite the right angle and is the longest side."
+    teacher: "Mislabels the hypotenuse."
+    detect: [{ type: distractor, rule: pythagoras_subtract_for_hypotenuse }, { type: classifier }]
+    scene: pythagoras_squares.label_hypotenuse
+    recheck: G20.pythagoras-hypotenuse
+    evidence: practice
+
+  # P7, P8: possibility spaces and tree diagrams
+  - code: TREE_ADD_ALONG_BRANCHES
+    node: P8
+    title: "Adds probabilities along the branches"
+    student: "Along a path you multiply: both things have to happen. You add only to combine different paths."
+    teacher: "Adds along branches instead of multiplying."
+    detect: [{ type: distractor, rule: tree_add_along_branches }]
+    scene: probability_tree.multiply_along
+    recheck: P8.tree-and
+    evidence: brief-s2
+  - code: TREE_IGNORE_REPLACEMENT
+    node: P8
+    title: "Keeps the same probabilities without replacement"
+    student: "If the first item is not put back, the second pick has one fewer item in total, and one fewer of whatever was taken first. Change both numbers on the second branches."
+    teacher: "Does not adjust second-stage probabilities without replacement."
+    detect: [{ type: distractor, rule: tree_ignore_replacement }]
+    scene: probability_tree.without_replacement
+    recheck: P8.tree-without-replacement
+    evidence: brief-s2
+  - code: TREE_MULTIPLY_ALTERNATIVES
+    node: P8
+    title: "Multiplies the probabilities of different paths"
+    student: 'Different paths are "or": add their probabilities.'
+    teacher: "Multiplies when outcomes are alternatives."
+    detect: [{ type: distractor, rule: tree_multiply_alternatives }]
+    scene: probability_tree.add_paths
+    recheck: P8.tree-or
+    evidence: practice
+  - code: PROBABILITY_OVER_ONE
+    node: P8
+    title: "Gives a probability greater than 1"
+    student: "A probability is always from 0 to 1, so an answer bigger than 1 cannot be right. On a tree diagram this often happens when probabilities along a path are added instead of multiplied."
+    teacher: "Accepts impossible probabilities."
+    detect: [{ type: structure, rule: probability_over_one }]
+    scene: probability_tree.multiply_along
+    recheck: P8.tree-and
+    evidence: brief-s2
+  - code: SAMPLE_SPACE_UNORDERED
+    node: P7
+    title: "Counts (1, 2) and (2, 1) as one outcome"
+    student: "Rolling a 1 then a 2 is a different outcome from a 2 then a 1. Draw a grid with one dice across the top and the other down the side to see every outcome."
+    teacher: "Undercounts ordered outcomes in two-dice sample spaces."
+    detect: [{ type: distractor, rule: sample_space_unordered }]
+    scene: coordinate_grid.sample_space
+    recheck: P7.two-dice
+    evidence: practice
+
+  # S4: averages
+  - code: MEDIAN_UNORDERED
+    node: S4
+    title: "Finds the median without ordering the data"
+    student: "Put the values in order first; the median is the middle of the ordered list."
+    teacher: "Takes the middle value of the unordered list."
+    detect: [{ type: distractor, rule: median_unordered }]
+    scene: data_chart.order_then_middle
+    recheck: S4.median
+    evidence: brief-s2
+  - code: MEDIAN_POSITION_AS_VALUE
+    node: S4
+    title: "Gives the position of the median instead of its value"
+    student: "(n + 1) / 2 tells you where the median is in the list. The median is the value in that place."
+    teacher: "Reports the position rather than the value."
+    detect: [{ type: distractor, rule: median_position_as_value }]
+    scene: data_chart.order_then_middle
+    recheck: S4.median
+    evidence: practice
+  - code: GROUPED_MEAN_CLASS_WIDTH
+    node: S4
+    title: "Uses class widths to estimate a grouped mean"
+    student: "Multiply each frequency by the midpoint of its class, not by its width."
+    teacher: "Uses class width instead of midpoint."
+    detect: [{ type: distractor, rule: grouped_mean_class_width }]
+    scene: data_chart.grouped_mean_midpoints
+    recheck: S4.grouped-mean
+    evidence: brief-s2
+  - code: GROUPED_MEAN_DIVIDE_BY_CLASSES
+    node: S4
+    title: "Divides by the number of classes"
+    student: "Divide by the total frequency: how many values there are, not how many groups."
+    teacher: "Divides the sum of fx by the number of classes."
+    detect: [{ type: distractor, rule: grouped_mean_divide_by_groups }]
+    scene: data_chart.grouped_mean_midpoints
+    recheck: S4.grouped-mean
+    evidence: practice
+  - code: RANGE_AS_LARGEST
+    node: S4
+    title: "Gives the largest value as the range"
+    student: "The range is how spread out the data is: largest minus smallest."
+    teacher: "Reports the maximum as the range."
+    detect: [{ type: distractor, rule: range_largest_value }]
+    scene: data_chart.range_span
+    recheck: S4.range
+    evidence: practice
+  - code: MODE_AS_FREQUENCY
+    node: S4
+    title: "Gives the highest frequency as the mode"
+    student: "The mode is the value that appears most often, not how many times it appears."
+    teacher: "Reports the frequency rather than the value."
+    detect: [{ type: distractor, rule: mode_as_frequency }]
+    scene: data_chart.frequency_table_mode
+    recheck: S4.mode-from-table
+    evidence: practice

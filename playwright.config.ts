@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 const WEB_PORT = 3301;
 const API_PORT = 8301;
+const GATED_PORT = 3302;
+// E2E has its own database, so it never migrates or reseeds the developer's.
+const E2E_DATABASE_URL = "postgresql+psycopg://eddy:eddy@127.0.0.1:5442/eddy_e2e";
 
 // A fresh service-token key pair per run, so E2E never depends on local .env files.
 // The config is also loaded by workers; only the main process starts the servers, so only its
@@ -52,9 +55,14 @@ export default defineConfig({
   ),
   webServer: [
     {
-      command: `uv run --package eddy-api uvicorn eddy_api.main:app --host 127.0.0.1 --port ${API_PORT}`,
+      // Its own eddy_e2e database, created, migrated and seeded first: the admin pages read the
+      // seeded curriculum, and the developer's eddy database is never touched.
+      command: `uv run --package eddy-api python -m eddy_api.db.local && pnpm db:migrate && pnpm db:seed && uv run --package eddy-api uvicorn eddy_api.main:app --host 127.0.0.1 --port ${API_PORT}`,
       url: `http://127.0.0.1:${API_PORT}/health`,
-      env: withEnv({ SERVICE_TOKEN_PUBLIC_KEY_B64: b64(publicKey) }),
+      env: withEnv({
+        SERVICE_TOKEN_PUBLIC_KEY_B64: b64(publicKey),
+        DATABASE_URL: E2E_DATABASE_URL,
+      }),
       reuseExistingServer: false,
       timeout: 120_000,
     },
@@ -65,9 +73,18 @@ export default defineConfig({
         SERVICE_TOKEN_PRIVATE_KEY_B64: b64(privateKey),
         API_BASE_URL: `http://127.0.0.1:${API_PORT}`,
         EDDY_SYSTEM_CHECK: "1", // the production build hides the check otherwise
+        EDDY_ADMIN_PREVIEW: "1", // and the admin pages
       }),
       reuseExistingServer: false,
       timeout: 300_000,
+    },
+    {
+      // The same production build without the preview flag: the admin pages must not exist.
+      command: `pnpm --filter @eddy/web exec next start --hostname 127.0.0.1 --port ${GATED_PORT}`,
+      url: `http://127.0.0.1:${GATED_PORT}`,
+      env: withEnv({ API_BASE_URL: `http://127.0.0.1:${API_PORT}`, EDDY_ADMIN_PREVIEW: "0" }),
+      reuseExistingServer: false,
+      timeout: 120_000,
     },
   ],
 });

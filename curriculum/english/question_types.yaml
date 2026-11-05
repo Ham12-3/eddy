@@ -1,0 +1,187 @@
+# English question types and level descriptors (SPEC.md section 6.6). Data model only in the MVP.
+# Structure (papers, marks, assessment objectives, timings) follows docs/brief.md sections 3 and 4.
+# Every task summary and level descriptor is our own paraphrase: no exam board question,
+# mark scheme or level wording is copied. Check the structure against the published
+# specification before any English feature is built on it.
+#
+# English Language reading and writing questions use four levels; Literature essays use six.
+# Points-based questions (Language question 1 on each paper) have no levels.
+
+level_sets:
+  language_analysis:
+    - Picks out some words or features and says something simple about them.
+    - Comments on the effect of some words or features, with some relevant references and terms, not always accurate.
+    - Explains clearly and in detail how the writer's choices shape meaning, with well chosen references and accurate terms.
+    - Analyses the writer's choices perceptively, with precise references and terms used to sharpen the argument.
+  structure_analysis:
+    - Notices some features of how the text is ordered, with simple comments.
+    - Explains how the order or focus of the text creates some effects, with relevant examples.
+    - Explains clearly how shifts in focus, pace or viewpoint are used, with accurate terms.
+    - Analyses how the whole text is built and why, with precise examples and a sustained argument.
+  evaluation:
+    - "Gives a simple opinion on the statement with limited support from the text."
+    - "Gives a reasoned view of the statement with some relevant references."
+    - "Gives a clear judgement on the statement, showing how the writer's methods affect the reader, with relevant quotations."
+    - "Weighs the statement against the text in depth and reaches a well argued judgement, backed by precisely chosen quotations."
+  summary:
+    - "Makes simple, mostly explicit points about one or both sources."
+    - "Makes relevant points about both sources and begins to infer differences or similarities."
+    - "Draws sound conclusions from both sources and links them, supported by relevant quotations."
+    - "Reads beneath the surface of both sources with insight and weaves them together, choosing evidence precisely."
+  comparison:
+    - Notices simple similarities or differences in what the writers think.
+    - Compares viewpoints and identifies some methods, with relevant references.
+    - Compares viewpoints clearly and explains how methods convey them, with apt references.
+    - Compares viewpoints and methods perceptively and in detail across both texts.
+  writing:
+    - Writing shows some awareness of reader and purpose, with simple organisation and limited control of sentences and spelling.
+    - Writing is mostly matched to reader and purpose, with some paragraphing, varied sentences and generally accurate spelling.
+    - Writing is clear and engaging, well organised, with a range of vocabulary and sentence forms, and largely accurate.
+    - Writing holds the reader throughout, with a confident and original structure, wide vocabulary chosen precisely, and accurate spelling, punctuation and grammar.
+  literature_essay:
+    - "Makes simple, literal points about the text, with occasional references."
+    - "Makes relevant points backed by references, with some comment on the writer's methods or context."
+    - "Explains a range of points in an organised way, with references and some comment on methods, their effects and context."
+    - "Explains ideas and methods clearly across the whole text, with well chosen references, accurate terms and specific links to context."
+    - "Develops a considered argument, examining methods and their effects closely, with references woven in and detailed links to context."
+    - "Sustains an original, critical argument about the whole text, analysing methods precisely and linking text, task and context with insight."
+  unseen_comparison:
+    - Makes a simple link between the two poems.
+    - Identifies relevant similarities or differences in how the poets write.
+    - Compares the poets' methods clearly, with examples.
+    - Compares the poets' methods perceptively and explores their effects.
+
+question_types:
+  # English Language paper 1: fiction source, then creative writing
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 1
+    number: "1"
+    marks: 4
+    aos: [AO1]
+    minutes: 5
+    task: List explicit facts or ideas from a short part of the source.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 1
+    number: "2"
+    marks: 8
+    aos: [AO2]
+    minutes: 10
+    levels: language_analysis
+    task: Analyse how the writer uses language in a short extract.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 1
+    number: "3"
+    marks: 8
+    aos: [AO2]
+    minutes: 10
+    levels: structure_analysis
+    task: Analyse how the whole source is structured to interest the reader.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 1
+    number: "4"
+    marks: 20
+    aos: [AO4]
+    minutes: 20
+    levels: evaluation
+    task: Evaluate a given view of part of the source and say how far you agree.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 1
+    number: "5"
+    marks: 40
+    aos: [AO5, AO6]
+    minutes: 45
+    levels: writing
+    task: Write a description or a story from a prompt or picture.
+
+  # English Language paper 2: two non-fiction sources, then viewpoint writing
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 2
+    number: "1"
+    marks: 4
+    aos: [AO1]
+    minutes: 5
+    task: Choose the true statements about part of one source.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 2
+    number: "2"
+    marks: 8
+    aos: [AO1]
+    minutes: 8
+    levels: summary
+    task: Summarise differences or similarities between the two sources.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 2
+    number: "3"
+    marks: 12
+    aos: [AO2]
+    minutes: 12
+    levels: language_analysis
+    task: Analyse how the writer of one source uses language.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 2
+    number: "4"
+    marks: 16
+    aos: [AO3]
+    minutes: 20
+    levels: comparison
+    task: Compare the writers' viewpoints and the methods they use to convey them.
+  - spec: { board: AQA, spec_code: "8700", version: "2015" }
+    paper: 2
+    number: "5"
+    marks: 40
+    aos: [AO5, AO6]
+    minutes: 45
+    levels: writing
+    task: "Write to present a viewpoint, such as a letter, article, speech or essay."
+
+  # English Literature paper 1
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 1
+    number: "A"
+    marks: 34
+    aos: [AO1, AO2, AO3, AO4]
+    minutes: 50
+    levels: literature_essay
+    task: "Write about a Shakespeare play, from an extract out to the whole play."
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 1
+    number: "B"
+    marks: 30
+    aos: [AO1, AO2, AO3]
+    minutes: 50
+    levels: literature_essay
+    task: "Write about a 19th-century novel, from an extract out to the whole novel."
+
+  # English Literature paper 2
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 2
+    number: "A"
+    marks: 34
+    aos: [AO1, AO2, AO3, AO4]
+    minutes: 45
+    levels: literature_essay
+    task: "Write an essay on a modern prose or drama text, choosing one of two questions."
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 2
+    number: "B"
+    marks: 30
+    aos: [AO1, AO2, AO3]
+    minutes: 45
+    levels: literature_essay
+    task: Compare a named anthology poem with another poem from the same cluster.
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 2
+    number: "C1"
+    marks: 24
+    aos: [AO1, AO2]
+    minutes: 30
+    levels: literature_essay
+    task: Write about one unseen poem.
+  - spec: { board: AQA, spec_code: "8702", version: "2015" }
+    paper: 2
+    number: "C2"
+    marks: 8
+    aos: [AO2]
+    minutes: 15
+    levels: unseen_comparison
+    task: Compare the methods of a second unseen poem with the first.

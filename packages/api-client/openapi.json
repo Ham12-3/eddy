@@ -1,6 +1,48 @@
 {
   "components": {
     "schemas": {
+      "DetectionRule": {
+        "properties": {
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule"
+          },
+          "type": {
+            "enum": [
+              "distractor",
+              "structure",
+              "classifier"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "DetectionRule",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -48,6 +90,475 @@
         ],
         "title": "HelloResponse",
         "type": "object"
+      },
+      "MisconceptionOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detection_rules": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DetectionRule"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection Rules"
+          },
+          "evidence_source": {
+            "title": "Evidence Source",
+            "type": "string"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "recheck_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recheck Family"
+          },
+          "remediation_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation Template"
+          },
+          "student_facing_description": {
+            "title": "Student Facing Description",
+            "type": "string"
+          },
+          "teacher_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teacher Description"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "node",
+          "title",
+          "student_facing_description",
+          "teacher_description",
+          "detection_rules",
+          "remediation_template",
+          "recheck_family",
+          "evidence_source"
+        ],
+        "title": "MisconceptionOut",
+        "type": "object"
+      },
+      "NodeDetail": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "dependents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dependents",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "higher_extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Higher Extension"
+          },
+          "misconception_count": {
+            "title": "Misconception Count",
+            "type": "integer"
+          },
+          "misconceptions": {
+            "items": {
+              "$ref": "#/components/schemas/MisconceptionOut"
+            },
+            "title": "Misconceptions",
+            "type": "array"
+          },
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/Prerequisite"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "strand": {
+            "enum": [
+              "NUMBER",
+              "ALGEBRA",
+              "RATIO",
+              "GEOMETRY",
+              "PROBABILITY",
+              "STATISTICS"
+            ],
+            "title": "Strand",
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "FOUNDATION",
+              "HIGHER_ONLY"
+            ],
+            "title": "Tier",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Topics",
+            "type": "array"
+          },
+          "visual_suitability": {
+            "title": "Visual Suitability",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "strand",
+          "tier",
+          "visual_suitability",
+          "prerequisites",
+          "misconception_count",
+          "description",
+          "higher_extension",
+          "dependents",
+          "topics",
+          "misconceptions"
+        ],
+        "title": "NodeDetail",
+        "type": "object"
+      },
+      "NodeSummary": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "misconception_count": {
+            "title": "Misconception Count",
+            "type": "integer"
+          },
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/Prerequisite"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "strand": {
+            "enum": [
+              "NUMBER",
+              "ALGEBRA",
+              "RATIO",
+              "GEOMETRY",
+              "PROBABILITY",
+              "STATISTICS"
+            ],
+            "title": "Strand",
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "FOUNDATION",
+              "HIGHER_ONLY"
+            ],
+            "title": "Tier",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "visual_suitability": {
+            "title": "Visual Suitability",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "strand",
+          "tier",
+          "visual_suitability",
+          "prerequisites",
+          "misconception_count"
+        ],
+        "title": "NodeSummary",
+        "type": "object"
+      },
+      "Paper": {
+        "properties": {
+          "calculator": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculator"
+          },
+          "focus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus"
+          },
+          "marks": {
+            "title": "Marks",
+            "type": "integer"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "paper": {
+            "title": "Paper",
+            "type": "string"
+          },
+          "tiers": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "FOUNDATION",
+                    "HIGHER"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiers"
+          }
+        },
+        "required": [
+          "paper",
+          "minutes",
+          "marks"
+        ],
+        "title": "Paper",
+        "type": "object"
+      },
+      "Prerequisite": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "strength": {
+            "title": "Strength",
+            "type": "number"
+          }
+        },
+        "required": [
+          "code",
+          "strength"
+        ],
+        "title": "Prerequisite",
+        "type": "object"
+      },
+      "Spec": {
+        "properties": {
+          "board": {
+            "enum": [
+              "DFE",
+              "AQA",
+              "EDEXCEL",
+              "OCR"
+            ],
+            "title": "Board",
+            "type": "string"
+          },
+          "papers": {
+            "items": {
+              "$ref": "#/components/schemas/Paper"
+            },
+            "title": "Papers",
+            "type": "array"
+          },
+          "qualification": {
+            "enum": [
+              "MATHS",
+              "ENG_LANG",
+              "ENG_LIT"
+            ],
+            "title": "Qualification",
+            "type": "string"
+          },
+          "spec_code": {
+            "title": "Spec Code",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "board",
+          "qualification",
+          "spec_code",
+          "version",
+          "title",
+          "papers",
+          "valid_from",
+          "valid_to"
+        ],
+        "title": "Spec",
+        "type": "object"
+      },
+      "TopicOut": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "scene_primitive": {
+            "title": "Scene Primitive",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "sort_order",
+          "scene_primitive",
+          "nodes"
+        ],
+        "title": "TopicOut",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -79,6 +590,206 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/v1/curriculum/misconceptions": {
+      "get": {
+        "operationId": "listMisconceptions",
+        "parameters": [
+          {
+            "description": "Only this node's misconceptions.",
+            "in": "query",
+            "name": "node",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this node's misconceptions.",
+              "title": "Node"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MisconceptionOut"
+                  },
+                  "title": "Response Listmisconceptions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Misconceptions",
+        "tags": [
+          "curriculum"
+        ]
+      }
+    },
+    "/v1/curriculum/nodes": {
+      "get": {
+        "operationId": "listCurriculumNodes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NodeSummary"
+                  },
+                  "title": "Response Listcurriculumnodes",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Nodes",
+        "tags": [
+          "curriculum"
+        ]
+      }
+    },
+    "/v1/curriculum/nodes/{code}": {
+      "get": {
+        "operationId": "getCurriculumNode",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No node has this code."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Node",
+        "tags": [
+          "curriculum"
+        ]
+      }
+    },
+    "/v1/curriculum/specs": {
+      "get": {
+        "operationId": "listCurriculumSpecs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Spec"
+                  },
+                  "title": "Response Listcurriculumspecs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Specs",
+        "tags": [
+          "curriculum"
+        ]
+      }
+    },
+    "/v1/curriculum/topics": {
+      "get": {
+        "operationId": "listCurriculumTopics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TopicOut"
+                  },
+                  "title": "Response Listcurriculumtopics",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Topics",
+        "tags": [
+          "curriculum"
+        ]
       }
     },
     "/v1/hello": {

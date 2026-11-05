@@ -1,0 +1,529 @@
+# GCSE mathematics subject content: every statement, N1 to S6.
+# Based on the DfE's GCSE mathematics subject content (2013), Open Government Licence v3.0.
+# Titles and descriptions are our own paraphrases. `visual` is how well the idea suits an
+# animated explanation (3 high, 1 low), from the brief's topic map (docs/brief.md section 2).
+# `higher` is the part of a Foundation statement that only Higher students study.
+spec: { board: DFE, spec_code: GCSE-MATHS, version: "2013" }
+
+strands:
+  NUMBER:
+    - code: N1
+      tier: FOUNDATION
+      visual: 3
+      title: Order and compare numbers
+      description: Order positive and negative integers, decimals and fractions, and use the symbols =, ≠, <, >, ≤ and ≥.
+    - code: N2
+      tier: FOUNDATION
+      visual: 3
+      title: The four operations
+      description: Add, subtract, multiply and divide integers, decimals, proper and improper fractions and mixed numbers, positive and negative, using written methods and place value.
+    - code: N3
+      tier: FOUNDATION
+      visual: 2
+      title: Inverse operations and order of operations
+      description: Use inverse operations and the conventional order of operations, including brackets, powers, roots and reciprocals.
+    - code: N4
+      tier: FOUNDATION
+      visual: 3
+      title: Factors, multiples and primes
+      description: Work with primes, factors, multiples, highest common factor, lowest common multiple and prime factorisation in product notation.
+    - code: N5
+      tier: FOUNDATION
+      visual: 2
+      title: Systematic listing
+      description: List outcomes systematically and use the product rule for counting.
+    - code: N6
+      tier: FOUNDATION
+      visual: 2
+      title: Powers and roots
+      description: Use positive integer powers and their roots (square, cube and higher), recognise powers of 2, 3, 4 and 5, and estimate powers and roots.
+    - code: N7
+      tier: FOUNDATION
+      visual: 2
+      title: Calculating with roots and indices
+      description: Calculate with roots and with integer indices.
+      higher: Fractional and negative indices.
+    - code: N8
+      tier: FOUNDATION
+      visual: 1
+      title: Exact calculation
+      description: Calculate exactly with fractions and multiples of π.
+      higher: Surds, simplifying surd expressions and rationalising denominators.
+    - code: N9
+      tier: FOUNDATION
+      visual: 2
+      title: Standard form
+      description: Calculate with and interpret numbers in standard form A × 10ⁿ, where 1 ≤ A < 10 and n is an integer.
+    - code: N10
+      tier: FOUNDATION
+      visual: 3
+      title: Fractions, decimals and percentages
+      description: Move between terminating decimals and their equivalent fractions, and between fractions, decimals and percentages.
+      higher: Changing recurring decimals to fractions and back.
+    - code: N11
+      tier: FOUNDATION
+      visual: 3
+      title: Fractions in ratio problems
+      description: Identify and work with fractions in ratio problems.
+    - code: N12
+      tier: FOUNDATION
+      visual: 3
+      title: Fractions and percentages as operators
+      description: Use fractions and percentages as operators, such as finding a fraction or percentage of an amount.
+    - code: N13
+      tier: FOUNDATION
+      visual: 3
+      title: Standard and compound units
+      description: Use standard units of mass, length, time, money and other measures, including compound measures, with decimal quantities.
+    - code: N14
+      tier: FOUNDATION
+      visual: 1
+      title: Estimation
+      description: Estimate answers and check calculations, including those done on a calculator, by approximating.
+    - code: N15
+      tier: FOUNDATION
+      visual: 2
+      title: Rounding and error intervals
+      description: Round to a suitable degree of accuracy and use inequality notation for error intervals from rounding or truncation.
+    - code: N16
+      tier: FOUNDATION
+      visual: 2
+      title: Limits of accuracy
+      description: Apply and interpret limits of accuracy.
+      higher: Upper and lower bounds, including in calculations.
+
+  ALGEBRA:
+    - code: A1
+      tier: FOUNDATION
+      visual: 2
+      title: Algebraic notation
+      description: Use and interpret algebraic notation, such as ab, 3y, a², a/b and brackets.
+    - code: A2
+      tier: FOUNDATION
+      visual: 2
+      title: Substitution
+      description: Substitute numbers into formulae and expressions, including scientific formulae.
+    - code: A3
+      tier: FOUNDATION
+      visual: 2
+      title: The vocabulary of algebra
+      description: Understand and use expression, equation, formula, identity, inequality, term and factor.
+    - code: A4
+      tier: FOUNDATION
+      visual: 3
+      title: Simplify, expand and factorise
+      description: Collect like terms, multiply out brackets, take out common factors, expand double brackets and factorise x² + bx + c, including the difference of two squares.
+      higher: Factorising ax² + bx + c, algebraic fractions and the laws of indices in algebra.
+    - code: A5
+      tier: FOUNDATION
+      visual: 2
+      title: Formulae and changing the subject
+      description: Use standard formulae and rearrange a formula to change its subject.
+      higher: Rearranging when the subject appears more than once.
+    - code: A6
+      tier: FOUNDATION
+      visual: 1
+      title: Equations, identities and argument
+      description: Tell an equation from an identity and show algebraically that expressions are equivalent.
+      higher: Algebraic proof.
+    - code: A7
+      tier: FOUNDATION
+      visual: 2
+      title: Functions
+      description: Treat simple expressions as functions with inputs and outputs, such as function machines.
+      higher: Inverse and composite functions.
+    - code: A8
+      tier: FOUNDATION
+      visual: 3
+      title: Coordinates
+      description: Work with coordinates in all four quadrants.
+    - code: A9
+      tier: FOUNDATION
+      visual: 3
+      title: Straight-line graphs
+      description: Plot straight-line graphs, use y = mx + c to spot parallel lines, and find the equation of a line through two points or through a point with a given gradient.
+      higher: Perpendicular lines.
+    - code: A10
+      tier: FOUNDATION
+      visual: 3
+      title: Gradients and intercepts
+      description: Find and interpret the gradient and intercept of a straight line, from a graph and from its equation.
+    - code: A11
+      tier: FOUNDATION
+      visual: 3
+      title: Features of quadratic graphs
+      description: Find roots, intercepts and turning points of quadratic graphs, and roots algebraically.
+      higher: Turning points by completing the square.
+    - code: A12
+      tier: FOUNDATION
+      visual: 3
+      title: Recognising graphs
+      description: Recognise, sketch and interpret graphs of linear, quadratic, simple cubic and reciprocal functions.
+      higher: Exponential and trigonometric graphs.
+    - code: A13
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Graph transformations
+      description: Sketch translations and reflections of a given graph.
+    - code: A14
+      tier: FOUNDATION
+      visual: 3
+      title: Graphs in real contexts
+      description: Plot and interpret graphs from real situations, such as distance-time graphs, to find approximate solutions.
+    - code: A15
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Gradients of curves and areas under graphs
+      description: Estimate gradients of curves and areas under graphs, and interpret them in context.
+    - code: A16
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Circles and tangents
+      description: Use the equation of a circle centred at the origin and find the equation of a tangent at a given point.
+    - code: A17
+      tier: FOUNDATION
+      visual: 3
+      title: Linear equations
+      description: Solve linear equations in one unknown, including with the unknown on both sides, and approximately from a graph.
+    - code: A18
+      tier: FOUNDATION
+      visual: 2
+      title: Quadratic equations
+      description: Solve quadratic equations by factorising, and approximately from a graph.
+      higher: Completing the square and the quadratic formula.
+    - code: A19
+      tier: FOUNDATION
+      visual: 3
+      title: Simultaneous equations
+      description: Solve two linear simultaneous equations algebraically, and approximately from a graph.
+      higher: One linear and one quadratic equation.
+    - code: A20
+      tier: HIGHER_ONLY
+      visual: 2
+      title: Iteration
+      description: Find approximate solutions to equations using iteration.
+    - code: A21
+      tier: FOUNDATION
+      visual: 2
+      title: Forming equations
+      description: Turn a situation into an expression, formula or equation, solve it and interpret the solution.
+    - code: A22
+      tier: FOUNDATION
+      visual: 3
+      title: Linear inequalities
+      description: Solve linear inequalities in one variable and show the solution on a number line.
+      higher: Quadratic inequalities, regions on graphs and set notation.
+    - code: A23
+      tier: FOUNDATION
+      visual: 2
+      title: Generating sequences
+      description: Generate terms of a sequence from a term-to-term or position-to-term rule.
+    - code: A24
+      tier: FOUNDATION
+      visual: 2
+      title: Special sequences
+      description: Recognise triangular, square and cube numbers, arithmetic, Fibonacci-type, quadratic and simple geometric sequences.
+      higher: Geometric sequences with a surd ratio.
+    - code: A25
+      tier: FOUNDATION
+      visual: 2
+      title: The nth term
+      description: Find an expression for the nth term of a linear sequence.
+      higher: The nth term of a quadratic sequence.
+
+  RATIO:
+    - code: R1
+      tier: FOUNDATION
+      visual: 2
+      title: Converting units
+      description: Convert between related standard units and compound units, in numerical and algebraic contexts.
+    - code: R2
+      tier: FOUNDATION
+      visual: 2
+      title: Scale factors and maps
+      description: Use scale factors, scale diagrams and maps.
+    - code: R3
+      tier: FOUNDATION
+      visual: 3
+      title: One quantity as a fraction of another
+      description: Express one quantity as a fraction of another, less than or greater than 1.
+    - code: R4
+      tier: FOUNDATION
+      visual: 3
+      title: Ratio notation
+      description: Use ratio notation and simplify a ratio to its simplest form.
+    - code: R5
+      tier: FOUNDATION
+      visual: 3
+      title: Dividing in a ratio
+      description: Divide a quantity in a given part to part or part to whole ratio, and express a division as a ratio, in real contexts.
+    - code: R6
+      tier: FOUNDATION
+      visual: 3
+      title: Ratios as relationships
+      description: Express a multiplicative relationship between two quantities as a ratio or a fraction.
+    - code: R7
+      tier: FOUNDATION
+      visual: 3
+      title: Proportion as equal ratios
+      description: Understand and use proportion as the equality of two ratios.
+    - code: R8
+      tier: FOUNDATION
+      visual: 2
+      title: Ratios, fractions and linear functions
+      description: Relate ratios to fractions and to linear functions.
+    - code: R9
+      tier: FOUNDATION
+      visual: 3
+      title: Percentages and percentage change
+      description: Work with percentages, including percentage change, percentages over 100%, reverse percentages and simple interest.
+    - code: R10
+      tier: FOUNDATION
+      visual: 3
+      title: Direct and inverse proportion
+      description: Solve direct and inverse proportion problems, including with graphs and algebra.
+    - code: R11
+      tier: FOUNDATION
+      visual: 2
+      title: Compound units
+      description: Use compound units such as speed, rates of pay, unit pricing, density and pressure.
+    - code: R12
+      tier: FOUNDATION
+      visual: 3
+      title: Comparing with ratio and similarity
+      description: Compare lengths, areas and volumes with ratios, linking to similarity, trigonometric ratios and scale factors.
+    - code: R13
+      tier: FOUNDATION
+      visual: 2
+      title: Proportion and reciprocals
+      description: Understand that y inversely proportional to x means y is proportional to 1/x.
+      higher: Constructing and interpreting equations for direct and inverse proportion.
+    - code: R14
+      tier: FOUNDATION
+      visual: 3
+      title: Gradient as rate of change
+      description: Interpret the gradient of a straight line as a rate of change and recognise graphs of direct and inverse proportion.
+    - code: R15
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Instantaneous rate of change
+      description: Interpret the gradient at a point on a curve as an instantaneous rate of change.
+    - code: R16
+      tier: FOUNDATION
+      visual: 3
+      title: Growth, decay and compound interest
+      description: Set up and solve growth and decay problems, including compound interest.
+      higher: General iterative processes.
+
+  GEOMETRY:
+    - code: G1
+      tier: FOUNDATION
+      visual: 2
+      title: Geometric conventions
+      description: Use conventional terms and notation for points, lines, angles, polygons and symmetry, and label triangles in the standard way.
+    - code: G2
+      tier: FOUNDATION
+      visual: 3
+      title: Constructions and loci
+      description: Use ruler and compass constructions and solve loci problems.
+    - code: G3
+      tier: FOUNDATION
+      visual: 3
+      title: Angle facts
+      description: Use angles at a point, on a straight line and vertically opposite, alternate and corresponding angles on parallel lines, and angle sums of triangles and polygons.
+    - code: G4
+      tier: FOUNDATION
+      visual: 2
+      title: Properties of shapes
+      description: Derive and use the properties of special quadrilaterals and triangles.
+    - code: G5
+      tier: FOUNDATION
+      visual: 2
+      title: Congruence criteria
+      description: Use the congruence conditions SSS, SAS, ASA and RHS.
+    - code: G6
+      tier: FOUNDATION
+      visual: 1
+      title: Geometric reasoning
+      description: Use angle facts, congruence, similarity and quadrilateral properties to derive results and simple proofs.
+      higher: Formal geometric proof.
+    - code: G7
+      tier: FOUNDATION
+      visual: 3
+      title: Transformations
+      description: Identify, describe and carry out rotations, reflections, translations and enlargements, including fractional scale factors.
+      higher: Negative scale factors.
+    - code: G8
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Combined transformations
+      description: Describe the changes and invariance produced by combining rotations, reflections and translations.
+    - code: G9
+      tier: FOUNDATION
+      visual: 2
+      title: Parts of a circle
+      description: Use circle words such as radius, diameter, chord, tangent, arc, sector and segment.
+    - code: G10
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Circle theorems
+      description: Apply and prove the standard circle theorems.
+    - code: G11
+      tier: FOUNDATION
+      visual: 2
+      title: Geometry on coordinate axes
+      description: Solve geometrical problems on coordinate axes.
+    - code: G12
+      tier: FOUNDATION
+      visual: 3
+      title: 3D shapes
+      description: Identify faces, edges and vertices of cubes, cuboids, prisms, cylinders, pyramids, cones and spheres.
+    - code: G13
+      tier: FOUNDATION
+      visual: 3
+      title: Plans and elevations
+      description: Construct and interpret plans and elevations of 3D shapes.
+    - code: G14
+      tier: FOUNDATION
+      visual: 1
+      title: Units of measure
+      description: Use standard units of length, area, volume, mass and time.
+    - code: G15
+      tier: FOUNDATION
+      visual: 3
+      title: Measuring and bearings
+      description: Measure lines and angles, interpret maps and scale drawings, and use bearings.
+    - code: G16
+      tier: FOUNDATION
+      visual: 3
+      title: Area and volume formulae
+      description: Find areas of triangles, parallelograms and trapezia, and volumes of cuboids and other right prisms.
+    - code: G17
+      tier: FOUNDATION
+      visual: 3
+      title: Circles, perimeter and composite shapes
+      description: Use the circumference and area of a circle, and find perimeters of 2D shapes, areas of composite shapes and surface areas and volumes of solids.
+    - code: G18
+      tier: FOUNDATION
+      visual: 3
+      title: Arcs and sectors
+      description: Calculate arc lengths, angles and areas of sectors.
+    - code: G19
+      tier: FOUNDATION
+      visual: 3
+      title: Congruence and similarity
+      description: Use congruence and similarity, including how lengths change in similar figures.
+      higher: How areas and volumes change in similar figures.
+    - code: G20
+      tier: FOUNDATION
+      visual: 3
+      title: Pythagoras and trigonometry
+      description: Use Pythagoras' theorem and sine, cosine and tangent to find lengths and angles in right-angled triangles.
+      higher: In two and three dimensional figures.
+    - code: G21
+      tier: FOUNDATION
+      visual: 2
+      title: Exact trigonometric values
+      description: Know exact values of sine and cosine for 0°, 30°, 45°, 60° and 90°, and of tangent for 0°, 30°, 45° and 60°.
+    - code: G22
+      tier: HIGHER_ONLY
+      visual: 2
+      title: Sine and cosine rules
+      description: Use the sine rule and cosine rule to find lengths and angles.
+    - code: G23
+      tier: HIGHER_ONLY
+      visual: 2
+      title: Area of any triangle
+      description: Use area = ½ab sin C for any triangle.
+    - code: G24
+      tier: FOUNDATION
+      visual: 3
+      title: Vectors as translations
+      description: Describe translations as 2D column vectors.
+    - code: G25
+      tier: FOUNDATION
+      visual: 3
+      title: Vector arithmetic
+      description: Add and subtract vectors and multiply them by a scalar, in diagrams and as column vectors.
+      higher: Vector arguments and proofs.
+
+  PROBABILITY:
+    - code: P1
+      tier: FOUNDATION
+      visual: 2
+      title: Frequency of outcomes
+      description: Record and analyse outcomes of probability experiments with tables and frequency trees.
+    - code: P2
+      tier: FOUNDATION
+      visual: 2
+      title: Expected outcomes
+      description: Use randomness, fairness and equally likely events to work out expected outcomes.
+    - code: P3
+      tier: FOUNDATION
+      visual: 2
+      title: Relative frequency and the probability scale
+      description: Relate relative frequency to theoretical probability, using the 0 to 1 scale.
+    - code: P4
+      tier: FOUNDATION
+      visual: 2
+      title: Probabilities sum to one
+      description: Use the fact that the probabilities of an exhaustive set of mutually exclusive outcomes add up to 1.
+    - code: P5
+      tier: FOUNDATION
+      visual: 3
+      title: Experiment and theory
+      description: Understand that larger unbiased samples get closer to theoretical probabilities.
+    - code: P6
+      tier: FOUNDATION
+      visual: 3
+      title: Sets, tables and Venn diagrams
+      description: List sets and combinations systematically with tables, grids and Venn diagrams.
+      higher: Tree diagrams for sets.
+    - code: P7
+      tier: FOUNDATION
+      visual: 3
+      title: Possibility spaces
+      description: Build possibility spaces for single and combined experiments with equally likely outcomes, and find probabilities from them.
+    - code: P8
+      tier: FOUNDATION
+      visual: 3
+      title: Combined events and tree diagrams
+      description: Find probabilities of independent and dependent combined events, including with tree diagrams.
+    - code: P9
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Conditional probability
+      description: Calculate and interpret conditional probabilities with two-way tables, tree diagrams and Venn diagrams.
+
+  STATISTICS:
+    - code: S1
+      tier: FOUNDATION
+      visual: 1
+      title: Populations and samples
+      description: Infer properties of a population from a sample, knowing the limits of sampling.
+    - code: S2
+      tier: FOUNDATION
+      visual: 3
+      title: Charts and diagrams
+      description: Read and draw tables, bar charts, pie charts, pictograms, vertical line charts and time series graphs, and know when to use each.
+    - code: S3
+      tier: HIGHER_ONLY
+      visual: 3
+      title: Histograms and cumulative frequency
+      description: Draw and interpret histograms with equal and unequal class widths, and cumulative frequency graphs.
+    - code: S4
+      tier: FOUNDATION
+      visual: 2
+      title: Averages and spread
+      description: Compare distributions using mean, median, mode, modal class and range, including for grouped data.
+      higher: Quartiles, interquartile range and box plots.
+    - code: S5
+      tier: FOUNDATION
+      visual: 2
+      title: Describing a population
+      description: Use statistics to describe a population.
+    - code: S6
+      tier: FOUNDATION
+      visual: 3
+      title: Scatter graphs
+      description: Use scatter graphs, recognise correlation and that it does not mean causation, draw lines of best fit, and interpolate and extrapolate with care.

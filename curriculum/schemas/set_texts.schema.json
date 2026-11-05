@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eddy:curriculum:set_texts",
+  "title": "English Literature set texts, with copyright status and display policy",
+  "type": "object",
+  "required": ["set_texts"],
+  "additionalProperties": false,
+  "properties": {
+    "set_texts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["board", "category", "title", "author", "copyright", "display"],
+        "additionalProperties": false,
+        "properties": {
+          "board": { "$ref": "urn:eddy:curriculum:common#/$defs/board" },
+          "category": {
+            "enum": [
+              "SHAKESPEARE",
+              "NINETEENTH_CENTURY_NOVEL",
+              "MODERN_TEXT",
+              "POETRY_ANTHOLOGY",
+              "UNSEEN_POETRY"
+            ]
+          },
+          "title": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" },
+          "author": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" },
+          "copyright": { "enum": ["PUBLIC_DOMAIN", "IN_COPYRIGHT"] },
+          "display": { "enum": ["FULL_TEXT", "QUOTATIONS_ONLY", "REFERENCE_ONLY"] },
+          "notes": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" }
+        },
+        "if": { "properties": { "copyright": { "const": "IN_COPYRIGHT" } } },
+        "then": { "properties": { "display": { "not": { "const": "FULL_TEXT" } } } }
+      }
+    }
+  }
+}

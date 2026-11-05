@@ -16,6 +16,24 @@ jobs:
   checks:
     name: Lint, typecheck, unit tests, synth
     runs-on: ubuntu-latest
+    services:
+      # Matches compose.yaml, so the default DATABASE_URL works unchanged.
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          POSTGRES_USER: eddy
+          POSTGRES_PASSWORD: eddy
+          POSTGRES_DB: eddy
+        ports:
+          - 5442:5432
+        options: >-
+          --health-cmd "pg_isready -U eddy -d eddy"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Database tests fail here instead of skipping.
+      EDDY_REQUIRE_DB: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -28,6 +46,8 @@ jobs:
           enable-cache: true
       - run: pnpm install --frozen-lockfile
       - run: uv sync --locked
+      - name: Curriculum YAML matches its schemas
+        run: pnpm curriculum:check
       - run: pnpm check
       - name: API client matches services/api
         run: pnpm api-client:generate && git diff --exit-code -- packages/api-client
@@ -37,6 +57,21 @@ jobs:
   e2e:
     name: Playwright E2E and axe
     runs-on: ubuntu-latest
+    services:
+      # Matches compose.yaml, so the default DATABASE_URL works unchanged.
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          POSTGRES_USER: eddy
+          POSTGRES_PASSWORD: eddy
+          POSTGRES_DB: eddy
+        ports:
+          - 5442:5432
+        options: >-
+          --health-cmd "pg_isready -U eddy -d eddy"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

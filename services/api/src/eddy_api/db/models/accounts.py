@@ -1,0 +1,169 @@
+"""Accounts and access. Auth.js's user, account, session and verification token models, in our
+schema with UUID ids and snake_case columns; M8 adds an Auth.js adapter for it (ADR-0023).
+"""
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+
+from eddy_api.db.base import Base, checked_enum, created_at, uuid_pk
+from eddy_api.db.models.curriculum import BOARDS, TIERS
+
+USER_ROLES = ("student", "parent", "admin")
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (Index("uq_users_email_lower", func.lower(text("email")), unique=True),)
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    email: Mapped[str] = mapped_column(String(320))
+    email_verified: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A first name only, optional; never sent to any model (SPEC.md section 10).
+    name: Mapped[str | None] = mapped_column(String(80))
+    role: Mapped[str] = mapped_column(checked_enum("user_role", *USER_ROLES))
+    created_at: Mapped[datetime] = created_at()
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Account(Base):
+    __tablename__ = "accounts"
+    __table_args__ = (UniqueConstraint("provider", "provider_account_id"),)
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    type: Mapped[str] = mapped_column(String(32))
+    provider: Mapped[str] = mapped_column(String(64))
+    provider_account_id: Mapped[str] = mapped_column(String(255))
+    # Sign-in is by email link only, so no OAuth access, refresh or id tokens are ever stored.
+    expires_at: Mapped[int | None] = mapped_column(Integer)
+    token_type: Mapped[str | None] = mapped_column(String(32))
+    scope: Mapped[str | None] = mapped_column(Text)
+    session_state: Mapped[str | None] = mapped_column(Text)
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    # SHA-256 of the session token, never the token itself (the M8 adapter hashes it).
+    session_token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    expires: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class VerificationToken(Base):
+    __tablename__ = "verification_token"
+
+    identifier: Mapped[str] = mapped_column(String(320), primary_key=True)
+    token: Mapped[str] = mapped_column(String(255), primary_key=True)
+    expires: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class StudentProfile(Base):
+    """Only what the tutor needs: birth month and year (not the day), board, tier and goals."""
+
+    __tablename__ = "student_profile"
+    __table_args__ = (
+        CheckConstraint("birth_month BETWEEN 1 AND 12", name="birth_month"),
+        CheckConstraint("target_grade BETWEEN 1 AND 9", name="target_grade"),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    birth_year: Mapped[int] = mapped_column(SmallInteger)
+    birth_month: Mapped[int] = mapped_column(SmallInteger)
+    board: Mapped[str] = mapped_column(checked_enum("profile_board", *BOARDS))
+    tier: Mapped[str] = mapped_column(checked_enum("profile_tier", *TIERS))
+    exam_series: Mapped[str | None] = mapped_column(String(32))
+    target_grade: Mapped[int] = mapped_column(SmallInteger)
+    is_resitter: Mapped[bool] = mapped_column(Boolean, default=False)
+    preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class InviteCode(Base):
+    __tablename__ = "invite_code"
+    __table_args__ = (
+        CheckConstraint("used_count <= max_uses", name="uses"),
+        CheckConstraint("used_count >= 0", name="used_count"),
+        CheckConstraint("max_uses >= 1", name="max_uses"),
+    )
+
+    code: Mapped[str] = mapped_column(String(32), primary_key=True)
+    cohort: Mapped[str] = mapped_column(String(64))
+    max_uses: Mapped[int] = mapped_column(Integer)
+    used_count: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+
+
+class ParentLink(Base):
+    """A parent's view of a student's progress, only ever with the student's agreement."""
+
+    __tablename__ = "parent_link"
+    __table_args__ = (
+        Index(
+            "uq_parent_link_active",
+            "student_id",
+            "parent_user_id",
+            unique=True,
+            postgresql_where=text("status <> 'ENDED'"),
+        ),
+        CheckConstraint("student_id <> parent_user_id", name="not_self"),
+        # The timestamps must agree with the status.
+        CheckConstraint(
+            "(status <> 'REQUESTED' OR accepted_at IS NULL)"
+            " AND (status <> 'ACTIVE' OR accepted_at IS NOT NULL)"
+            " AND (status <> 'ENDED' OR (ended_at IS NOT NULL AND ended_by IS NOT NULL))",
+            name="status_timestamps",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    parent_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    status: Mapped[str] = mapped_column(
+        checked_enum("parent_link_status", "REQUESTED", "ACTIVE", "ENDED")
+    )
+    requested_by: Mapped[str] = mapped_column(
+        checked_enum("parent_link_requester", "STUDENT", "PARENT")
+    )
+    created_at: Mapped[datetime] = created_at()
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_by: Mapped[str | None] = mapped_column(
+        checked_enum("parent_link_ender", "STUDENT", "PARENT", "ADMIN")
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class NoticeAcknowledgement(Base):
+    __tablename__ = "notice_acknowledgement"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    notice_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    version: Mapped[str] = mapped_column(String(16), primary_key=True)
+    acknowledged_at: Mapped[datetime] = created_at()
