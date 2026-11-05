@@ -155,7 +155,7 @@ Definition of done:
 
 - [x] DAG cycle test passes (and fails on a planted cycle).
 - [x] Seed runs twice; the second run reports zero changes.
-- [ ] YAML schema validation runs in CI.
+- [x] YAML schema validation runs in CI.
 - [x] Admin browser screenshots reviewed; axe clean.
 
 ---
@@ -421,7 +421,7 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14. Branch `m1-design-
 
 ### M2: Curriculum and data (5 November 2026)
 
-Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, PostgreSQL 16.15 in Docker. Branch `m2-curriculum-data`, stacked on M1. Not pushed yet, so no CI run exists: "YAML schema validation runs in CI" stays unticked until the first CI run on this branch passes.
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, PostgreSQL 16.15 in Docker. Branch `m2-curriculum-data`, stacked on M1; PR #3.
 
 **What landed**: 32 tables and two migrations (0001 schema, 0002 review fixes); the curriculum YAML (97 DfE nodes, 6 specifications, 71 prerequisite edges, 13 topics, 85 misconceptions, 28 set texts, 16 English question types with 66 level descriptors), each file with a JSON Schema; the seed loader with dry run; the read-only curriculum API and admin browser; the `/new-misconception` skill; ADR-0021 to ADR-0024.
 
@@ -455,9 +455,11 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, PostgreSQL 16.15 i
 - The node page has no loading state: a route-level loading boundary would stream a 200 before an unknown code could answer 404. It blocks on one fast API call instead.
 - No `pip-audit` or `pnpm audit` step in CI yet (M10 hardening).
 
+**CI**: the first run on this branch (42049930737, commit acbfdcd, PR #3) passed all three jobs. The checks job ran "Curriculum YAML matches its schemas", `pnpm check` with the database tests required against a Postgres service, and "API client matches services/api". E2E ran against its own `eddy_e2e` database. Every M2 definition-of-done item is now met.
+
 ### M3: Maths core (5 November 2026)
 
-Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, SymPy 1.14.0, Hypothesis and pytest-cov (dev). Branch `m3-maths-core`, stacked on M2. Not pushed yet, so no CI run exists for M2 or M3.
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, SymPy 1.14.0, Hypothesis and pytest-cov (dev). Branch `m3-maths-core`, stacked on M2; PR #4.
 
 **What landed**: the MathJSON converter and its limits; equivalence, answer formats (exact, decimal places, significant figures, fraction, decimal, mixed number, standard form, simplest form, units), step checking, and claim verification with an answer-leak check; 87 templates (every MVP node at least three times, every re-check family covered); 82 distractor rules and 2 structure rules, each matching the YAML and each with a hand-worked example; five HTTP routes behind the service token, with a byte-counted 64 KB limit and no public docs; the 300-item golden set with a 30-item hand check; the benchmark and coverage gate in CI; ADR-0025.
 
@@ -487,3 +489,5 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Sy
 - Items with a `diagram` need the scene primitives (M5) before a student sees them.
 - Equivalence accepts a non-rational answer when two fresh sets of 20 points agree and `simplify` cannot decide (ADR-0025).
 - MathLive's exact MathJSON for units and currency is not yet pinned against MathLive itself (M8). Clients must send numbers as `{"num": "<as typed>"}`.
+
+**CI**: the first run on this branch (42050023947, commit 6982bde, PR #4) passed all three jobs, including the new steps "Maths golden set (100% required)", "maths-core coverage (85% or more)" and "Verification latency (p95 under 150 ms)" on Linux.
