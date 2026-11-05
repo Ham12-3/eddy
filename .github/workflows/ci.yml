@@ -61,3 +61,27 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+  storybook:
+    name: Design system stories, axe and screenshots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e:storybook
+      - name: Upload story screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-artifacts
+          path: |
+            e2e-artifacts/storybook/
+            playwright-report/storybook/
+            test-results/storybook/
+          retention-days: 14

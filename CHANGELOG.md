@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### M1: Design system (5 November 2026)
+
+Added:
+
+- The "Paper and Ink" design system in `packages/ui`: tokens from one TypeScript source with generated CSS and a drift test, and a Tailwind v4 theme limited to those tokens.
+- A contrast-safe palette approved during M1 (ADR-0019). The marker-orange accent is a fill with ink text (light #F08C4A, dark #FFA552), well apart from the misconception red. New `--field-border` and `--on-accent` tokens, and a darker dark-mode highlighter. Every allowed colour pairing is tested in light, dark and dyslexia modes.
+- Self-hosted Fraunces, Atkinson Hyperlegible Next, Caveat and OpenDyslexic (regular and bold), plus dark, dyslexia and reduced-motion modes. Reduced motion turns movement into 150ms cross-fades.
+- 20 components: Button, Link, Card, QuestionCard, WorkingPad, Maths (KaTeX with MathML), MathField (MathLive with a Foundation keyboard including units), Feedback with LiveRegion, ConfidencePicker, ProgressMapNode, Chip, Toggle, Dialog and Sheet, Tabs, Toast, form fields, Skeleton, EmptyState, ErrorState and the explanation player controls.
+- Storybook stories for every component and state, and Playwright checks of every story at 375, 768 and 1280 px in light, dark, reduced motion and dyslexia, plus a forced-dark theme and dyslexia on dark. Each check runs axe and saves a screenshot (ADR-0020). A new CI job runs them.
+- Keyboard and screen reader checks for MathField, the dialog, a busy button, the toggle and the confidence picker, and a manual checklist in `docs/accessibility/screen-reader-checklist.md`.
+- A cliché lint (`scripts/lint-cliches.mjs`) for the banned design patterns, as part of `pnpm check`.
+
+Changed:
+
+- The web app uses the design system instead of M0's placeholder styles.
+
+Fixed during M1 (found by the checks and the fresh-context review):
+
+- MathField's hint and error now reach the textbox that has focus inside MathLive's shadow DOM, and a new error is announced.
+- External links read "Childline (opens in a new tab)" with a space; the speed buttons' names match their visible text.
+- A busy button keeps keyboard focus; the toggle's name is no longer read twice; toasts pause while hovered or focused; pressable chips are 44px tall.
+- Feedback no longer relies on a live region that arrives already filled.
+
 ### M0: Foundations (4 November 2026)
 
 Added:

@@ -1,0 +1,92 @@
+/*
+ * "Paper and Ink" for Tailwind v4. Import this one file (apps import "@eddy/ui/styles.css").
+ * Tailwind's default palette, fonts, radii and shadows are switched off: components can only use
+ * the tokens below, which point at the CSS variables generated in tokens.css.
+ */
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./base.css";
+
+/* Scan the design system's own components for class names. */
+@source "../";
+
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-rule: var(--rule);
+  --color-field-border: var(--field-border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-focus: var(--focus);
+  --color-correct: var(--correct);
+  --color-misconception: var(--misconception);
+  --color-student: var(--student);
+  --color-highlight: var(--highlight);
+
+  --font-*: initial;
+  --font-display: var(--font-display-family);
+  --font-body: var(--font-body-family);
+  --font-annotation: var(--font-annotation-family);
+  --font-mono: var(--font-mono-family);
+
+  --text-*: initial;
+  --text-caption: var(--type-caption);
+  --text-caption--line-height: 1.5;
+  --text-body: var(--type-body);
+  --text-body--line-height: var(--reading-line-height);
+  --text-lead: var(--type-lead);
+  --text-lead--line-height: 1.5;
+  --text-h4: var(--type-h4);
+  --text-h4--line-height: var(--line-height-display);
+  --text-h3: var(--type-h3);
+  --text-h3--line-height: var(--line-height-display);
+  --text-h2: var(--type-h2);
+  --text-h2--line-height: var(--line-height-display);
+  --text-h1: var(--type-h1);
+  --text-h1--line-height: var(--line-height-display);
+
+  --radius-*: initial;
+  --radius-control: var(--radius-control-size);
+  --radius-card: var(--radius-card-size);
+  --radius-sheet: var(--radius-sheet-size);
+  /* Pills are for toggles only (see the cliche lint). */
+  --radius-full: 9999px;
+
+  --shadow-*: initial;
+  --shadow-raised: var(--shadow-raised-value);
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+
+  --ease-*: initial;
+  --ease-standard: var(--ease-standard-curve);
+  --ease-exit: var(--ease-exit-curve);
+}
+
+/* 4px spacing base: p-1 is 4px, p-11 is 44px (the minimum target size). */
+@theme {
+  --spacing: 4px;
+}
+
+/* Exercise-book lines that follow the current line height. */
+@utility ruled-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1lh - 1px),
+    var(--rule) calc(1lh - 1px),
+    var(--rule) 1lh
+  );
+}
+
+/* Command words such as WORK OUT, set in small capitals. */
+@utility small-caps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.04em;
+}

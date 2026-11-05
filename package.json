@@ -14,14 +14,16 @@
     "keys:dev": "node scripts/dev-keys.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm check:py",
     "check:py": "uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest",
-    "lint": "eslint && pnpm -r lint && prettier --check . && node scripts/check-dashes.mjs",
+    "lint": "eslint && pnpm -r lint && prettier --check . && node scripts/check-dashes.mjs && node scripts/lint-cliches.mjs",
     "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
-    "test": "pnpm -r test && node --test \".claude/hooks/*.test.mjs\"",
+    "test": "pnpm -r test && node --test \".claude/hooks/*.test.mjs\" \"scripts/lib/*.test.mjs\"",
     "format": "prettier --write . && uv run ruff format .",
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium",
     "api-client:generate": "pnpm --filter @eddy/api-client generate",
-    "evals": "node scripts/evals.mjs"
+    "evals": "node scripts/evals.mjs",
+    "e2e:storybook": "pnpm --filter @eddy/ui storybook:build && playwright test -c playwright.storybook.config.ts",
+    "storybook": "pnpm --filter @eddy/ui storybook"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
@@ -31,6 +33,7 @@
     "concurrently": "10.0.6",
     "eslint": "9.39.5",
     "globals": "17.14.0",
+    "http-server": "14.1.1",
     "prettier": "3.9.10",
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1"

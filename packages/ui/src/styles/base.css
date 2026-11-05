@@ -1,0 +1,144 @@
+/* Element defaults, focus, maths input theming and the motion rules. */
+
+@layer base {
+  html {
+    /* A 17px root: rem-based type scales with the reader's own browser setting. */
+    font-size: 106.25%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body-family);
+    line-height: var(--reading-line-height);
+    letter-spacing: var(--reading-letter-spacing);
+    word-spacing: var(--reading-word-spacing);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display-family);
+    font-weight: 600;
+    line-height: var(--line-height-display);
+    font-variation-settings:
+      "opsz" 72,
+      "SOFT" 50,
+      "WONK" 0;
+    text-wrap: balance;
+    letter-spacing: normal;
+    word-spacing: normal;
+  }
+
+  h1 {
+    font-size: var(--type-h1);
+  }
+  h2 {
+    font-size: var(--type-h2);
+  }
+  h3 {
+    font-size: var(--type-h3);
+  }
+  h4 {
+    font-size: var(--type-h4);
+  }
+
+  /* Numbers line up in tables and working. */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Placeholders at the muted ink colour (Tailwind's default halves the text colour). */
+  ::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: var(--highlight);
+    color: var(--ink);
+  }
+
+  /* The student's maths input (MathLive). Their working is always in the student colour. */
+  math-field {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-control-size);
+    background: var(--paper-raised);
+    color: var(--student);
+    font-size: 1.25rem;
+    --caret-color: var(--student);
+    --selection-background-color: var(--highlight);
+    --selection-color: var(--ink);
+    --contains-highlight-background-color: color-mix(in srgb, var(--highlight) 25%, transparent);
+    --primary: var(--focus);
+    --smart-fence-color: var(--ink-muted);
+  }
+
+  math-field:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  math-field[data-invalid="true"] {
+    border-color: var(--misconception);
+  }
+
+  /* MathLive's on-screen keyboard, themed with tokens. */
+  body {
+    --keyboard-background: var(--paper-raised);
+    --keyboard-border: var(--rule);
+    --keyboard-toolbar-text: var(--ink);
+    --keyboard-toolbar-text-active: var(--ink);
+    --keyboard-accent-color: var(--focus);
+    --keycap-background: var(--paper);
+    --keycap-background-hover: var(--paper-raised);
+    --keycap-text: var(--ink);
+    --keycap-border: var(--field-border);
+    --keycap-secondary-background: var(--paper-raised);
+    --keycap-secondary-text: var(--ink);
+    --keycap-secondary-border: var(--field-border);
+    --keycap-primary-background: var(--ink);
+    --keycap-primary-text: var(--paper-raised);
+  }
+
+  /*
+   * Reduced motion (the system setting or Eddy's own data-motion="reduce"): no animation and no
+   * movement; changes become 150ms cross-fades of opacity and colour instead (brief section 6).
+   * MathLive's shadow DOM is out of reach of these rules.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation: none !important;
+      transition-property: opacity, color, background-color, border-color, outline-color !important;
+      transition-duration: var(--duration-reduced-cross-fade) !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :root[data-motion="reduce"] *,
+  :root[data-motion="reduce"] ::before,
+  :root[data-motion="reduce"] ::after {
+    animation: none !important;
+    transition-property: opacity, color, background-color, border-color, outline-color !important;
+    transition-duration: var(--duration-reduced-cross-fade) !important;
+    scroll-behavior: auto !important;
+  }
+}

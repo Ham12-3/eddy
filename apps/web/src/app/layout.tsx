@@ -1,3 +1,4 @@
+import "@eddy/ui/assets";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
