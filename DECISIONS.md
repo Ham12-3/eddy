@@ -214,3 +214,64 @@ Status: Accepted (5 November 2026, during M3; revised after the M3 and security 
   - Claims: anything about numbers alone must be true whatever its role; a claim with letters must be an identity or true at the item's answer; a given, and the first step, must be true at the answer, or stay unverified when that cannot be checked.
   - The golden set freezes 300 distinct generated items with their answers and distractors. `pnpm evals` regenerates and verifies them, so a change to a template's maths fails until the golden file is rewritten and reviewed.
 - **Consequences:** Adding a template is a code change with property tests and a worked example per new rule. Items with a `diagram` need the scene primitives (M5) before a student sees them. Scene spec verification uses the claims endpoint and is wired to SceneSpec in M5.
+
+## ADR-0026: The learner model's rules, made precise and checked on synthetic students
+
+Status: Accepted (5 November 2026, during M4)
+
+- **Context:** SPEC.md 7.1 sets the learner model's shape: BKT per node, prerequisite propagation, a two-failure prerequisite diagnostic, Elo, FSRS, a misconception state machine, node selection and interleaving. PLAN.md M4 asks for two measured outcomes: learnable students reach SECURE within a bounded number of attempts, and students with a persistent misconception are falsely marked SECURE less than 2% of the time. Taken literally, SPEC's rules failed both in simulation: a single re-check let a student who made the mistake half the time close it with a lucky answer and secure the node 83% of the time. A code review and a pedagogy review then found that, wired to the real curriculum, the rules would lock most of the MVP: 17 ancestor nodes have no item templates, and a root node falling due for review would block everything after it.
+- **Decision:** The model is pure functions in `services/api/src/eddy_api/learner/`, with no database access, so every transition is deterministic and tested. M7's tutor loop reads and writes the learning tables around it. These are the rules beyond SPEC.md.
+  - **BKT:** SPEC's starting parameters. Guessing is 1 divided by the number of options on a choice item (0.25 for four, as SPEC says, and 0.5 for two). Aided attempts move the estimate half as far. Mastery never rises above 0.99, so wrong answers still move a well-practised node. Two in a row take a free answer from 0.99 to 0.70; on two-option items they reach only 0.85, which is why the lapse rule below exists.
+  - **SECURE:**
+    - p_mastery at least 0.95.
+    - The last 3 counted correct answers span at least 2 sessions on 2 UK calendar dates, and at least 8 hours from first to last. A counted answer is unaided and not rated 1 out of 4 for confidence ("I guessed"). Spacing is judged on the latest answers, so old lucky guesses cannot supply it.
+    - No open misconception on the node.
+    - The answer that completes the bar is a counted one: a guess or a helped answer never secures a node.
+    - Coverage: each misconception an item template on the node can reveal (by a distractor or structure rule) has been passed at least twice since it last showed itself. A misconception only the classifier can spot does not block SECURE. These codes are curriculum data, so M7 passes them in on every call rather than storing them on the learner's state. An item could reveal a misconception when the generated item has that misconception's distractor, or the template has its structure rule. The template's full list would credit items that could not have shown the mistake.
+    - When a misconception shows itself on the node, the run of counted correct answers starts again.
+  - **NEEDS_REVIEW:** a secured node moves here when its review falls due, after 2 wrong answers in a row in one session that no misconception explains (a lapse), when p_mastery falls below 0.80, or when a misconception on it opens; one slip alone does not move it. A review that has fallen due, or a lapse, stays owed until a counted correct answer.
+  - **Two-failure diagnostic:** two wrong answers in a row in one session trigger it. A wrong answer that matched a misconception rule does not count, because remediation deals with it. It runs at most once per node per session. It probes direct prerequisites with items: those not yet secured first, lowest mastery first (SPEC); then secured ones, least likely to be remembered first by FSRS retrievability. It walks up the graph one level at a time.
+  - **Misconception evidence:**
+    - A diagnostic match makes a new misconception SUSPECTED, as SPEC.md 4.1 says of the onboarding diagnostic, and confirms one already suspected.
+    - An unsure pick of the distractor on a choice item (confidence below 3) is only a weak suspicion when it is the first sign of that misconception: not open, not queued for a scene, and the run carries on. It still counts as a failure for the diagnostic and for a lapse, because nothing else deals with it. After that a choice match counts like a rule match.
+    - The classifier can only ever suspect.
+  - **Closing a misconception:** RECHECKED_OK needs 3 clean re-checks since the last match, 2 more for each further match (up to 9). At least one must come in a later session than the scene. The confident-and-wrong flag clears when it closes.
+  - **Propagation:** a prerequisite not yet secured gets a boost of half its edge strength (capped at 0.3) of its remaining gap, never above 0.9, so only its own evidence can make it SECURE.
+  - **Elo:** item K is 40 / (1 + n / 20): 20 after 20 attempts, 10 after 60, and 8 from 80 on. Student K is 32. Aided attempts update neither rating. Once mastery is near SECURE, item choice prefers items that test misconceptions not yet probed.
+  - **FSRS:**
+    - Target retention 0.9, scheduled in days (no minute-long learning steps), without fuzzing so schedules repeat, and never more than 120 days apart.
+    - A node's card starts when it becomes SECURE, with the securing answer as its first review.
+    - The rating is Again when wrong or guessed (confidence 1). It is Hard with any help, confidence 2, or more than twice the time a paper allows (72 seconds a mark, scaled by the student's extra time). It is Easy when sure and within half that time, and Good otherwise.
+  - **Planning:**
+    - A prerequisite is met once secured (SECURE or NEEDS_REVIEW). A prerequisite with no items yet is looked through: it is met when its own prerequisites are, so a student cannot skip the practisable nodes behind it.
+    - The student carries on with a node already started, nearest to SECURE first. Otherwise SPEC's rule opens a new node: lowest mastery, weighted by mark density (flattened for a target grade of 5).
+    - Reviews are due cards plus a repair for any node in NEEDS_REVIEW, at most 5 a session. They are interleaved by strand once 3 nodes have been secured.
+- **Evidence:** `pnpm learner:report`, seeded. Free-answer items unless stated.
+  - **Learnable students** (5,000): all secured within 60 attempts; median 7, 99th percentile 31, maximum 57. 1.00% were secured by lucky guessing without knowing the node.
+  - **Two-option choice items** (2,500 learnable students): all secured within 120 attempts; median 11, 99th percentile 66, maximum 101. 1.56% were secured by lucky guessing.
+  - **Students who already know the node**, two-option items, 10% slips, every slip on the distractor (2,500): 21.1% were shown a scene for a slip. Counting each slip as a full match would show 46%.
+  - **Persistent misconceptions** (2,500 per rate), falsely SECURE by how often the student makes the mistake: 0.00% at 100%, 0.20% at 90%, 1.32% at 80%, 2.76% at 70%, 8.04% at 60% and 16.68% at 50%. At 80% to 100%, without confidence ratings, it is 0.40% on two-option items and 1.32% on four-option items.
+  - **Students who never learn the node** (2,500 per row), by how often they are right by chance:
+    - 1 in 5: 21.64% falsely SECURE within 60 attempts.
+    - 1 in 10: 2.96%.
+    - 1 in 20: 0.28%.
+    - Two-option items: 8.08%.
+    - The prerequisite diagnostic is offered in nearly every session.
+- **Consequences:**
+  - PLAN's "persistent" population is students who make the mistake on at least 80% of the items that could reveal it. The tests hold them under 2% on free answers and on choice items.
+  - Less consistent misconceptions are often closed too early. Only later matches reopen them, and M7 still has to make reviews favour items that carry misconceptions the student has had.
+  - BKT with SPEC's parameters reads any three correct answers in a row as learning. A student who never learns the node, but is right by chance 1 time in 5, is falsely secured about a fifth of the time over 12 days. In the tutor loop that student will have been offered the prerequisite diagnostic in nearly every session, and the first review comes 1 to 8 days after securing, depending on how the securing answer was rated (2 days for Good). Refitting p_guess and p_learn on pilot data is the real fix.
+  - The simulator's limits: one node with one misconception, all items of one kind, 5 items every day, no forgetting, no confidence ratings, and no planner or prerequisites.
+  - The model has not met real students; every parameter is a starting point for refitting on pilot data.
+  - The state these functions keep has no columns yet, and losing any of it on reload changes behaviour: a weak suspicion would reopen as a real one, for example, or the later-session re-check rule would pass in the scene's own session. M7 needs a migration for:
+    - on a node: the counted answers with their sessions and times, the failure count, the last session, the session the diagnostic last ran in, the review flag and the probes;
+    - on a misconception: the match and clean re-check counts, the weak flag, the scene's session and whether a later re-check has come;
+    - Elo ability per strand.
+  - **Left to M7, from the reviews:**
+    - Require each item family on a node once, not only each misconception.
+    - Offer a test-out route, and let onboarding evidence count towards coverage, so able students are not ground through every family.
+    - Let matches fade with time.
+    - Allow more than one re-check a session.
+    - Mix look-alike problem types when interleaving.
+    - Return to a worked example when a diagnostic finds no gap.
+    - Sweep reviews before the exam.

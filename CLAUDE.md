@@ -12,6 +12,7 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | Database | `pnpm db:migrate`, `pnpm db:seed` (`--dry-run --verbose` shows the diff) |
 | Curriculum YAML | `pnpm curriculum:check` (schemas and cross-file checks, no database) |
 | Maths core | `pnpm evals` (golden set, 100%), `pnpm maths:coverage` (85% or more), `pnpm maths:bench` (p95 under 150 ms) |
+| Learner model | `pnpm learner:coverage` (85% or more), `pnpm learner:report` (the synthetic-student numbers behind ADR-0026) |
 | All checks | `pnpm check` (ESLint, Prettier, dash check, typecheck, unit tests, ruff, mypy, pytest) |
 | One TS package | `pnpm --filter @eddy/web test` (or `typecheck`, `lint`) |
 | One TS test file | `pnpm --filter @eddy/web exec vitest run src/lib/service-token.test.ts` |
