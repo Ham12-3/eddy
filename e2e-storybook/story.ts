@@ -16,11 +16,15 @@ export function listStories(): IndexEntry[] {
   return Object.values(index.entries).filter((entry) => entry.type === "story");
 }
 
-/** Opens a story in the preview iframe with the project's mode, and waits until it has settled. */
+/**
+ * Opens a story in the preview iframe with the project's mode, and waits until it has settled.
+ * The a11y addon's own automatic scan is switched off (a11y.manual), because two axe runs in one
+ * page collide ("Axe is already running"); these tests run axe themselves.
+ */
 export async function openStory(page: Page, testInfo: TestInfo, id: string): Promise<void> {
-  const globals = (testInfo.project.metadata as { globals?: string }).globals;
-  const query = new URLSearchParams({ id, viewMode: "story" });
-  if (globals) query.set("globals", globals);
+  const mode = (testInfo.project.metadata as { globals?: string }).globals;
+  const globals = [mode, "a11y.manual:!true"].filter(Boolean).join(";");
+  const query = new URLSearchParams({ id, viewMode: "story", globals });
   await page.goto(`/iframe.html?${query.toString()}`);
   await page.locator("#storybook-root > *").first().waitFor();
   await page.evaluate(() => document.fonts.ready);
@@ -28,4 +32,8 @@ export async function openStory(page: Page, testInfo: TestInfo, id: string): Pro
   for (let i = 0; i < (await mathFields.count()); i++) {
     await mathFields.nth(i).and(page.locator("[data-ready='true']")).waitFor();
   }
+  // Belt and braces: never start our axe run while another is still going.
+  await page.waitForFunction(
+    () => !(window as Window & { axe?: { _running?: boolean } }).axe?._running,
+  );
 }
