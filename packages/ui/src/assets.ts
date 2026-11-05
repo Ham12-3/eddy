@@ -7,5 +7,6 @@ import "@fontsource-variable/fraunces/full.css";
 import "@fontsource-variable/atkinson-hyperlegible-next/index.css";
 import "@fontsource-variable/caveat/index.css";
 import "@fontsource/opendyslexic/index.css";
+import "@fontsource/opendyslexic/700.css";
 // KaTeX's fonts also serve MathLive (its own font loading is switched off in MathField).
 import "katex/dist/katex.min.css";

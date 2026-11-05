@@ -36,6 +36,11 @@ describe("Tabs", () => {
     expect(averages).toHaveFocus();
   });
 
+  it("falls back to the first tab when the default does not exist", () => {
+    render(<Tabs label="Topics" items={items} defaultTabId="missing" />);
+    expect(screen.getAllByRole("tab")[0]).toHaveAttribute("tabindex", "0");
+  });
+
   it("keeps only the selected tab in the tab order", () => {
     render(<Tabs label="Topics" items={items} defaultTabId="b" />);
     const tabIndexes = screen.getAllByRole("tab").map((tab) => tab.getAttribute("tabindex"));
@@ -52,6 +57,7 @@ describe("Toggle", () => {
     }
     render(<Harness />);
     const toggle = screen.getByRole("switch", { name: "Reduce motion" });
+    expect(toggle).toHaveAccessibleName("Reduce motion");
     expect(toggle).toHaveAttribute("aria-checked", "false");
     await user.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "true");
@@ -129,26 +135,51 @@ describe("Toast", () => {
     expect(region).not.toHaveTextContent("Saved");
   });
 
+  function TimedTrigger() {
+    const show = useToast();
+    return (
+      <button type="button" onClick={() => show({ title: "Review scheduled" })}>
+        Go
+      </button>
+    );
+  }
+
   it("removes messages after their time", () => {
     vi.useFakeTimers();
-    function Trigger() {
-      const show = useToast();
-      return (
-        <button type="button" onClick={() => show({ title: "Review scheduled" })}>
-          Go
-        </button>
+    try {
+      render(
+        <ToastProvider durationMs={1000}>
+          <TimedTrigger />
+        </ToastProvider>,
       );
+      act(() => screen.getByRole("button", { name: "Go" }).click());
+      expect(screen.getByRole("status")).toHaveTextContent("Review scheduled");
+      act(() => vi.advanceTimersByTime(1001));
+      expect(screen.getByRole("status")).not.toHaveTextContent("Review scheduled");
+    } finally {
+      vi.useRealTimers();
     }
-    render(
-      <ToastProvider durationMs={1000}>
-        <Trigger />
-      </ToastProvider>,
-    );
-    act(() => screen.getByRole("button", { name: "Go" }).click());
-    expect(screen.getByRole("status")).toHaveTextContent("Review scheduled");
-    act(() => vi.advanceTimersByTime(1001));
-    expect(screen.getByRole("status")).not.toHaveTextContent("Review scheduled");
-    vi.useRealTimers();
+  });
+
+  it("keeps a message while it has focus, then removes it", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <ToastProvider durationMs={1000}>
+          <TimedTrigger />
+        </ToastProvider>,
+      );
+      act(() => screen.getByRole("button", { name: "Go" }).click());
+      const dismiss = screen.getByRole("button", { name: "Dismiss: Review scheduled" });
+      act(() => dismiss.focus());
+      act(() => vi.advanceTimersByTime(5000));
+      expect(screen.getByRole("status")).toHaveTextContent("Review scheduled");
+      act(() => dismiss.blur());
+      act(() => vi.advanceTimersByTime(1001));
+      expect(screen.getByRole("status")).not.toHaveTextContent("Review scheduled");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

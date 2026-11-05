@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/Button";
 import {
   ConfidencePicker,
   type Confidence as ConfidenceValue,
 } from "../components/ConfidencePicker";
-import { Feedback } from "../components/Feedback";
+import { Feedback, LiveRegion } from "../components/Feedback";
 import { MathField } from "../components/MathField";
 import { Maths } from "../components/Maths";
 import { QuestionCard } from "../components/QuestionCard";
@@ -122,6 +122,7 @@ export const FeedbackKinds: Story = {
 export const LearningStep: Story = {
   render: function LearningStepStory() {
     const [confidence, setConfidence] = useState<ConfidenceValue | null>(null);
+    const [checked, setChecked] = useState(false);
     return (
       <div className="flex max-w-2xl flex-col gap-6">
         <QuestionCard number={1} commandWord="Work out" marks={1} calculator={false}>
@@ -132,9 +133,41 @@ export const LearningStep: Story = {
         <MathField label="Your answer" />
         <ConfidencePicker value={confidence} onChange={setConfidence} />
         <div className="flex flex-wrap gap-3">
-          <Button variant="accent">Check my answer</Button>
+          <Button variant="accent" onClick={() => setChecked(true)}>
+            Check my answer
+          </Button>
           <Button variant="secondary">Show a hint</Button>
         </div>
+        {/* Mounted from the start, so the feedback is announced when it appears. */}
+        <LiveRegion>
+          {checked ? (
+            <Feedback kind="misconception">
+              You added the numerators and the denominators. Fractions need a common denominator
+              first.
+            </Feedback>
+          ) : null}
+        </LiveRegion>
+      </div>
+    );
+  },
+};
+
+/** The on-screen Foundation keyboard, as a touch-screen student sees it. */
+export const FoundationKeyboard: Story = {
+  render: function FoundationKeyboardStory() {
+    useEffect(() => {
+      const timer = window.setInterval(() => {
+        const field = document.querySelector<HTMLElement>("math-field[data-ready='true']");
+        if (!field) return;
+        window.clearInterval(timer);
+        field.focus();
+        window.mathVirtualKeyboard.show();
+      }, 100);
+      return () => window.clearInterval(timer);
+    }, []);
+    return (
+      <div className="max-w-md">
+        <MathField label="Your answer" />
       </div>
     );
   },

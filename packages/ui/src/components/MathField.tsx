@@ -36,6 +36,7 @@ export const FOUNDATION_KEYBOARD: VirtualKeyboardLayout = {
     ["1", "2", "3", "-", "#@^{#?}"],
     ["0", ".", "=", "+", "\\sqrt{#0}"],
     ["(", ")", "x", "\\pi", "\\%"],
+    ["\\mathrm{cm}", "\\mathrm{m}", "\\mathrm{kg}", "\\mathrm{g}", "\\mathrm{s}"],
     ["[left]", "[right]", "\\pounds", "\\degree", "[return]"],
   ],
 };
@@ -66,6 +67,10 @@ export interface MathFieldProps {
 /**
  * The student's maths input (MathLive). Works with a physical keyboard alone; on touch screens it
  * offers the Foundation keyboard. MathLive speaks the maths through its own live region.
+ *
+ * Focus lands on a textbox inside MathLive's shadow DOM, which ARIA ID references cannot reach
+ * and to which MathLive copies only the label. So the hint and error are set on that textbox as
+ * aria-description and aria-invalid, and a new error is also announced through a live region.
  */
 export function MathField({
   label,
@@ -78,7 +83,6 @@ export function MathField({
   const id = useId();
   const field = useRef<MathfieldElement>(null);
   const [ready, setReady] = useState(false);
-  const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
 
   useEffect(() => {
@@ -104,33 +108,52 @@ export function MathField({
     return () => element.removeEventListener("input", handleInput);
   }, [ready, onChange]);
 
-  const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;
+  useEffect(() => {
+    const textbox = field.current?.shadowRoot?.querySelector<HTMLElement>('[part="keyboard-sink"]');
+    if (!ready || !textbox) return;
+    const description = [hint, error].filter(Boolean).join(" ");
+    if (description) textbox.setAttribute("aria-description", description);
+    else textbox.removeAttribute("aria-description");
+    if (error) textbox.setAttribute("aria-invalid", "true");
+    else textbox.removeAttribute("aria-invalid");
+  }, [ready, hint, error]);
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-semibold" aria-hidden="true">
+      {/* Not a <label>: MathLive takes its name from aria-label. Clicking still focuses the field. */}
+      <span
+        className="cursor-pointer self-start font-semibold"
+        aria-hidden="true"
+        onClick={() => field.current?.focus()}
+      >
         {label}
       </span>
       {hint ? (
-        <p id={hintId} className="m-0 text-caption text-ink-muted">
+        <p className="m-0 text-caption text-ink-muted" aria-hidden="true">
           {hint}
         </p>
       ) : null}
       <math-field
         ref={field}
         aria-label={label}
-        aria-describedby={describedBy}
-        aria-invalid={error ? "true" : undefined}
         math-virtual-keyboard-policy="auto"
         placeholder={placeholder}
+        data-invalid={error ? "true" : undefined}
         data-ready={ready ? "true" : undefined}
       />
-      {error ? (
-        <p id={errorId} className="m-0 flex items-center gap-1 text-caption text-misconception">
-          <SlipIcon width={16} height={16} />
-          {error}
-        </p>
-      ) : null}
+      {/* Always present, so a new error is announced when it appears. */}
+      <p
+        id={errorId}
+        aria-live="polite"
+        className="m-0 flex items-center gap-1 text-caption text-misconception"
+      >
+        {error ? (
+          <>
+            <SlipIcon width={16} height={16} />
+            {error}
+          </>
+        ) : null}
+      </p>
     </div>
   );
 }

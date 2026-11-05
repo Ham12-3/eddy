@@ -25,6 +25,8 @@ export function ToastProvider({
 }) {
   const [messages, setMessages] = useState<Array<ToastMessage & { id: number }>>([]);
   const nextId = useRef(1);
+  // While the pointer or focus is on a toast, nothing disappears from under it (WCAG 2.2.1).
+  const paused = useRef(false);
 
   const dismiss = useCallback((id: number) => {
     setMessages((current) => current.filter((message) => message.id !== id));
@@ -34,7 +36,11 @@ export function ToastProvider({
     (message) => {
       const id = nextId.current++;
       setMessages((current) => [...current.slice(-2), { ...message, id }]);
-      window.setTimeout(() => dismiss(id), durationMs);
+      const expire = () => {
+        if (paused.current) window.setTimeout(expire, 1000);
+        else dismiss(id);
+      };
+      window.setTimeout(expire, durationMs);
     },
     [dismiss, durationMs],
   );
@@ -45,6 +51,18 @@ export function ToastProvider({
       <div
         role="status"
         aria-live="polite"
+        onMouseEnter={() => {
+          paused.current = true;
+        }}
+        onMouseLeave={() => {
+          paused.current = false;
+        }}
+        onFocus={() => {
+          paused.current = true;
+        }}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) paused.current = false;
+        }}
         className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex flex-col items-end gap-2 sm:right-6 sm:bottom-6 sm:left-auto"
       >
         {messages.map((message) => (

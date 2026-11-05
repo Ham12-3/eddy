@@ -9,19 +9,20 @@ export interface ChipProps {
 }
 
 const base =
-  "inline-flex min-h-8 items-center gap-1 rounded-control border px-3 text-caption font-semibold";
+  "inline-flex items-center gap-1 rounded-control border px-3 text-caption font-semibold";
 
 export function Chip({ children, selected = false, onClick }: ChipProps) {
   const look = selected
     ? "border-ink bg-ink text-paper-raised"
     : "border-field-border bg-paper-raised text-ink";
-  if (!onClick) return <span className={cx(base, look)}>{children}</span>;
+  if (!onClick) return <span className={cx(base, "min-h-8", look)}>{children}</span>;
   return (
     <button
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={cx(base, look, !selected && "hover:bg-paper")}
+      // Pressable chips meet the 44px target size; static ones can be smaller.
+      className={cx(base, "min-h-11", look, !selected && "hover:bg-paper")}
     >
       {children}
     </button>

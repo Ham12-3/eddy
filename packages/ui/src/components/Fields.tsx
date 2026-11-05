@@ -113,7 +113,7 @@ export type CheckboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "ty
   hint?: string;
 };
 
-/** The whole row is the target, so the small native box is never hard to hit. */
+/** The label text is part of the target, so the small native box is never the only thing to hit. */
 export function CheckboxField({ label, hint, className, ...input }: CheckboxFieldProps) {
   const { id, hintId } = useFieldIds({ hint });
   return (

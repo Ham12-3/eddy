@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, MouseEvent } from "react";
 import { cx } from "./cx";
 
 /**
@@ -20,28 +20,35 @@ export const buttonClassName = (variant: ButtonVariant = "primary") =>
     "font-body text-body leading-tight font-semibold",
     "transition-colors duration-[120ms] ease-standard",
     "disabled:cursor-not-allowed disabled:opacity-60",
+    "aria-disabled:cursor-progress aria-disabled:opacity-60",
     VARIANTS[variant],
   );
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
-  /** Marks the button busy and blocks repeat presses while something is saving. */
+  /** Marks the button busy and ignores presses while something is saving. */
   busy?: boolean;
+}
+
+function ignorePress(event: MouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
 }
 
 export function Button({
   variant = "primary",
   busy = false,
-  disabled,
   className,
   type = "button",
+  onClick,
   ...rest
 }: ButtonProps) {
   return (
     <button
       type={type}
-      disabled={disabled || busy}
+      // aria-disabled, not disabled: a disabled button would drop keyboard focus to the page.
+      aria-disabled={busy || undefined}
       aria-busy={busy || undefined}
+      onClick={busy ? ignorePress : onClick}
       className={cx(buttonClassName(variant), className)}
       {...rest}
     />

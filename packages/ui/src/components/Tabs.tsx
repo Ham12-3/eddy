@@ -18,7 +18,9 @@ export interface TabsProps {
 
 /** ARIA tabs: arrow keys, Home and End move between tabs; Tab moves into the panel. */
 export function Tabs({ label, items, defaultTabId }: TabsProps) {
-  const [selected, setSelected] = useState(defaultTabId ?? items[0]?.id);
+  const [selected, setSelected] = useState(
+    items.some((item) => item.id === defaultTabId) ? defaultTabId : items[0]?.id,
+  );
   const baseId = useId();
   const tabs = useRef<Record<string, HTMLButtonElement | null>>({});
 

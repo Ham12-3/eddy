@@ -479,14 +479,6 @@ Additions:
 
 Every allowed pairing is listed in `packages/ui/src/tokens/contrast-pairs.ts` and tested in light, dark and dyslexia modes.
 
----|---|---|---|
-| `--accent` #D9480F as text on `--paper` #F6F3EA | about 3.9:1 | 4.5:1 for body text | Accent only for large text and non-text UI. |
-| White label on `--accent` #D9480F button fill | about 4.3:1 | 4.5:1 (17px labels are not "large") | Add `--accent-strong` around #B8400D (about 5.6:1 with white) for fills. |
-| `--student` or `--misconception` text on light `--highlight` #F5C542 | about 3.5 to 3.8:1 | 4.5:1 | Highlight only behind `--ink` text; coloured text gets an underline or outline highlight instead. |
-| Dark `--ink` #ECE7DA on dark `--highlight` #8A6D12 | about 4.0:1 | 4.5:1 | Darken the dark-mode highlight to around #6B5410 (about 5.9:1). |
-
-Also worth reviewing in M1: `--accent` (marker orange) and `--misconception` (#B83A24) are close in hue. Scenes never use `--accent`, and misconception marks always carry a shape and a label, but the UI should still avoid putting the two side by side.
-
 ---
 
 ## 12. Safety and compliance

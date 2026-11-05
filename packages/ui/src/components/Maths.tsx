@@ -28,6 +28,7 @@ export function Maths({ latex, display = false, tone = "given", className }: Mat
     displayMode: display,
     output: "htmlAndMathml",
     throwOnError: false,
+    errorColor: "currentColor",
     trust: false,
     strict: "ignore",
   });

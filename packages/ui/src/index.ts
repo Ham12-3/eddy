@@ -26,7 +26,7 @@ export {
   type ConfidencePickerProps,
 } from "./components/ConfidencePicker";
 export { Dialog, type DialogProps } from "./components/Dialog";
-export { Feedback, type FeedbackKind, type FeedbackProps } from "./components/Feedback";
+export { Feedback, LiveRegion, type FeedbackKind, type FeedbackProps } from "./components/Feedback";
 export {
   CheckboxField,
   SelectField,

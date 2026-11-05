@@ -16,8 +16,9 @@ import { Toggle } from "../components/Toggle";
 import { WorkingPad } from "../components/WorkingPad";
 
 /**
- * Every component on one page, for reviewing the design system at a glance in each mode
- * (screenshots at 375, 768 and 1280 px; light, dark, reduced motion and dyslexia).
+ * The main components on one page, for reviewing the design system at a glance in each mode
+ * (screenshots at 375, 768 and 1280 px; light, dark, reduced motion and dyslexia). Every
+ * component also has its own stories, including open dialogs, toasts and the maths keyboard.
  */
 const meta = {
   title: "Design system/Gallery",

@@ -11,18 +11,23 @@ export interface ToggleProps {
 
 /** An on/off switch. The whole row is the target; the knob position and fill show the state. */
 export function Toggle({ label, description, checked, onChange }: ToggleProps) {
+  const labelId = useId();
   const descriptionId = useId();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      // Named by the label alone; the description is read as a description, not repeated.
+      aria-labelledby={labelId}
       aria-describedby={description ? descriptionId : undefined}
       onClick={() => onChange(!checked)}
       className="group flex min-h-11 w-full items-center justify-between gap-4 rounded-control py-2 text-left"
     >
       <span className="flex flex-col">
-        <span className="font-semibold">{label}</span>
+        <span id={labelId} className="font-semibold">
+          {label}
+        </span>
         {description ? (
           <span id={descriptionId} className="text-caption text-ink-muted">
             {description}

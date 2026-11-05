@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Dialog } from "../components/Dialog";
@@ -195,6 +195,45 @@ export const Toasts: Story = {
     return (
       <ToastProvider>
         <Trigger />
+      </ToastProvider>
+    );
+  },
+};
+
+/** The sheet in its open state, for screenshots and axe. */
+export const SheetOpen: Story = {
+  render: () => (
+    <Dialog
+      variant="sheet"
+      open
+      onClose={() => {}}
+      title="Settings"
+      description="Changes save as you go."
+    >
+      <Toggle
+        label="Captions"
+        description="Show the words as they are spoken."
+        checked
+        onChange={() => {}}
+      />
+      <Toggle label="Reduce motion" checked={false} onChange={() => {}} />
+    </Dialog>
+  ),
+};
+
+/** A toast already showing, for screenshots and axe. */
+export const ToastShowing: Story = {
+  render: function ToastShowingStory() {
+    function ShowOnce() {
+      const show = useToast();
+      useEffect(() => {
+        show({ title: "Saved", body: "Your next review is on Thursday." });
+      }, [show]);
+      return null;
+    }
+    return (
+      <ToastProvider durationMs={600_000}>
+        <ShowOnce />
       </ToastProvider>
     );
   },

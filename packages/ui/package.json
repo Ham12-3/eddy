@@ -8,6 +8,10 @@
     "./assets": "./src/assets.ts",
     "./styles.css": "./src/styles/index.css"
   },
+  "sideEffects": [
+    "*.css",
+    "./src/assets.ts"
+  ],
   "scripts": {
     "tokens:generate": "tsx scripts/generate-tokens-css.ts",
     "storybook": "storybook dev --port 6006 --host 127.0.0.1 --no-open",

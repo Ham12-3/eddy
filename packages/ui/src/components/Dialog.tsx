@@ -54,7 +54,7 @@ export function Dialog({
         if (open) onClose();
       }}
       className={cx(
-        "border border-rule bg-paper-raised p-0 text-ink shadow-raised backdrop:bg-ink/40",
+        "border border-rule bg-paper-raised p-0 text-ink shadow-raised backdrop:bg-paper/80",
         variant === "sheet"
           ? "mx-0 mt-auto mb-0 w-full max-w-none rounded-t-sheet sm:mt-0 sm:mr-0 sm:ml-auto sm:h-full sm:max-h-none sm:w-[28rem] sm:rounded-none sm:rounded-l-sheet"
           : "m-auto w-[min(34rem,calc(100%-2rem))] rounded-sheet",

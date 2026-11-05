@@ -26,6 +26,26 @@ describe("cliche lint", () => {
     ["pill", "x.tsx", '<button className="rounded-full px-6">Go</button>'],
     ["streak", "x.tsx", "<p>Keep your 7-day streak going!</p>"],
     ["confetti", "package.json", '    "canvas-confetti": "1.9.0",'],
+    // Gaps the M1 review found
+    ["inter-font", "x.tsx", 'import { Inter } from "next/font/google";'],
+    ["inter-font", "x.tsx", "const inter = Inter({ subsets: ['latin'] });"],
+    ["inter-font", "x.ts", 'import "@fontsource-variable/inter";'],
+    ["inter-font", "x.css", '--font-sans: "Inter Variable", system-ui;'],
+    ["sparkle", "x.tsx", 'import { SparklesIcon } from "@heroicons/react/24/outline";'],
+    ["sparkle", "x.tsx", 'import { HiSparkles } from "react-icons/hi";'],
+    ["sparkle", "x.tsx", "<WandSparkles />"],
+    ["confetti", "package.json", '    "react-canvas-confetti": "2.0.0",'],
+    ["confetti", "package.json", '    "@tsparticles/confetti": "3.0.0",'],
+    ["text-shadow", "x.tsx", "style={{ textShadow: '0 0 8px gold' }}"],
+    ["glow", "x.tsx", 'style={{ boxShadow: "0 0 24px var(--accent)" }}'],
+    ["glow", "x.css", "filter: drop-shadow(0 0 6px var(--accent));"],
+    ["pill", "x.tsx", '<button className="rounded-[9999px]">Go</button>'],
+    ["pill", "x.css", "border-radius: 9999px;"],
+    ["raw-colour", "apps/web/src/x.tsx", '<div className="from-[orchid] to-[plum]" />'],
+    ["raw-colour", "apps/web/src/x.tsx", 'style={{ color: "purple" }}'],
+    ["raw-colour", "apps/web/src/x.jsx", "color: #7c3aed;"],
+    ["emoji", "x.tsx", "<p>Made in the UK \u{1F1EC}\u{1F1E7}</p>"],
+    ["glow", "x.svg", '<rect style="filter: drop-shadow(0 0 4px var(--ink))" />'],
   ];
 
   for (const [rule, path, text] of cases) {
@@ -48,6 +68,11 @@ describe("cliche lint", () => {
     ["packages/ui/src/contrast.test.ts", 'expect(contrastRatio("#000000", "#FFFFFF"))'],
     ["x.css", "--shadow-*: initial;"],
     ["x.tsx", "<p>Your next review is due on Thursday.</p>"],
+    // False positives the M1 review found
+    ["apps/web/src/x.tsx", '<a href="#add">Add a topic</a>'],
+    ["apps/web/src/x.tsx", '<a href="#decade">Decade</a>'],
+    ["x.tsx", "<p>© Eddy 2026</p>"],
+    ["x.css", "--text-shadow-*: initial;"],
   ];
 
   for (const [path, text] of clean) {

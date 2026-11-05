@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Button } from "./Button";
-import { Feedback } from "./Feedback";
+import { Feedback, LiveRegion } from "./Feedback";
 import { CheckboxField, TextField } from "./Fields";
 import { Link } from "./Link";
 import { Maths } from "./Maths";
@@ -12,12 +12,22 @@ import { EmptyState, ErrorState } from "./States";
 import { WorkingPad } from "./WorkingPad";
 
 describe("Button", () => {
-  it("defaults to type=button and blocks presses while busy", () => {
-    render(<Button busy>Save</Button>);
+  it("defaults to type=button, and ignores presses while busy without losing focus", () => {
+    const onClick = vi.fn();
+    render(
+      <Button busy onClick={onClick}>
+        Save
+      </Button>,
+    );
     const button = screen.getByRole("button", { name: "Save" });
     expect(button).toHaveAttribute("type", "button");
-    expect(button).toBeDisabled();
+    expect(button).not.toBeDisabled(); // a disabled button would drop keyboard focus
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAttribute("aria-busy", "true");
+    button.focus();
+    button.click();
+    expect(onClick).not.toHaveBeenCalled();
+    expect(button).toHaveFocus();
   });
 });
 
@@ -36,7 +46,20 @@ describe("Link", () => {
 describe("Feedback", () => {
   it("names the kind in words, not just colour", () => {
     render(<Feedback kind="misconception">You added the denominators.</Feedback>);
-    expect(screen.getByRole("status")).toHaveTextContent("A common slip");
+    expect(screen.getByText("A common slip")).toBeInTheDocument();
+  });
+
+  it("is announced when it appears inside a mounted LiveRegion", () => {
+    const { rerender } = render(<LiveRegion />);
+    const region = screen.getByRole("status");
+    expect(region).toHaveAttribute("aria-live", "polite");
+    rerender(
+      <LiveRegion>
+        <Feedback kind="correct">Well reasoned.</Feedback>
+      </LiveRegion>,
+    );
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toHaveTextContent("Well reasoned.");
   });
 });
 

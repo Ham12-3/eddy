@@ -35,13 +35,26 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never", outputFolder: "playwright-report/storybook" }]]
     : [["list"]],
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: "retain-on-failure" },
-  projects: Object.entries(viewports).flatMap(([viewportName, viewport]) =>
-    Object.entries(modes).map(([modeName, mode]) => ({
-      name: `${viewportName}-${modeName}`,
-      metadata: { globals: mode.globals },
-      use: { ...devices["Desktop Chrome"], viewport, ...mode.use },
-    })),
-  ),
+  projects: [
+    ...Object.entries(viewports).flatMap(([viewportName, viewport]) =>
+      Object.entries(modes).map(([modeName, mode]) => ({
+        name: `${viewportName}-${modeName}`,
+        metadata: { globals: mode.globals },
+        use: { ...devices["Desktop Chrome"], viewport, ...mode.use },
+      })),
+    ),
+    // The in-app theme switch overriding a light system setting, and dyslexia mode on dark.
+    {
+      name: "desktop-forced-dark",
+      metadata: { globals: "theme:dark" },
+      use: { ...devices["Desktop Chrome"], viewport: viewports.desktop, colorScheme: "light" },
+    },
+    {
+      name: "desktop-dark-dyslexia",
+      metadata: { globals: "reading:dyslexia" },
+      use: { ...devices["Desktop Chrome"], viewport: viewports.desktop, colorScheme: "dark" },
+    },
+  ],
   webServer: {
     command: `pnpm exec http-server packages/ui/storybook-static -a 127.0.0.1 -p ${PORT} -s -c-1`,
     url: `http://127.0.0.1:${PORT}/index.json`,

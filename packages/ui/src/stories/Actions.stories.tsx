@@ -27,6 +27,25 @@ export const Buttons: Story = {
   ),
 };
 
+/** Press it: it stays focused while busy, then recovers. */
+export const BusyButton: Story = {
+  render: function BusyButtonStory() {
+    const [busy, setBusy] = useState(false);
+    return (
+      <Button
+        variant="accent"
+        busy={busy}
+        onClick={() => {
+          setBusy(true);
+          window.setTimeout(() => setBusy(false), 3000);
+        }}
+      >
+        Check my answer
+      </Button>
+    );
+  },
+};
+
 export const Links: Story = {
   render: () => (
     <p className="max-w-prose">

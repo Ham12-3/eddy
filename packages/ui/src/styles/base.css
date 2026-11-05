@@ -51,14 +51,19 @@
 
   /* Numbers line up in tables and working. */
   table,
-  .tabular,
-  .katex {
+  .tabular {
     font-variant-numeric: tabular-nums;
   }
 
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
+  }
+
+  /* Placeholders at the muted ink colour (Tailwind's default halves the text colour). */
+  ::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
   }
 
   ::selection {
@@ -90,7 +95,7 @@
     outline-offset: 2px;
   }
 
-  math-field[aria-invalid="true"] {
+  math-field[data-invalid="true"] {
     border-color: var(--misconception);
   }
 
@@ -113,8 +118,9 @@
   }
 
   /*
-   * Reduced motion (the system setting or Eddy's own data-motion="reduce"): no animation, and
-   * movement transitions become opacity cross-fades. Elements without transitions are unaffected.
+   * Reduced motion (the system setting or Eddy's own data-motion="reduce"): no animation and no
+   * movement; changes become 150ms cross-fades of opacity and colour instead (brief section 6).
+   * MathLive's shadow DOM is out of reach of these rules.
    */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -122,6 +128,7 @@
     ::after {
       animation: none !important;
       transition-property: opacity, color, background-color, border-color, outline-color !important;
+      transition-duration: var(--duration-reduced-cross-fade) !important;
       scroll-behavior: auto !important;
     }
   }
@@ -131,6 +138,7 @@
   :root[data-motion="reduce"] ::after {
     animation: none !important;
     transition-property: opacity, color, background-color, border-color, outline-color !important;
+    transition-duration: var(--duration-reduced-cross-fade) !important;
     scroll-behavior: auto !important;
   }
 }
