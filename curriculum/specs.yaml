@@ -1,0 +1,81 @@
+# Specifications. Paper structures are facts about the assessments, described in our own words;
+# no exam board questions, mark schemes or wording appear anywhere in Eddy (SPEC.md section 12).
+# Exam board maths specifications build on the DfE subject content (content: DFE/GCSE-MATHS/2013).
+
+specs:
+  - board: DFE
+    qualification: MATHS
+    spec_code: GCSE-MATHS
+    version: "2013"
+    title: GCSE mathematics subject content
+    valid_from: 2015-09-01
+    papers: []
+
+  - board: AQA
+    qualification: MATHS
+    spec_code: "8300"
+    version: "2015"
+    title: AQA GCSE Mathematics
+    content: { board: DFE, spec_code: GCSE-MATHS, version: "2013" }
+    valid_from: 2015-09-01
+    papers:
+      - { paper: "1", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: false }
+      - { paper: "2", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: true }
+      - { paper: "3", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: true }
+
+  - board: EDEXCEL
+    qualification: MATHS
+    spec_code: 1MA1
+    version: "2015"
+    title: Pearson Edexcel GCSE Mathematics
+    content: { board: DFE, spec_code: GCSE-MATHS, version: "2013" }
+    valid_from: 2015-09-01
+    papers:
+      - { paper: "1", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: false }
+      - { paper: "2", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: true }
+      - { paper: "3", tiers: [FOUNDATION, HIGHER], minutes: 90, marks: 80, calculator: true }
+
+  - board: OCR
+    qualification: MATHS
+    spec_code: J560
+    version: "2015"
+    title: OCR GCSE Mathematics
+    content: { board: DFE, spec_code: GCSE-MATHS, version: "2013" }
+    valid_from: 2015-09-01
+    papers:
+      - { paper: "1", tiers: [FOUNDATION], minutes: 90, marks: 100, calculator: true }
+      - { paper: "2", tiers: [FOUNDATION], minutes: 90, marks: 100, calculator: false }
+      - { paper: "3", tiers: [FOUNDATION], minutes: 90, marks: 100, calculator: true }
+      - { paper: "4", tiers: [HIGHER], minutes: 90, marks: 100, calculator: true }
+      - { paper: "5", tiers: [HIGHER], minutes: 90, marks: 100, calculator: false }
+      - { paper: "6", tiers: [HIGHER], minutes: 90, marks: 100, calculator: true }
+
+  - board: AQA
+    qualification: ENG_LANG
+    spec_code: "8700"
+    version: "2015"
+    title: AQA GCSE English Language
+    valid_from: 2015-09-01
+    papers:
+      - {
+          paper: "1",
+          minutes: 105,
+          marks: 80,
+          focus: "Creative reading and writing, fiction source",
+        }
+      - {
+          paper: "2",
+          minutes: 105,
+          marks: 80,
+          focus: "Writers' viewpoints, two non-fiction sources",
+        }
+
+  - board: AQA
+    qualification: ENG_LIT
+    spec_code: "8702"
+    version: "2015"
+    title: AQA GCSE English Literature
+    valid_from: 2015-09-01
+    papers:
+      - { paper: "1", minutes: 105, marks: 64, focus: Shakespeare and the 19th-century novel }
+      - { paper: "2", minutes: 135, marks: 96, focus: Modern texts and poetry }

@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### M2: Curriculum and data (5 November 2026)
+
+Added:
+
+- SQLAlchemy models and the first Alembic migration for every table in SPEC.md section 6 (32 tables), including the Auth.js tables in our own conventions (ADR-0023) and an `audit_log` that a trigger keeps append-only. Enums are checked strings; constraints have stable names.
+- The curriculum as YAML with a JSON Schema per file (ADR-0021): all 97 DfE maths statements with tiers and visual suitability; the AQA 8300, Edexcel 1MA1 and OCR J560 paper structures; the prerequisite DAG for the 13 MVP topics and every ancestor; 85 misconceptions with student and teacher wording, detection rules, scene, re-check family and evidence; English set texts with copyright status and display policy, question types and level descriptors in our own words.
+- A rule language for misconception detection (ADR-0022): `distractor`, `structure` and `classifier` rules. 82 distractor and 2 structure rule names for maths-core to implement in M3.
+- `python -m eddy_api.seed` (`pnpm db:seed`, `pnpm curriculum:check`): schema and cross-file validation, cycle detection, then an idempotent upsert by natural key with a `--dry-run` diff. The second run reports zero changes.
+- A read-only curriculum API (`/v1/curriculum/specs`, `nodes`, `nodes/{code}`, `topics`, `misconceptions`) for every role, and the regenerated TypeScript client.
+- A read-only admin curriculum browser at `/admin/curriculum`, with a page per node. Development or `EDDY_ADMIN_PREVIEW=1` only until M8.
+- The `/new-misconception` skill and `curriculum/README.md`.
+- Tests: YAML validity and planted faults (a cycle, unknown codes, duplicate keys, an en dash, in-copyright full text), seed idempotence and dry run, migrations up, down and up again, models matching migrations, the audit trigger, the API and its auth.
+- CI: a Postgres service for the checks and E2E jobs, database tests required there, and a curriculum check step. `pnpm dev` and the E2E API server migrate and seed first; E2E uses its own `eddy_e2e` database.
+
+Fixed during M2 (found by the fresh-context, security and pedagogy reviews):
+
+- The admin pages rendered and fetched data behind a layout `notFound()` in a production build. They are now gated in `src/proxy.ts`, in every page and `generateMetadata`, and before any token is signed; an E2E server without the flag proves the 404 for HTML and RSC requests. The preview signs as `admin`, not `system` (ADR-0018 amended), and only runs under `next dev` or with the flag.
+- The seed left edges touching a removed node, and left removed rows live. It now deletes those edges and retires removed nodes, topics, misconceptions and set texts, which the API no longer serves.
+- Migration 0002: deleting an account no longer deletes safeguarding or erasure records; sessions store a token hash; OAuth token columns removed; integrity checks on parent links and invite codes. Audit grants, the age check before email storage and retention move to M8 (ADR-0024).
+- Students and parents no longer receive teacher wording or detection rules from the curriculum API.
+- The YAML loader refuses aliases and non-scalar keys, reports impossible dates as problems, and checks codes with a full match.
+- Student-facing misconception text no longer uses one item's numbers or gives an answer away; two duplicate misconceptions were replaced (EQ_SIGN_CHANGED_NOT_MOVED, RATIO_FRACTION_WRONG_WAY_ROUND); order of operations moved to N3; two structure rules and two new distractor rules; English level descriptors rewritten further from the board's wording, with the Literature ladder realigned.
+- N16 is Foundation with a Higher extension and G8 is Higher only; two modern set texts added.
+
 ### M1: Design system (5 November 2026)
 
 Added:

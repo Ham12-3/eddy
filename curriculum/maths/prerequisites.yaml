@@ -1,0 +1,119 @@
+# The prerequisite DAG for the MVP nodes and all their ancestors (SPEC.md section 7.1).
+# `requires` lists what a node builds on. Strength (0 to 1) is how much mastery of the
+# prerequisite matters: it scales prior propagation and orders prerequisite diagnostics.
+# A test fails on any cycle, any unknown code, and any MVP node with a missing ancestor.
+# Every MVP node and ancestor is listed; a root lists no prerequisites ([]).
+
+edges:
+  N1: []
+  N2:
+    - { code: N1, strength: 0.5 }
+  N3:
+    - { code: N2, strength: 0.7 }
+  N4:
+    - { code: N2, strength: 0.6 }
+  N6:
+    - { code: N2, strength: 0.6 }
+    - { code: N3, strength: 0.5 }
+  N9:
+    - { code: N6, strength: 0.8 }
+    - { code: N2, strength: 0.6 }
+  N10:
+    - { code: N2, strength: 0.7 }
+    - { code: N1, strength: 0.6 }
+  N11:
+    - { code: N10, strength: 0.6 }
+    - { code: R4, strength: 0.6 }
+  N12:
+    - { code: N10, strength: 0.8 }
+    - { code: N2, strength: 0.6 }
+  R4:
+    - { code: N4, strength: 0.7 }
+    - { code: N2, strength: 0.5 }
+  R5:
+    - { code: R4, strength: 0.9 }
+    - { code: N2, strength: 0.6 }
+  R6:
+    - { code: R4, strength: 0.7 }
+    - { code: N10, strength: 0.5 }
+  R7:
+    - { code: R4, strength: 0.8 }
+    - { code: R6, strength: 0.6 }
+  R2:
+    - { code: R4, strength: 0.6 }
+  R9:
+    - { code: N12, strength: 0.9 }
+    - { code: N10, strength: 0.7 }
+  A1:
+    - { code: N3, strength: 0.6 }
+  A2:
+    - { code: A1, strength: 0.8 }
+    - { code: N3, strength: 0.7 }
+  A3:
+    - { code: A1, strength: 0.6 }
+  A4:
+    - { code: A1, strength: 0.8 }
+    - { code: A3, strength: 0.6 }
+    - { code: N4, strength: 0.4 }
+  A8:
+    - { code: N1, strength: 0.6 }
+  A17:
+    - { code: A1, strength: 0.8 }
+    - { code: N3, strength: 0.7 }
+    - { code: N2, strength: 0.7 }
+    - { code: A3, strength: 0.6 }
+    - { code: A4, strength: 0.5 }
+  A9:
+    - { code: A8, strength: 0.9 }
+    - { code: A2, strength: 0.7 }
+    - { code: A17, strength: 0.4 }
+  A10:
+    - { code: A9, strength: 0.9 }
+    - { code: N10, strength: 0.4 }
+  G1: []
+  G3:
+    - { code: G1, strength: 0.6 }
+  G4:
+    - { code: G1, strength: 0.6 }
+    - { code: G3, strength: 0.5 }
+  G7:
+    - { code: A8, strength: 0.8 }
+    - { code: G1, strength: 0.5 }
+    - { code: R2, strength: 0.4 }
+  G9:
+    - { code: G1, strength: 0.6 }
+  G14:
+    - { code: N13, strength: 0.6 }
+  N13:
+    - { code: N2, strength: 0.5 }
+  G16:
+    - { code: N2, strength: 0.6 }
+    - { code: G4, strength: 0.5 }
+    - { code: G14, strength: 0.5 }
+  G17:
+    - { code: G16, strength: 0.7 }
+    - { code: G9, strength: 0.7 }
+    - { code: N8, strength: 0.4 }
+  N8:
+    - { code: N2, strength: 0.6 }
+  G20:
+    - { code: N6, strength: 0.8 }
+    - { code: G4, strength: 0.4 }
+    - { code: G1, strength: 0.4 }
+  N5: []
+  P3:
+    - { code: N10, strength: 0.7 }
+  P4:
+    - { code: P3, strength: 0.8 }
+  P7:
+    - { code: P3, strength: 0.8 }
+    - { code: N5, strength: 0.6 }
+  P8:
+    - { code: P7, strength: 0.9 }
+    - { code: N10, strength: 0.7 }
+    - { code: N2, strength: 0.6 }
+    - { code: P4, strength: 0.5 }
+  S2: []
+  S4:
+    - { code: N2, strength: 0.7 }
+    - { code: S2, strength: 0.5 }

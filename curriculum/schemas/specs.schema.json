@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eddy:curriculum:specs",
+  "title": "Specifications: the DfE subject content and the exam board specifications built on it",
+  "type": "object",
+  "required": ["specs"],
+  "additionalProperties": false,
+  "properties": {
+    "specs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "board",
+          "qualification",
+          "spec_code",
+          "version",
+          "title",
+          "valid_from",
+          "papers"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "board": { "$ref": "urn:eddy:curriculum:common#/$defs/board" },
+          "qualification": { "enum": ["MATHS", "ENG_LANG", "ENG_LIT"] },
+          "spec_code": { "$ref": "urn:eddy:curriculum:common#/$defs/specCode" },
+          "version": { "$ref": "urn:eddy:curriculum:common#/$defs/version" },
+          "title": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" },
+          "content": { "$ref": "urn:eddy:curriculum:common#/$defs/specRef" },
+          "valid_from": { "$ref": "urn:eddy:curriculum:common#/$defs/date" },
+          "valid_to": { "$ref": "urn:eddy:curriculum:common#/$defs/date" },
+          "papers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["paper", "minutes", "marks"],
+              "additionalProperties": false,
+              "properties": {
+                "paper": { "type": "string", "pattern": "^[1-9]$" },
+                "tiers": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "enum": ["FOUNDATION", "HIGHER"] }
+                },
+                "minutes": { "type": "integer", "minimum": 1, "maximum": 300 },
+                "marks": { "type": "integer", "minimum": 1, "maximum": 200 },
+                "calculator": { "type": "boolean" },
+                "focus": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

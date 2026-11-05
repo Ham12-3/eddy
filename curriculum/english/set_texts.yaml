@@ -1,0 +1,191 @@
+# English Literature set texts (SPEC.md section 6.6). Data model only in the MVP.
+# Titles and authors are facts about the specification; no text, notes or questions appear here.
+# display:
+#   FULL_TEXT       public domain in the UK, so the whole text may be shown
+#   REFERENCE_ONLY  in copyright: named and discussed, never reproduced
+#   (QUOTATIONS_ONLY stays unused until legal advice on fair dealing, docs/brief.md section 4)
+# Copyright status follows docs/brief.md section 4; check it again before any text is shown.
+# The list is not yet checked against the board's current list of modern texts (more were
+# added for first teaching in 2024); do that before any English feature is built on it.
+
+set_texts:
+  # Shakespeare: public domain (modern editions' notes and lineation are not)
+  - board: AQA
+    category: SHAKESPEARE
+    title: Macbeth
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: SHAKESPEARE
+    title: Romeo and Juliet
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: SHAKESPEARE
+    title: The Tempest
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: SHAKESPEARE
+    title: The Merchant of Venice
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: SHAKESPEARE
+    title: Much Ado About Nothing
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: SHAKESPEARE
+    title: Julius Caesar
+    author: William Shakespeare
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+
+  # 19th-century novels: public domain
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: The Strange Case of Dr Jekyll and Mr Hyde
+    author: Robert Louis Stevenson
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: A Christmas Carol
+    author: Charles Dickens
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: Great Expectations
+    author: Charles Dickens
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: Jane Eyre
+    author: "Charlotte Brontë"
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: Frankenstein
+    author: Mary Shelley
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: Pride and Prejudice
+    author: Jane Austen
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+  - board: AQA
+    category: NINETEENTH_CENTURY_NOVEL
+    title: The Sign of Four
+    author: Arthur Conan Doyle
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+
+  # Modern texts: mostly in copyright
+  - board: AQA
+    category: MODERN_TEXT
+    title: An Inspector Calls
+    author: J. B. Priestley
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Blood Brothers
+    author: Willy Russell
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Lord of the Flies
+    author: William Golding
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Animal Farm
+    author: George Orwell
+    copyright: PUBLIC_DOMAIN
+    display: FULL_TEXT
+    notes: "Public domain in the UK from 2021 (the author died in 1950). Not public domain everywhere, so serve it to UK users only."
+  - board: AQA
+    category: MODERN_TEXT
+    title: Anita and Me
+    author: Meera Syal
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Never Let Me Go
+    author: Kazuo Ishiguro
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Pigeon English
+    author: Stephen Kelman
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: The History Boys
+    author: Alan Bennett
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: DNA
+    author: Dennis Kelly
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: The Curious Incident of the Dog in the Night-Time
+    author: Simon Stephens
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+    notes: The play adaptation of the novel by Mark Haddon.
+  - board: AQA
+    category: MODERN_TEXT
+    title: A Taste of Honey
+    author: Shelagh Delaney
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+  - board: AQA
+    category: MODERN_TEXT
+    title: Leave Taking
+    author: Winsome Pinnock
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+
+  # Poetry anthology clusters: mixed, so each cluster is treated as in copyright
+  - board: AQA
+    category: POETRY_ANTHOLOGY
+    title: Power and Conflict
+    author: Various
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+    notes: "Mixed. Pre-1900 poems and Owen's Exposure are public domain and could be shown one by one; most modern poems are in copyright and are never reproduced."
+  - board: AQA
+    category: POETRY_ANTHOLOGY
+    title: Love and Relationships
+    author: Various
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+    notes: "Mixed. Treat the cluster as in copyright; clear any single poem before showing it."
+  - board: AQA
+    category: POETRY_ANTHOLOGY
+    title: Worlds and Lives
+    author: Various
+    copyright: IN_COPYRIGHT
+    display: REFERENCE_ONLY
+    notes: The newer cluster. Mostly in copyright.

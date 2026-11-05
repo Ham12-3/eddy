@@ -8,7 +8,9 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 |---|---|
 | Install | `pnpm install` then `uv sync` |
 | Local secrets (first run) | `pnpm keys:dev` (writes git-ignored .env files) |
-| Run everything | `pnpm dev` (docker compose, web :3300, api :8300, maths-core :8310) |
+| Run everything | `pnpm dev` (docker compose, migrate, seed, then web :3300, api :8300, maths-core :8310) |
+| Database | `pnpm db:migrate`, `pnpm db:seed` (`--dry-run --verbose` shows the diff) |
+| Curriculum YAML | `pnpm curriculum:check` (schemas and cross-file checks, no database) |
 | All checks | `pnpm check` (ESLint, Prettier, dash check, typecheck, unit tests, ruff, mypy, pytest) |
 | One TS package | `pnpm --filter @eddy/web test` (or `typecheck`, `lint`) |
 | One TS test file | `pnpm --filter @eddy/web exec vitest run src/lib/service-token.test.ts` |
@@ -28,6 +30,8 @@ Local services (`docker compose up -d --wait`): Postgres 127.0.0.1:5442 (eddy/ed
 - You cannot read `.env` files (permission rule plus the guard hook). The keys each one holds are listed in the matching `.env.example`.
 - Edits under `compliance/` always ask the user first. Never write evidence that does not exist.
 - Workspace packages export TypeScript source; Next compiles them via `transpilePackages`. There is no package build step.
+- E2E creates, migrates and seeds its own `eddy_e2e` database; the seed refuses a non-local database unless `--allow-remote` is passed. Database tests make and drop their own `eddy_test_*` database. They skip when Postgres is down, except with `EDDY_REQUIRE_DB=1` (CI), where they fail. The API suite is slow on the dev machine; run it in the background.
+- The curriculum is YAML in `curriculum/`, seeded by natural key (ADR-0021). Add misconceptions with `/new-misconception`. The admin pages under `/admin` exist only in development or with `EDDY_ADMIN_PREVIEW=1` until sign-in in M8.
 - The Python workspace root is virtual. Tests run with `--import-mode=importlib` because both services have a `tests/` folder.
 - TypeScript is pinned to 5.9 and ESLint to 9 (ADR-0017). Do not upgrade either without checking typescript-eslint and eslint-config-next support.
 - LocalStack now needs a licence, so local S3 and SQS are S3Mock and ElasticMQ (ADR-0016).

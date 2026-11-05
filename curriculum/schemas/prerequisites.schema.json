@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eddy:curriculum:prerequisites",
+  "title": "The prerequisite DAG: what each node builds on, with a strength",
+  "type": "object",
+  "required": ["edges"],
+  "additionalProperties": false,
+  "properties": {
+    "edges": {
+      "type": "object",
+      "propertyNames": { "$ref": "urn:eddy:curriculum:common#/$defs/nodeCode" },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["code", "strength"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "$ref": "urn:eddy:curriculum:common#/$defs/nodeCode" },
+            "strength": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    }
+  }
+}
