@@ -619,4 +619,9 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Ka
 - On a phone, the standard-form headings stay as powers of ten: "thousandths" does not fit a 288 px column at a readable size, so the narration links the names and the powers.
 - The scenes have been reviewed by AI reviewers, not yet by a teacher. A teacher's look at the 13 scenes belongs with the hand check of the maths golden sample.
 
-**CI**: not run yet for this branch.
+**CI**: the first run (34f6562) failed two checks.
+
+- The committed font metrics had been reformatted by Prettier, so the freshness check failed. They are regenerated from the repo root now.
+- On Linux the keyframe check found text drawn up to about 3% wider than on Windows, past the 2 px tolerance. Measured widths now carry a margin (ADR-0028).
+
+The phone place-value headings were refitted to the new margin. After the fix, the scene tests (171), `pnpm scenes:golden` (104 specs, 0 problems) and `pnpm scenes:check` passed on Windows; CI reruns on the fix commit.

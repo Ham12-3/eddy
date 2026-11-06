@@ -311,6 +311,7 @@ Status: Accepted (5 November 2026, during M5)
     - Glyph advances come from the self-hosted font files (`font-metrics.json`, regular weight only, because fontkit cannot make instances of a variable WOFF2 font).
     - Scene text stays in Atkinson Hyperlegible in dyslexia mode, because the layout is measured with it; captions and the transcript follow the reader's font.
     - Maths labels are KaTeX, measured with KaTeX's fonts and centred in their boxes. The DOM check is the judge of the result.
+    - Measured widths carry a margin, 3% for text and 5% for maths. Linux font hinting draws the same text up to about 3% wider than Windows, so a box that fits exactly on one system spills on another (the first CI run found this).
   - **Faulty steps.** A faulty step is a misconception-coloured label with a pen mark. The student's own working is never recoloured, because a quantity keeps its colour.
   - **Tints and exponents.**
     - Highlight shapes are a 35% wash with no outline, and filled shapes a 16% tint. Text on any tint must reach 4.5:1 against the blended colour, in both themes.

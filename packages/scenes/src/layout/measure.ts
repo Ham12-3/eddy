@@ -21,6 +21,13 @@ const METRICS = metricsJson as Record<FontName, FontMetrics>;
 export const LINE_HEIGHT = 1.25;
 /** Padding added to each measured width, as a multiple of the font size. */
 const PADDING = 0.1;
+/**
+ * Room for the same text rendering a little wider on another system: font hinting on Linux and
+ * some phones rounds glyph advances, so a label measured here can come out 1 to 3% wider there
+ * (the keyframe checker found it in CI). Maths gets more: KaTeX's own spacing varies a little too.
+ */
+const TEXT_SAFETY = 1.03;
+const MATHS_SAFETY = 1.05;
 
 export interface Size {
   w: number;
@@ -45,7 +52,7 @@ export function emWidth(text: string, font: FontName = "body"): number {
 
 /** One line of text at `size` canvas units. */
 export function measureText(text: string, size: number, font: "body" | "pen" = "body"): Size {
-  return { w: (emWidth(text, font) + PADDING) * size, h: LINE_HEIGHT * size };
+  return { w: (emWidth(text, font) * TEXT_SAFETY + PADDING) * size, h: LINE_HEIGHT * size };
 }
 
 /** Splits text into lines no wider than `maxWidth` at `size`. A single long word stays whole. */
@@ -142,7 +149,10 @@ function single(node: MathNode): MathBox {
 /** A maths label at `size` canvas units (the scene stage sets KaTeX's em to the label size). */
 export function measureMaths(nodes: readonly MathNode[], size: number): Size {
   const box = row(nodes);
-  return { w: (box.w + PADDING) * size, h: Math.max(LINE_HEIGHT, box.up + box.down + 0.1) * size };
+  return {
+    w: (box.w * MATHS_SAFETY + PADDING) * size,
+    h: Math.max(LINE_HEIGHT, box.up + box.down + 0.1) * size,
+  };
 }
 
 /** Trust stays off (no links, classes or images from TeX) and expansion is kept small. */

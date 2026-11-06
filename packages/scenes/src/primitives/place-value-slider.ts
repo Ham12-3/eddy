@@ -83,12 +83,9 @@ export function placeValueChart(options: PlaceValueOptions): PlaceValueChart {
 
   // Headings: up to two lines of place name, then the power of ten.
   const room = width - 2 * nameSize * 0.08;
-  // The widest power is the last column's (the longest negative power), with 7% of the column
-  // clear on each side of it.
-  const powerSize = Math.min(
-    options.powerSize,
-    (width * 0.86) / measureMaths(powerOfTen(low), 1).w,
-  );
+  // The widest power is the last column's (the longest negative power), with 5% of the column
+  // clear on each side of its measured box (which already allows for wider rendering).
+  const powerSize = Math.min(options.powerSize, (width * 0.9) / measureMaths(powerOfTen(low), 1).w);
   const pad = Math.max(nameSize, powerSize) * 0.2;
   const names = new Map(
     powers.map((power) => [power, nameSize ? nameLines(placeName(power), nameSize, room) : []]),
