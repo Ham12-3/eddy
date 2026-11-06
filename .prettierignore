@@ -19,3 +19,8 @@ packages/api-client/src/schema.d.ts
 packages/ui/src/styles/tokens.css
 
 storybook-static/
+
+# Generated (CI regenerates these and checks nothing changed)
+packages/schemas/generated/
+packages/scenes/src/layout/font-metrics.json
+evals/golden/scenes/

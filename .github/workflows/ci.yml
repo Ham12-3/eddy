@@ -49,14 +49,23 @@ jobs:
       - name: Curriculum YAML matches its schemas
         run: pnpm curriculum:check
       - run: pnpm check
-      - name: Maths golden set (100% required)
+      - name: Maths golden set and scene specs (100% required)
         run: pnpm evals
+      - name: Scene golden specs match the templates
+        run: test -z "$(git status --porcelain -- evals/golden/scenes)" || (git status --porcelain -- evals/golden/scenes && git diff -- evals/golden/scenes && exit 1)
+      - name: Golden scene inputs match maths-core, font metrics match the fonts
+        run: |
+          uv run --package eddy-maths-core python -m eddy_maths_core.scene_golden inputs evals/golden/scenes/inputs.json
+          pnpm --filter @eddy/scenes fonts:generate
+          test -z "$(git status --porcelain -- evals/golden/scenes packages/scenes/src/layout/font-metrics.json)" || (git diff && exit 1)
       - name: maths-core coverage (85% or more)
         run: pnpm maths:coverage
       - name: Verification latency (p95 under 150 ms)
         run: pnpm maths:bench
       - name: Learner model coverage (85% or more)
         run: pnpm learner:coverage
+      - name: Scene schema and pydantic models match packages/schemas
+        run: pnpm schemas:generate && test -z "$(git status --porcelain -- packages/schemas/generated services/api/src/eddy_api/scenes)" || (git diff && exit 1)
       - name: API client matches services/api
         run: pnpm api-client:generate && git diff --exit-code -- packages/api-client
       - name: CDK synth (no deploy)
@@ -94,6 +103,9 @@ jobs:
       - run: uv sync --locked
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
+      - name: Scene keyframes (static and DOM checks, every beat, both themes)
+        if: success() || failure()
+        run: pnpm scenes:check
       - name: Upload screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4

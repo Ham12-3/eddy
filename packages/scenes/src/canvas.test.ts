@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SCENE_ASPECT_RATIOS, safeArea } from "./index";
+import { SCENE_ASPECT_RATIOS, safeArea } from "./canvas";
 
 describe("safeArea", () => {
   it("keeps a 6% margin on every side", () => {

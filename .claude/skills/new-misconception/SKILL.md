@@ -40,7 +40,7 @@ Add it beside the other entries for the same node:
 ## 3. Stubs in code (only where the code exists)
 
 - **maths-core (from M3):** if `services/maths-core` has a distractor rule registry, add a function for the new rule name with a property test that its output differs from the correct answer, and add a re-check template to the named item family if the family does not exist yet. Before M3, leave a note in the PR that the rule name is new.
-- **scenes (from M5):** if `packages/scenes` has templates for the primitive, add a stub template for the scene name that renders the default explanation; before M5, the name is enough.
+- **scenes (from M5):** if `packages/scenes` has no template with this scene key yet, use the `/new-template` skill to write one (the primitive may already exist in `packages/scenes/src/primitives/`).
 
 ## 4. Check and seed
 

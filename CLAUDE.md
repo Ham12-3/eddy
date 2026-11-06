@@ -13,6 +13,8 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | Curriculum YAML | `pnpm curriculum:check` (schemas and cross-file checks, no database) |
 | Maths core | `pnpm evals` (golden set, 100%), `pnpm maths:coverage` (85% or more), `pnpm maths:bench` (p95 under 150 ms) |
 | Learner model | `pnpm learner:coverage` (85% or more), `pnpm learner:report` (the synthetic-student numbers behind ADR-0026) |
+| Scenes | `pnpm scenes:check [key]` (static and DOM checks, keyframes in `e2e-artifacts/scenes/`), `pnpm scenes:golden` (scene maths verified), `/admin/scenes` gallery |
+| Generated schemas | `pnpm schemas:generate` after changing `packages/schemas` (SceneSpec JSON Schema and pydantic; CI checks) |
 | All checks | `pnpm check` (ESLint, Prettier, dash check, typecheck, unit tests, ruff, mypy, pytest) |
 | One TS package | `pnpm --filter @eddy/web test` (or `typecheck`, `lint`) |
 | One TS test file | `pnpm --filter @eddy/web exec vitest run src/lib/service-token.test.ts` |
@@ -42,6 +44,7 @@ Local services (`docker compose up -d --wait`): Postgres 127.0.0.1:5442 (eddy/ed
 - The guard hook (`.claude/hooks/lib/guard.mjs`) also blocks recursive `grep` over directories (use `rg` or the Grep tool, which skip `.env`), recursive deletes outside temp folders, and `git clean -f`. It fails closed: an error in the guard denies the command.
 - The hello page's system check only renders in development or with `EDDY_SYSTEM_CHECK=1` (ADR-0018). Routes in services/api name their accepted roles with `require_roles(...)`.
 - `next dev` would write an `AGENTS.md`; `agentRules: false` in `next.config.ts` stops it.
+- Scene text is measured with `packages/scenes/src/layout/font-metrics.json` (regular weight only); run `pnpm --filter @eddy/scenes fonts:generate` if a font changes. Scenes play on our own renderer, not Remotion (ADR-0027).
 
 ## Rules that never bend
 

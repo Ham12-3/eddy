@@ -1,2 +1,4 @@
 /* The "Paper and Ink" design system: tokens, Tailwind theme and base styles (packages/ui). */
 @import "@eddy/ui/styles.css";
+/* Scene canvas styles (packages/scenes). */
+@import "@eddy/scenes/styles.css";

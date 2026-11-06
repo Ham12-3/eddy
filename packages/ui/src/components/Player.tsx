@@ -31,7 +31,7 @@ export interface PlayerControlsProps {
 }
 
 const iconButton =
-  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-control border border-field-border bg-paper-raised px-3 text-ink hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-control border border-field-border bg-paper-raised px-3 text-ink hover:bg-paper aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
 const pressed = "aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-paper-raised";
 
 /** Controls for an animated explanation (SPEC.md section 8.4). The scene engine wires them up in M5. */
@@ -68,8 +68,10 @@ export function PlayerControls({
       <button
         type="button"
         aria-label="Previous step"
-        onClick={onStepBack}
-        disabled={!canStepBack}
+        // aria-disabled, not disabled: a disabled button would drop the keyboard user's focus
+        // when they step to the first beat.
+        aria-disabled={!canStepBack}
+        onClick={canStepBack ? onStepBack : undefined}
         className={iconButton}
       >
         <StepBackIcon />
@@ -85,8 +87,8 @@ export function PlayerControls({
       <button
         type="button"
         aria-label="Next step"
-        onClick={onStepForward}
-        disabled={!canStepForward}
+        aria-disabled={!canStepForward}
+        onClick={canStepForward ? onStepForward : undefined}
         className={iconButton}
       >
         <StepForwardIcon />

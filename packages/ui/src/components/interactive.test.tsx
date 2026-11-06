@@ -206,7 +206,10 @@ describe("PlayerControls", () => {
     );
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Playback speed" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Previous step" })).toBeDisabled();
+    // Unavailable but still focusable, so a keyboard user stepping to the start keeps focus.
+    const back = screen.getByRole("button", { name: "Previous step" });
+    expect(back).toHaveAttribute("aria-disabled", "true");
+    expect(back).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "1x" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Captions" })).toHaveAttribute(
       "aria-pressed",

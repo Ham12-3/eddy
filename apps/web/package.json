@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@eddy/api-client": "workspace:*",
+    "@eddy/scenes": "workspace:*",
     "@eddy/schemas": "workspace:*",
     "@eddy/ui": "workspace:*",
     "jose": "6.2.15",
