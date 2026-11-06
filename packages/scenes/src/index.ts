@@ -1,35 +1,27 @@
-/**
- * Scene canvas geometry shared by the layout engine (M5) and the keyframe checker.
- * SPEC.md section 8.3: 16:9 on desktop, 4:5 on mobile, 6% safe margins on every side.
- */
+// Geometry and formats
+export * from "./canvas";
 
-export const SCENE_ASPECT_RATIOS = {
-  desktop: { width: 16, height: 9 },
-  mobile: { width: 4, height: 5 },
-} as const;
+// Layout
+export { bounds, contains, overlaps } from "./layout/geometry";
+export { LINE_HEIGHT, measureMaths, measureText, mathsToTex, mathsToWords } from "./layout/measure";
+export type * from "./layout/types";
+export { ROLES } from "./layout/types";
 
-export type SceneFormat = keyof typeof SCENE_ASPECT_RATIOS;
+// Timeline
+export * from "./timeline/timeline";
 
-export const SAFE_MARGIN_RATIO = 0.06;
+// Templates
+export * from "./templates/template";
+export { TEMPLATES, TEMPLATES_BY_KEY } from "./templates/registry";
 
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** The area inside the safe margins of a canvas, in the canvas's own units. */
-export function safeArea(canvasWidth: number, canvasHeight: number): Rect {
-  if (canvasWidth <= 0 || canvasHeight <= 0) {
-    throw new Error("Canvas dimensions must be positive");
-  }
-  const marginX = canvasWidth * SAFE_MARGIN_RATIO;
-  const marginY = canvasHeight * SAFE_MARGIN_RATIO;
-  return {
-    x: marginX,
-    y: marginY,
-    width: canvasWidth - 2 * marginX,
-    height: canvasHeight - 2 * marginY,
-  };
-}
+// Rendering
+export { SceneCanvas, type SceneCanvasProps } from "./render/SceneCanvas";
+export { SceneDiagram, type SceneDiagramProps } from "./render/SceneDiagram";
+export { ScenePlayer, usePrefersReducedMotion, type ScenePlayerProps } from "./render/ScenePlayer";
+export {
+  CHECKS,
+  checkScene,
+  describeProblem,
+  type CheckName,
+  type CheckProblem,
+} from "./checks/static-checks";

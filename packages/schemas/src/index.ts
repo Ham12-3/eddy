@@ -6,3 +6,6 @@ import { z } from "zod";
  */
 export const roleSchema = z.enum(["student", "parent", "admin", "system"]);
 export type Role = z.infer<typeof roleSchema>;
+
+export * from "./scene-spec";
+export { sceneSpecJsonSchema } from "./json-schema";

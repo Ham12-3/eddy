@@ -30,7 +30,7 @@ I never claim something is done without the evidence. If a check fails or a step
 |---|---|---|
 | Anthropic API key in local `.env` (never read by me) and CI secrets | M6 | The key, plus a ZDR arrangement with Anthropic before any real student data |
 | ElevenLabs account, plan, DPA and a British voice | M6 | Account and key; voice choice |
-| Remotion licence | M5 | Confirmation that 3 or fewer people work on Eddy commercially, or a licence decision |
+| Remotion licence | M5 | Resolved: no licence, so scenes use our own renderer (ADR-0027) |
 | LLM evals in CI (they cost money) | M6 | OK to run labelled PR evals, and a monthly cap |
 | AWS account and any deployment | M10 | Account, budget alarm, explicit go-ahead per deploy |
 | Amazon SES production access | M10 | Sending domain |
@@ -60,7 +60,7 @@ Critical path: M0, M3, M5, M6, M7, M8, M9, M10. M1 must finish before M5 starts;
 ```
 /apps/web                 Next.js app (student, parent, admin) and the BFF
 /packages/ui              design tokens, components, MathField, Maths (KaTeX), Storybook
-/packages/scenes          primitives, templates, layout engine, Remotion compositions, static checks
+/packages/scenes          primitives, templates, layout engine, time-based renderer and Player, static checks
 /packages/schemas         zod schemas (SceneSpec, TutorMessage, LLM outputs) -> JSON Schema -> pydantic
 /packages/api-client      TypeScript client generated from services/api OpenAPI
 /services/api             FastAPI: domain API, learner model, tutor graph, safety, scenes, Alembic
@@ -207,25 +207,25 @@ Definition of done:
 
 ## M5: Scenes engine
 
-Depends on: M1, M3. Estimate: 2.5 weeks. Gate: Remotion licence confirmation.
+Depends on: M1, M3. Estimate: 3 weeks (half a week more than planned, for our own renderer). No gate (ADR-0027).
 
 Deliverables:
 
-- [ ] SceneSpec v1 in zod, with generated JSON Schema and pydantic models.
-- [ ] 11 primitives: number line, bar model, balance, coordinate grid, transformation grid, angle diagram, area model, Pythagoras squares, probability tree, data chart, place-value slider.
-- [ ] Layout engine with font-metric text measurement and 16:9 and 4:5 region maps.
-- [ ] Remotion compositions and the Player wrapper with all controls, captions, transcript, reduced-motion stepped mode and the static annotated diagram.
-- [ ] Static checks library (overlap, off-canvas, margins, overflow, font size, contrast, colour roles, moving-element count, flash rate).
-- [ ] 13 Tier D scenes, one per MVP node for its most common misconception, with reviewed narration templates.
-- [ ] `workers/scene-check`: headless keyframes and DOM box confirmation.
-- [ ] Admin scene gallery.
-- [ ] `/new-template` skill.
+- [x] SceneSpec v1 in zod, with generated JSON Schema and pydantic models.
+- [x] 11 primitives: number line, bar model, balance, coordinate grid, transformation grid, angle diagram, area model, Pythagoras squares, probability tree, data chart, place-value slider.
+- [x] Layout engine with font-metric text measurement and 16:9 and 4:5 region maps.
+- [x] Scene renderer (each scene a pure function of time, ADR-0027) and the Player with all controls, captions, transcript, reduced-motion stepped mode and the static annotated diagram.
+- [x] Static checks library (overlap, off-canvas, margins, overflow, font size, contrast, colour roles, moving-element count, flash rate).
+- [x] 13 Tier D scenes, one per MVP node for its most common misconception, with reviewed narration templates.
+- [x] `workers/scene-check`: headless keyframes and DOM box confirmation.
+- [x] Admin scene gallery.
+- [x] `/new-template` skill.
 
 Definition of done:
 
-- [ ] All 13 default scenes pass static and DOM checks at 3 viewports in light, dark and reduced motion.
-- [ ] Captions and transcript present for every scene; keyboard control of the Player works.
-- [ ] Gallery passes axe; I review every keyframe screenshot.
+- [x] All 13 default scenes pass static and DOM checks at 3 viewports in light, dark and reduced motion. (Static and DOM checks on every beat at 288, 343, 640, 704 and 1152 px in light and dark, plus all 104 golden variants; reduced motion changes only transitions, and the gallery tests run at 375, 768 and 1280 px in light, dark and reduced motion.)
+- [x] Captions and transcript present for every scene; keyboard control of the Player works. (End-to-end tests for all 13 scenes at every viewport and mode, plus 8 player unit tests.)
+- [x] Gallery passes axe; I review every keyframe screenshot. (Axe has zero serious or critical findings at every viewport and mode. Every beat of every scene was looked at in light at 1152 and 288 px, by the scene writers and twice by the pedagogy critic; dark and the other widths were sampled. The DOM check confirms every keyframe's text boxes.)
 
 ---
 
@@ -533,3 +533,90 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, fs
 - The learner state has no columns yet; M7 needs a migration (ADR-0026 lists the fields).
 - For M7: coverage of each item family, a test-out route and onboarding evidence for coverage, matches that fade, more than one re-check a session, interleaving look-alike problem types, a worked example after a diagnostic that finds no gap, and a pre-exam review sweep.
 - The simulator models one node and one misconception at a time, with no forgetting, no confidence ratings and no planner.
+
+### M5: Scenes engine (6 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, KaTeX 0.19.1, Playwright 1.64.1; fontkit 2.0.4 and datamodel-code-generator 0.85.0 as dev tools (both MIT). Branch `m5-scenes-engine`, stacked on M4; no PR yet.
+
+**What landed**:
+
+- **Renderer.** Remotion's licence could not be obtained, so scenes play on Eddy's own renderer (ADR-0027). Each scene is a pure function of time, drawn as SVG plus real DOM text.
+- **Scene engine** (ADR-0028):
+  - SceneSpec v1, with its generated JSON Schema and pydantic models;
+  - layout measured with the real fonts;
+  - 11 primitives;
+  - the timeline, including rigid turns;
+  - the player and the static diagram;
+  - the static checks and the keyframe worker;
+  - the scene golden set and the admin gallery.
+- **13 default scenes**, one per topic.
+- **The `/new-template` skill.**
+
+**Checks run (final run, on the final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, Prettier, dash check (329 files), cliché lint (155 files), typecheck, Vitest (scenes 171, ui 98, schemas 11, web 9, infra 6, scene-check 3, api-client 1), 186 hook and lint-rule tests, ruff, strict mypy (75 files), 730 pytest tests. |
+| `pnpm scenes:check` | 13 scenes passed the static and DOM checks: 154 sample keyframes at 2 or 3 widths in light and dark, and 104 golden variants at the widest widths. |
+| `pnpm scenes:golden` and `pnpm evals` | Maths golden set 300/300; scene golden set 104 specs, 0 problems. That covers every claim verified, each correct answer equal to maths-core's, each predicted wrong answer equal to the student's, and every stated number traced, sign included. |
+| `pnpm e2e` | 234 passed (8.6 minutes): every scene's captions, transcript, keyboard and diagram, the gallery, the unknown-scene 404 and the gated 404s, at 375, 768 and 1280 px in light, dark and reduced motion, with axe showing zero serious or critical findings. |
+
+**Screenshots**:
+
+- The keyframes in `e2e-artifacts/scenes/` (every beat, 5 widths, 2 themes) and the gallery pages in `e2e-artifacts/screenshots/` (117 scene pages).
+- I looked at:
+  - the reference scene at both formats;
+  - the standard form, ratio, probability tree, angles, balance and triangle scenes at chosen beats;
+  - three gallery pages: phone dark, tablet reduced motion, laptop light.
+- The scene writers looked at every beat at 1152 and 288 px in light, plus dark samples. The pedagogy critic looked at every beat at those widths twice.
+
+**Fresh-context reviews**: `pedagogy-critic` (twice), `reviewer` and `security-reviewer`. Fixed:
+
+- **Pedagogy, high.**
+  - The probability tree never said the events were independent; it now says so on screen and gives it as the reason to multiply.
+  - The balance put negative weights on the scales; negative items now use an equation set out in columns.
+  - The decimals scene said the digits after the point "are not whole numbers"; it now says each digit has its own place value.
+  - The first triangle fix described a reflection in a rectangle's diagonal, which is false; it is now a half turn about the middle of each sloping side, animated as a real rotation.
+- **Pedagogy, medium.**
+  - "Alternate angles" is named.
+  - Place names lead the standard-form headings on desktop.
+  - Every area carries cm².
+  - "Closer to zero" became "to the right of".
+  - The gradient beats were split, and their wording follows the drawing.
+  - The student's own moves are drawn in the translation.
+  - Numbers are no longer cross-wired in the ratio scene.
+  - The crossing-off pace matches the median scene's picture.
+  - Plurals and command words were corrected throughout.
+- **Code, high.**
+  - Text inside tinted shapes was never contrast-checked (two scenes were at 3.45:1 and 3.87:1); every tint is checked now.
+  - The scene golden check did not compare answers or signs; it now checks the correct answer, the predicted wrong answer and signed numbers.
+- **Code, medium.**
+  - Exponents fell below the 14 px floor; they are now set at 90%, and the check counts them.
+  - The player clock skipped to the end after a background tab.
+  - Focus was lost at the first and last beats.
+  - The static diagram repeated labels to screen readers.
+  - The DOM check only covered the gallery samples; it now also checks fonts, 640 px and all golden variants.
+  - Integers became floats in pydantic.
+  - Helpers were duplicated across primitives; they now live in the framework, and a layout snapshot of all 104 golden scenes proved the move changed nothing.
+- **Security, all low.**
+  - The keyframe page is self-contained, with JavaScript and the network off.
+  - The gallery index rendered at build time; it now renders per request, with gated tests.
+  - KaTeX has `trust` off, a strict node check, a render check before serving and an error boundary.
+  - Narration rejects control and invisible characters and every dash.
+  - Template versions accept ASCII digits only.
+
+**Recorded, not fixed in M5** (ADR-0028):
+
+- Before M6 sends model-written specs through this code:
+  - Claude supplies only the beats, with strict per-template parameter schemas and size caps;
+  - the narration checks are repeated in Python;
+  - templates declare their beat kinds;
+  - SPEC.md 6.7 gets retention rules for Tier L material;
+  - the keyframe worker gets a sandboxed container.
+- M8's content security policy needs `style-src-attr 'unsafe-inline'` for scene positions and KaTeX.
+- The overlap check compares bounding boxes, so slanted lines are drawn as short pieces; two slanted-line helpers remain until a line-aware check replaces them.
+- During a half turn the triangle's copies sweep briefly over nearby labels. The checks judge end states, not the frames in between.
+- On a phone, the standard-form headings stay as powers of ten: "thousandths" does not fit a 288 px column at a readable size, so the narration links the names and the powers.
+- The scenes have been reviewed by AI reviewers, not yet by a teacher. A teacher's look at the 13 scenes belongs with the hand check of the maths golden sample.
+
+**CI**: not run yet for this branch.

@@ -1,0 +1,1475 @@
+{
+ "n1-order-negatives:NEG_ORDER_BY_DIGIT": [
+  {
+   "seed": 2000,
+   "params": {
+    "a": 2,
+    "b": 8
+   },
+   "answer": -8,
+   "studentAnswer": -2
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "a": 14,
+    "b": 9
+   },
+   "answer": -14,
+   "studentAnswer": -9
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "a": 14,
+    "b": 10
+   },
+   "answer": -14,
+   "studentAnswer": -10
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "a": 14,
+    "b": 12
+   },
+   "answer": -14,
+   "studentAnswer": -12
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "a": 13,
+    "b": 9
+   },
+   "answer": -13,
+   "studentAnswer": -9
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "a": 4,
+    "b": 2
+   },
+   "answer": -4,
+   "studentAnswer": -2
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "a": 6,
+    "b": 5
+   },
+   "answer": -6,
+   "studentAnswer": -5
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "a": 9,
+    "b": 6
+   },
+   "answer": -9,
+   "studentAnswer": -6
+  }
+ ],
+ "n1-order-decimals:DEC_LONGER_IS_BIGGER": [
+  {
+   "seed": 2000,
+   "params": {
+    "short": "0.9",
+    "long": "0.117"
+   },
+   "answer": [
+    "Rational",
+    9,
+    10
+   ],
+   "studentAnswer": [
+    "Rational",
+    117,
+    1000
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "short": "0.9",
+    "long": "0.364"
+   },
+   "answer": [
+    "Rational",
+    9,
+    10
+   ],
+   "studentAnswer": [
+    "Rational",
+    91,
+    250
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "short": "0.8",
+    "long": "0.211"
+   },
+   "answer": [
+    "Rational",
+    4,
+    5
+   ],
+   "studentAnswer": [
+    "Rational",
+    211,
+    1000
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "short": "0.8",
+    "long": "0.234"
+   },
+   "answer": [
+    "Rational",
+    4,
+    5
+   ],
+   "studentAnswer": [
+    "Rational",
+    117,
+    500
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "short": "0.5",
+    "long": "0.321"
+   },
+   "answer": [
+    "Rational",
+    1,
+    2
+   ],
+   "studentAnswer": [
+    "Rational",
+    321,
+    1000
+   ]
+  },
+  {
+   "seed": 2009,
+   "params": {
+    "short": "0.7",
+    "long": "0.471"
+   },
+   "answer": [
+    "Rational",
+    7,
+    10
+   ],
+   "studentAnswer": [
+    "Rational",
+    471,
+    1000
+   ]
+  },
+  {
+   "seed": 2010,
+   "params": {
+    "short": "0.5",
+    "long": "0.359"
+   },
+   "answer": [
+    "Rational",
+    1,
+    2
+   ],
+   "studentAnswer": [
+    "Rational",
+    359,
+    1000
+   ]
+  },
+  {
+   "seed": 2013,
+   "params": {
+    "short": "0.4",
+    "long": "0.329"
+   },
+   "answer": [
+    "Rational",
+    2,
+    5
+   ],
+   "studentAnswer": [
+    "Rational",
+    329,
+    1000
+   ]
+  }
+ ],
+ "n9-standard-to-ordinary:SF_NEGATIVE_POWER_DIRECTION": [
+  {
+   "seed": 2005,
+   "params": {
+    "m": "7.1",
+    "k": -4
+   },
+   "answer": [
+    "Rational",
+    71,
+    100000
+   ],
+   "studentAnswer": 71000
+  },
+  {
+   "seed": 2008,
+   "params": {
+    "m": "8.9",
+    "k": -4
+   },
+   "answer": [
+    "Rational",
+    89,
+    100000
+   ],
+   "studentAnswer": 89000
+  },
+  {
+   "seed": 2009,
+   "params": {
+    "m": "8.1",
+    "k": -4
+   },
+   "answer": [
+    "Rational",
+    81,
+    100000
+   ],
+   "studentAnswer": 81000
+  },
+  {
+   "seed": 2010,
+   "params": {
+    "m": "7.2",
+    "k": -4
+   },
+   "answer": [
+    "Rational",
+    9,
+    12500
+   ],
+   "studentAnswer": 72000
+  },
+  {
+   "seed": 2012,
+   "params": {
+    "m": "1.4",
+    "k": -4
+   },
+   "answer": [
+    "Rational",
+    7,
+    50000
+   ],
+   "studentAnswer": 14000
+  },
+  {
+   "seed": 2013,
+   "params": {
+    "m": "4.8",
+    "k": -3
+   },
+   "answer": [
+    "Rational",
+    3,
+    625
+   ],
+   "studentAnswer": 4800
+  },
+  {
+   "seed": 2015,
+   "params": {
+    "m": "7.8",
+    "k": -3
+   },
+   "answer": [
+    "Rational",
+    39,
+    5000
+   ],
+   "studentAnswer": 7800
+  },
+  {
+   "seed": 2016,
+   "params": {
+    "m": "8.1",
+    "k": -3
+   },
+   "answer": [
+    "Rational",
+    81,
+    10000
+   ],
+   "studentAnswer": 8100
+  }
+ ],
+ "r9-reverse-percentage:PCT_REVERSE_APPLY_TO_NEW": [
+  {
+   "seed": 2000,
+   "params": {
+    "original": 80,
+    "pct": 10,
+    "sign": 1
+   },
+   "answer": 80,
+   "studentAnswer": [
+    "Rational",
+    396,
+    5
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "original": 440,
+    "pct": 30,
+    "sign": -1
+   },
+   "answer": 440,
+   "studentAnswer": [
+    "Rational",
+    2002,
+    5
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "original": 480,
+    "pct": 30,
+    "sign": 1
+   },
+   "answer": 480,
+   "studentAnswer": [
+    "Rational",
+    2184,
+    5
+   ]
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "original": 120,
+    "pct": 20,
+    "sign": 1
+   },
+   "answer": 120,
+   "studentAnswer": [
+    "Rational",
+    576,
+    5
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "original": 440,
+    "pct": 10,
+    "sign": 1
+   },
+   "answer": 440,
+   "studentAnswer": [
+    "Rational",
+    2178,
+    5
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "original": 80,
+    "pct": 30,
+    "sign": -1
+   },
+   "answer": 80,
+   "studentAnswer": [
+    "Rational",
+    364,
+    5
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "original": 120,
+    "pct": 10,
+    "sign": -1
+   },
+   "answer": 120,
+   "studentAnswer": [
+    "Rational",
+    594,
+    5
+   ]
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "original": 460,
+    "pct": 25,
+    "sign": -1
+   },
+   "answer": 460,
+   "studentAnswer": [
+    "Rational",
+    1725,
+    4
+   ]
+  }
+ ],
+ "r5-share-in-ratio:RATIO_DIVIDE_BY_EACH_PART": [
+  {
+   "seed": 2000,
+   "params": {
+    "a": 7,
+    "b": 2,
+    "total": 117,
+    "ask": "a"
+   },
+   "answer": 91,
+   "studentAnswer": [
+    "Rational",
+    117,
+    7
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "a": 7,
+    "b": 6,
+    "total": 104,
+    "ask": "b"
+   },
+   "answer": 48,
+   "studentAnswer": [
+    "Rational",
+    52,
+    3
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "a": 1,
+    "b": 3,
+    "total": 36,
+    "ask": "b"
+   },
+   "answer": 27,
+   "studentAnswer": 12
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "a": 5,
+    "b": 7,
+    "total": 168,
+    "ask": "b"
+   },
+   "answer": 98,
+   "studentAnswer": 24
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "a": 7,
+    "b": 2,
+    "total": 63,
+    "ask": "a"
+   },
+   "answer": 49,
+   "studentAnswer": 9
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "a": 4,
+    "b": 5,
+    "total": 45,
+    "ask": "b"
+   },
+   "answer": 25,
+   "studentAnswer": 9
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "a": 1,
+    "b": 4,
+    "total": 40,
+    "ask": "b"
+   },
+   "answer": 32,
+   "studentAnswer": 10
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "a": 5,
+    "b": 3,
+    "total": 80,
+    "ask": "b"
+   },
+   "answer": 30,
+   "studentAnswer": [
+    "Rational",
+    80,
+    3
+   ]
+  }
+ ],
+ "a17-two-step:EQ_DIVIDE_ONE_TERM": [
+  {
+   "seed": 2000,
+   "params": {
+    "a": 6,
+    "b": -5,
+    "c": -29,
+    "x": -4
+   },
+   "answer": -4,
+   "studentAnswer": [
+    "Rational",
+    1,
+    6
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "a": 9,
+    "b": 10,
+    "c": 28,
+    "x": 2
+   },
+   "answer": 2,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     62,
+     9
+    ]
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "a": 6,
+    "b": -9,
+    "c": 45,
+    "x": 9
+   },
+   "answer": 9,
+   "studentAnswer": [
+    "Rational",
+    33,
+    2
+   ]
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "a": 3,
+    "b": 11,
+    "c": 14,
+    "x": 1
+   },
+   "answer": 1,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     19,
+     3
+    ]
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "a": 5,
+    "b": -11,
+    "c": -1,
+    "x": 2
+   },
+   "answer": 2,
+   "studentAnswer": [
+    "Rational",
+    54,
+    5
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "a": 6,
+    "b": 1,
+    "c": 55,
+    "x": 9
+   },
+   "answer": 9,
+   "studentAnswer": [
+    "Rational",
+    49,
+    6
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "a": 3,
+    "b": 15,
+    "c": -3,
+    "x": -6
+   },
+   "answer": -6,
+   "studentAnswer": -16
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "a": 7,
+    "b": 3,
+    "c": 59,
+    "x": 8
+   },
+   "answer": 8,
+   "studentAnswer": [
+    "Rational",
+    38,
+    7
+   ]
+  }
+ ],
+ "a10-gradient-two-points:GRADIENT_RUN_OVER_RISE": [
+  {
+   "seed": 2000,
+   "params": {
+    "x1": -2,
+    "y1": 1,
+    "x2": 1,
+    "y2": -5,
+    "m": -2
+   },
+   "answer": -2,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     1,
+     2
+    ]
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "x1": 2,
+    "y1": 6,
+    "x2": 4,
+    "y2": -2,
+    "m": -4
+   },
+   "answer": -4,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     1,
+     4
+    ]
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "x1": -2,
+    "y1": -3,
+    "x2": -1,
+    "y2": -5,
+    "m": -2
+   },
+   "answer": -2,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     1,
+     2
+    ]
+   ]
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "x1": 0,
+    "y1": 6,
+    "x2": 1,
+    "y2": 8,
+    "m": 2
+   },
+   "answer": 2,
+   "studentAnswer": [
+    "Rational",
+    1,
+    2
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "x1": -4,
+    "y1": -3,
+    "x2": 0,
+    "y2": -15,
+    "m": -3
+   },
+   "answer": -3,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     1,
+     3
+    ]
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "x1": 3,
+    "y1": -2,
+    "x2": 7,
+    "y2": 6,
+    "m": 2
+   },
+   "answer": 2,
+   "studentAnswer": [
+    "Rational",
+    1,
+    2
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "x1": 3,
+    "y1": 3,
+    "x2": 5,
+    "y2": -1,
+    "m": -2
+   },
+   "answer": -2,
+   "studentAnswer": [
+    "Negate",
+    [
+     "Rational",
+     1,
+     2
+    ]
+   ]
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "x1": 1,
+    "y1": 6,
+    "x2": 4,
+    "y2": 21,
+    "m": 5
+   },
+   "answer": 5,
+   "studentAnswer": [
+    "Rational",
+    1,
+    5
+   ]
+  }
+ ],
+ "g3-cointerior:ANGLES_COINTERIOR_EQUAL": [
+  {
+   "seed": 2000,
+   "params": {
+    "a": 116
+   },
+   "answer": 64,
+   "studentAnswer": 116
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "a": 59
+   },
+   "answer": 121,
+   "studentAnswer": 59
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "a": 127
+   },
+   "answer": 53,
+   "studentAnswer": 127
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "a": 107
+   },
+   "answer": 73,
+   "studentAnswer": 107
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "a": 89
+   },
+   "answer": 91,
+   "studentAnswer": 89
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "a": 55
+   },
+   "answer": 125,
+   "studentAnswer": 55
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "a": 60
+   },
+   "answer": 120,
+   "studentAnswer": 60
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "a": 62
+   },
+   "answer": 118,
+   "studentAnswer": 62
+  }
+ ],
+ "g7-translation:TRANSLATE_COMPONENTS_SWAPPED": [
+  {
+   "seed": 2000,
+   "params": {
+    "x": -3,
+    "y": -5,
+    "dx": -1,
+    "dy": 4
+   },
+   "answer": [
+    "Tuple",
+    -4,
+    -1
+   ],
+   "studentAnswer": [
+    "Tuple",
+    1,
+    -6
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "x": 3,
+    "y": -4,
+    "dx": 2,
+    "dy": 1
+   },
+   "answer": [
+    "Tuple",
+    5,
+    -3
+   ],
+   "studentAnswer": [
+    "Tuple",
+    4,
+    -2
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "x": -2,
+    "y": 5,
+    "dx": -1,
+    "dy": 6
+   },
+   "answer": [
+    "Tuple",
+    -3,
+    11
+   ],
+   "studentAnswer": [
+    "Tuple",
+    4,
+    4
+   ]
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "x": -1,
+    "y": -2,
+    "dx": -2,
+    "dy": 6
+   },
+   "answer": [
+    "Tuple",
+    -3,
+    4
+   ],
+   "studentAnswer": [
+    "Tuple",
+    5,
+    -4
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "x": 0,
+    "y": 4,
+    "dx": -6,
+    "dy": 2
+   },
+   "answer": [
+    "Tuple",
+    -6,
+    6
+   ],
+   "studentAnswer": [
+    "Tuple",
+    2,
+    -2
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "x": 2,
+    "y": -4,
+    "dx": -2,
+    "dy": -6
+   },
+   "answer": [
+    "Tuple",
+    0,
+    -10
+   ],
+   "studentAnswer": [
+    "Tuple",
+    -4,
+    -6
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "x": -5,
+    "y": 3,
+    "dx": -4,
+    "dy": -6
+   },
+   "answer": [
+    "Tuple",
+    -9,
+    -3
+   ],
+   "studentAnswer": [
+    "Tuple",
+    -11,
+    -1
+   ]
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "x": 4,
+    "y": 4,
+    "dx": 6,
+    "dy": -4
+   },
+   "answer": [
+    "Tuple",
+    10,
+    0
+   ],
+   "studentAnswer": [
+    "Tuple",
+    0,
+    10
+   ]
+  }
+ ],
+ "g16-triangle-area:AREA_TRIANGLE_NO_HALF": [
+  {
+   "seed": 2000,
+   "params": {
+    "b": 13,
+    "h": 2
+   },
+   "answer": 13,
+   "studentAnswer": 26
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "b": 6,
+    "h": 7
+   },
+   "answer": 21,
+   "studentAnswer": 42
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "b": 14,
+    "h": 12
+   },
+   "answer": 84,
+   "studentAnswer": 168
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "b": 3,
+    "h": 10
+   },
+   "answer": 15,
+   "studentAnswer": 30
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "b": 3,
+    "h": 7
+   },
+   "answer": [
+    "Rational",
+    21,
+    2
+   ],
+   "studentAnswer": 21
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "b": 9,
+    "h": 9
+   },
+   "answer": [
+    "Rational",
+    81,
+    2
+   ],
+   "studentAnswer": 81
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "b": 8,
+    "h": 13
+   },
+   "answer": 52,
+   "studentAnswer": 104
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "b": 15,
+    "h": 14
+   },
+   "answer": 105,
+   "studentAnswer": 210
+  }
+ ],
+ "g20-hypotenuse:PYTH_NO_SQUARE_ROOT": [
+  {
+   "seed": 2000,
+   "params": {
+    "a": 15,
+    "b": 8,
+    "c": 17
+   },
+   "answer": 17,
+   "studentAnswer": 289
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "a": 21,
+    "b": 20,
+    "c": 29
+   },
+   "answer": 29,
+   "studentAnswer": 841
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "a": 8,
+    "b": 15,
+    "c": 17
+   },
+   "answer": 17,
+   "studentAnswer": 289
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "a": 24,
+    "b": 7,
+    "c": 25
+   },
+   "answer": 25,
+   "studentAnswer": 625
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "a": 12,
+    "b": 9,
+    "c": 15
+   },
+   "answer": 15,
+   "studentAnswer": 225
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "a": 3,
+    "b": 4,
+    "c": 5
+   },
+   "answer": 5,
+   "studentAnswer": 25
+  },
+  {
+   "seed": 2010,
+   "params": {
+    "a": 8,
+    "b": 6,
+    "c": 10
+   },
+   "answer": 10,
+   "studentAnswer": 100
+  },
+  {
+   "seed": 2012,
+   "params": {
+    "a": 4,
+    "b": 3,
+    "c": 5
+   },
+   "answer": 5,
+   "studentAnswer": 25
+  }
+ ],
+ "p8-tree-and:TREE_ADD_ALONG_BRANCHES": [
+  {
+   "seed": 2000,
+   "params": {
+    "n": 5,
+    "m": 8,
+    "a": 3,
+    "b": 5
+   },
+   "answer": [
+    "Rational",
+    3,
+    8
+   ],
+   "studentAnswer": [
+    "Rational",
+    49,
+    40
+   ]
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "n": 10,
+    "m": 8,
+    "a": 1,
+    "b": 1
+   },
+   "answer": [
+    "Rational",
+    1,
+    80
+   ],
+   "studentAnswer": [
+    "Rational",
+    9,
+    40
+   ]
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "n": 4,
+    "m": 10,
+    "a": 3,
+    "b": 3
+   },
+   "answer": [
+    "Rational",
+    9,
+    40
+   ],
+   "studentAnswer": [
+    "Rational",
+    21,
+    20
+   ]
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "n": 4,
+    "m": 4,
+    "a": 1,
+    "b": 1
+   },
+   "answer": [
+    "Rational",
+    1,
+    16
+   ],
+   "studentAnswer": [
+    "Rational",
+    1,
+    2
+   ]
+  },
+  {
+   "seed": 2004,
+   "params": {
+    "n": 10,
+    "m": 8,
+    "a": 3,
+    "b": 1
+   },
+   "answer": [
+    "Rational",
+    3,
+    80
+   ],
+   "studentAnswer": [
+    "Rational",
+    17,
+    40
+   ]
+  },
+  {
+   "seed": 2005,
+   "params": {
+    "n": 4,
+    "m": 8,
+    "a": 1,
+    "b": 7
+   },
+   "answer": [
+    "Rational",
+    7,
+    32
+   ],
+   "studentAnswer": [
+    "Rational",
+    9,
+    8
+   ]
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "n": 10,
+    "m": 5,
+    "a": 1,
+    "b": 3
+   },
+   "answer": [
+    "Rational",
+    3,
+    50
+   ],
+   "studentAnswer": [
+    "Rational",
+    7,
+    10
+   ]
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "n": 4,
+    "m": 8,
+    "a": 3,
+    "b": 1
+   },
+   "answer": [
+    "Rational",
+    3,
+    32
+   ],
+   "studentAnswer": [
+    "Rational",
+    7,
+    8
+   ]
+  }
+ ],
+ "s4-median:MEDIAN_UNORDERED": [
+  {
+   "seed": 2000,
+   "params": {
+    "values": [
+     20,
+     1,
+     1,
+     27,
+     16
+    ]
+   },
+   "answer": 16,
+   "studentAnswer": 1
+  },
+  {
+   "seed": 2001,
+   "params": {
+    "values": [
+     2,
+     15,
+     23,
+     26,
+     13,
+     7,
+     7,
+     3,
+     7
+    ]
+   },
+   "answer": 7,
+   "studentAnswer": 13
+  },
+  {
+   "seed": 2002,
+   "params": {
+    "values": [
+     18,
+     30,
+     17,
+     5,
+     21,
+     16,
+     13,
+     5,
+     4
+    ]
+   },
+   "answer": 16,
+   "studentAnswer": 21
+  },
+  {
+   "seed": 2003,
+   "params": {
+    "values": [
+     15,
+     12,
+     19,
+     9,
+     30,
+     6,
+     1
+    ]
+   },
+   "answer": 12,
+   "studentAnswer": 9
+  },
+  {
+   "seed": 2006,
+   "params": {
+    "values": [
+     21,
+     22,
+     13,
+     5,
+     3,
+     23,
+     4
+    ]
+   },
+   "answer": 13,
+   "studentAnswer": 5
+  },
+  {
+   "seed": 2007,
+   "params": {
+    "values": [
+     30,
+     15,
+     20,
+     24,
+     1,
+     10,
+     8
+    ]
+   },
+   "answer": 15,
+   "studentAnswer": 24
+  },
+  {
+   "seed": 2008,
+   "params": {
+    "values": [
+     28,
+     23,
+     7,
+     21,
+     14,
+     25,
+     27,
+     7,
+     15
+    ]
+   },
+   "answer": 21,
+   "studentAnswer": 14
+  },
+  {
+   "seed": 2009,
+   "params": {
+    "values": [
+     5,
+     21,
+     26,
+     3,
+     7
+    ]
+   },
+   "answer": 7,
+   "studentAnswer": 26
+  }
+ ]
+}

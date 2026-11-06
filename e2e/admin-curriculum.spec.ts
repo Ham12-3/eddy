@@ -58,7 +58,13 @@ test.describe("without the preview flag", () => {
   // The second production server from playwright.config.ts, started without EDDY_ADMIN_PREVIEW.
   const gated = "http://127.0.0.1:3302";
 
-  for (const path of ["/admin", "/admin/curriculum", "/admin/curriculum/N1"]) {
+  for (const path of [
+    "/admin",
+    "/admin/curriculum",
+    "/admin/curriculum/N1",
+    "/admin/scenes",
+    "/admin/scenes/number_line.compare_negatives",
+  ]) {
     test(`${path} is a 404 that renders nothing`, async ({ request }) => {
       const variants: Record<string, string>[] = [{}, { RSC: "1" }];
       for (const headers of variants) {
@@ -66,6 +72,7 @@ test.describe("without the preview flag", () => {
         expect(response.status(), JSON.stringify(headers)).toBe(404);
         const body = await response.text();
         expect(body).not.toContain("Order and compare numbers");
+        expect(body).not.toContain("Which negative number is smaller");
         expect(body).not.toContain("Admin preview");
       }
     });

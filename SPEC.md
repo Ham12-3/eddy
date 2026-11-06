@@ -54,7 +54,7 @@ Eddy is an adaptive GCSE Maths tutor for students around the grade 3/4 boundary.
 - Grade predictions presented as fact. Grade-boundary context is only ever shown as a range with a caveat.
 - Any AQA, Pearson or OCR questions, mark schemes, examiner reports or logos, anywhere, including prompts and evals.
 - Higher tier content, teacher view, English marking, billing, native mobile apps.
-- MP4 download. The Remotion Lambda export path is designed (section 8.6) but not built.
+- MP4 download. An export path is designed (section 8.6) but not built.
 
 ---
 
@@ -84,7 +84,7 @@ Each has an ADR in [DECISIONS.md](DECISIONS.md).
 - **Vision critique runs off the hot path.**
 - **LLM traces in our own Postgres table plus OpenTelemetry**, not self-hosted Langfuse.
 - **Storybook** for the design system.
-- **Remotion** for scene playback, on the assumption that 3 or fewer people work on Eddy commercially (free licence tier). Needs your confirmation.
+- **Our own scene renderer** (ADR-0027, replacing Remotion, whose licence could not be obtained): each scene is a pure function of time, played by our own React Player. No third-party animation runtime.
 - **No AWS deployment until you approve it.** CDK synthesises in CI from M0; first staging deploy planned for M10.
 
 ---
@@ -139,7 +139,7 @@ All accounts get Children's Code defaults regardless of age. Nothing in the prod
 
 ```
                          Browser
-   Next.js client components, @remotion/player, MathLive, KaTeX
+   Next.js client components, the scene Player, MathLive, KaTeX
                             |
                  HTTPS, Auth.js session cookie
                             |
@@ -169,7 +169,7 @@ All accounts get Children's Code defaults regardless of age. Nothing in the prod
 |---|---|---|
 | `apps/web` | Next.js (App Router, latest stable at M0, pinned), React 19, TypeScript strict, Tailwind v4 driven by our tokens | Student, parent and admin UI. Auth.js. BFF: the browser never calls a Python service directly. |
 | `packages/ui` | React, CSS variables, Storybook | Tokens, components, `MathField` (MathLive wrapper), `Maths` (KaTeX with MathML output). |
-| `packages/scenes` | React, SVG, Remotion | Primitives, templates, layout engine (pure TypeScript), static checks, Player wrapper and controls, reduced-motion stepped renderer, static diagram renderer. |
+| `packages/scenes` | React, SVG | Primitives, templates, layout engine (pure TypeScript), the time-based scene renderer (ADR-0027), static checks, Player and controls, reduced-motion stepped renderer, static diagram renderer. |
 | `packages/schemas` | zod | Source of truth for SceneSpec, TutorMessage, every LLM output, English marking output. Emits JSON Schema; pydantic models are generated from it. |
 | `packages/api-client` | generated | TypeScript client generated from the `services/api` OpenAPI document. |
 | `services/api` | FastAPI, SQLAlchemy 2, Alembic, pydantic v2, LangGraph, `anthropic` SDK | Everything stateful. Owns the database. Runs an HTTP process and a worker process (TTS jobs, critique jobs, privacy jobs). |
@@ -382,7 +382,7 @@ Pure TypeScript. Each template declares named regions for 16:9 and 4:5 with 6% s
 
 ### 8.4 Playback and accessibility
 
-- Remotion compositions played in the browser with `@remotion/player`. No server render on the normal path.
+- Each scene is a pure function of time: given the spec, the layout and a time in milliseconds, it gives the picture (SVG shapes plus DOM text). Our own Player drives the time in the browser; the keyframe checker sets it directly. No server render on the normal path (ADR-0027).
 - Controls: play and pause, step back and forward one beat, replay, speed (0.75x, 1x, 1.25x), captions on and off, transcript.
 - Never autoplays movement. Beat transitions 500 to 900 ms; holds of at least 1.2 s after each new idea.
 - `prefers-reduced-motion` (or the in-app setting): stepped states with 150 ms opacity cross-fades.
@@ -395,7 +395,7 @@ Objects persist and morph rather than cut. A quantity keeps its colour for the w
 
 ### 8.6 MP4 export (designed, not built)
 
-Same compositions rendered by Remotion Lambda in eu-west-2, triggered by an SQS job, stored in S3 behind CloudFront. Built after the MVP if parents or schools ask for it.
+The same scenes rendered frame by frame in headless Chromium (the time set for each frame, then captured) and encoded to MP4, as an SQS job in eu-west-2, stored in S3 behind CloudFront. Built after the MVP if parents or schools ask for it; the encoder and its licence are chosen then.
 
 ---
 
@@ -524,7 +524,7 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 | MathLive on small phones and with screen readers | Custom keyboard; M1 accessibility review; manual screen reader checks in M8 |
 | Opus 4.8 costs more than newer models | One-line model switch per route, judged by evals |
 | Student-first accounts for 13 to 15 year olds | All-users Children's Code defaults; DPIA; legal review before launch |
-| Remotion licence | Confirm team size; the Player is the only runtime dependency, and primitives are plain SVG |
+| Our own scene renderer | No licence or vendor risk, but we maintain it: kept small, pure and unit-tested (ADR-0027) |
 
 ---
 
@@ -540,6 +540,7 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 8. MP4 export designed but not built in the MVP.
 9. 13 curriculum nodes (ratio and percentages split) and 13 default scenes, rather than 12.
 10. Proposed token fixes for contrast (section 11), pending the M1 contrast test.
+11. Scenes play on our own time-based renderer instead of Remotion, whose licence could not be obtained. (ADR-0027)
 
 ---
 
@@ -547,7 +548,7 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 
 1. **Safeguarding route for B2C:** who is Eddy's named safeguarding lead, what response time applies, and when do we contact emergency services? Needs advice from a safeguarding professional before any real student uses the tutor.
 2. **Legal review** of the lawful basis, the DPIA and the privacy notices before launch.
-3. **Remotion licence:** please confirm 3 or fewer people will work on Eddy commercially.
+3. **Remotion licence:** resolved. It could not be obtained, so scenes use our own renderer (ADR-0027).
 4. **ZDR with Anthropic** and the **ElevenLabs** data processing agreement and voice choice (a British voice).
 5. **School pilot:** partner and timing, which decides when the teacher-facing reports in the DfE matrix matter.
 6. **Retention** of safeguarding excerpts.
