@@ -5,7 +5,7 @@ import { text } from "../layout/geometry";
 import { LINE_HEIGHT, measureMaths } from "../layout/measure";
 import type { MathNode, SceneElement, TextElement } from "../layout/types";
 import { arrange, balance, blockWidth, pile, type Block } from "../primitives/balance";
-import { gcd, integer, LABEL, layoutFor, WORKING } from "./shared";
+import { gcd, integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 import { focusOf } from "./template";
 
@@ -468,6 +468,14 @@ export const twoStepEquation: SceneTemplate<Params> = {
   itemTemplate: "a17-two-step",
   title: "Do the same to the whole of each side",
   focusIds: ["question", "student", "balance", "slip", "subtract", "divide"],
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const a = integer(item, "a", 2, 9);

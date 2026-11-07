@@ -12,7 +12,7 @@ import {
   triangleInRectangle,
   trianglePoints,
 } from "../primitives/area-model";
-import { integer, LABEL, layoutFor, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 import { focusOf } from "./template";
 
@@ -321,6 +321,14 @@ export const triangleArea: SceneTemplate<Params> = {
   itemTemplate: "g16-triangle-area",
   title: "A triangle is half its rectangle",
   focusIds: ["question", "shape", "student", "rectangle", "slip", "parts", "match", "answer"],
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const b = integer(item, "b", 3, 16);

@@ -29,7 +29,7 @@ I never claim something is done without the evidence. If a check fails or a step
 | Gate | Needed by | What I need from you |
 |---|---|---|
 | Anthropic API key in local `.env` (never read by me) and CI secrets | M6 | The key, plus a ZDR arrangement with Anthropic before any real student data |
-| ElevenLabs account, plan, DPA and a British voice | M6 | Account and key; voice choice |
+| ElevenLabs account, plan, DPA and a British voice | Deferred (ADR-0029) | Account and key; voice choice, when a paid voice is wanted |
 | Remotion licence | M5 | Resolved: no licence, so scenes use our own renderer (ADR-0027) |
 | LLM evals in CI (they cost money) | M6 | OK to run labelled PR evals, and a monthly cap |
 | AWS account and any deployment | M10 | Account, budget alarm, explicit go-ahead per deploy |
@@ -231,23 +231,23 @@ Definition of done:
 
 ## M6: Animation generation loop
 
-Depends on: M3, M5. Estimate: 1.5 weeks. Gates: Anthropic key, ElevenLabs account, CI eval budget.
+Depends on: M3, M5. Estimate: 1.5 weeks. Gates: Anthropic key, CI eval budget. (No ElevenLabs account: the device's own voice until a paid voice is chosen, ADR-0029.)
 
 Deliverables:
 
-- [ ] Claude client module in `services/api`: model routing from `config/models.yaml`, prompt registry with semver, `llm_call` logging, typed error handling and retries, prompt caching. Confirm structured-output support and cache minimums for both models against the current docs.
-- [ ] `prompts/scene-spec.md` and `prompts/scene-critique.md`.
-- [ ] Tier L generation with validation, verification, layout, static checks and structured-feedback retries.
-- [ ] Background keyframe render and vision critique with cache eviction on failure.
-- [ ] Narration: ElevenLabs with timestamps converted to word timings, S3 cache, Polly fallback adapter, captions-first until audio is ready.
-- [ ] Cache and the precompute job (top 3 variants per seeded misconception).
-- [ ] Eval suite: 100 misconception cases.
+- [x] Claude client module in `services/api`: model routing from `config/models.yaml`, prompt registry with semver, `llm_call` logging, typed error handling and retries, prompt caching. Confirm structured-output support and cache minimums for both models against the current docs. (Confirmed: both Opus 4.8 and Haiku 4.5 support structured outputs; the minimum cacheable prefix is 1,024 tokens on Opus 4.8 and 4,096 on Haiku 4.5.)
+- [x] `prompts/scene-spec.md` and `prompts/scene-critique.md`. (Rewritten after the pedagogy review; not yet run against Claude.)
+- [x] Tier L generation with validation, verification, layout, static checks and structured-feedback retries. (Every reviewed scene goes through the real scene engine and maths-core with no problems; the loop is tested with a stand-in for Claude.)
+- [x] Background keyframe render and vision critique with cache eviction on failure. (The keyframe endpoint was run for real; the critique is tested with a stand-in and has not yet called Claude.)
+- [x] Narration: the device's own voice in the Player (ADR-0029). On-device voices only, each beat held until its line is spoken, captions always, and one interface so a paid voice can replace it.
+- [x] Cache and the precompute job (top 3 variants per seeded misconception). (Built and dry-run; the job has not yet been run against Claude.)
+- [x] Eval suite: 100 misconception cases. (Cases and runner built; not yet run live.)
 
 Definition of done:
 
-- [ ] At least 95% of the 100 cases pass on the first or second attempt.
-- [ ] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving).
-- [ ] Cost per generated variant and per narration reported in the evidence block.
+- [ ] At least 95% of the 100 cases pass on the first or second attempt. (Not run: it needs your Anthropic key and your go-ahead to spend about £10 to £20.)
+- [ ] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving). (Cache hit measured at 38.4 ms p95; the cold figure needs the live eval.)
+- [ ] Cost per generated variant reported in the evidence block (narration on the device costs nothing, ADR-0029). (Needs the live eval.)
 
 ---
 
@@ -625,3 +625,84 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Ka
 - On Linux the keyframe check found text drawn up to about 3% wider than on Windows, past the 2 px tolerance. Measured widths now carry a margin (ADR-0028).
 
 The phone place-value headings were refitted to the new margin. After the fix, the scene tests (171), `pnpm scenes:golden` (104 specs, 0 problems) and `pnpm scenes:check` passed on Windows; CI reruns on the fix commit.
+
+### M6: Animation generation loop (7 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; anthropic 2.6.0 (MIT) and httpx 0.28.1 (BSD) added to services/api. Branch `m6-generation-loop`, stacked on M5; no PR yet.
+
+**Status: not done.** Every deliverable is built and checked without calling Claude. The three definition-of-done items that need real Claude calls (pass rate, cold latency, cost per variant) wait for your Anthropic key and your go-ahead to spend on the live eval.
+
+**What landed**:
+
+- **Device voice (ADR-0029).** ElevenLabs is deferred: the Player reads narration with on-device speech synthesis, holding each beat until its line is spoken, with a Voice toggle.
+- **The Tier L generation loop (ADR-0030):**
+  - the Claude client and prompt registry;
+  - Claude writes only the beats, through a schema built for each template;
+  - Python narration checks;
+  - the scene engine's checks over HTTP from workers/scene-check;
+  - maths-core scene verification and answer equivalence;
+  - structured-feedback retries;
+  - a cache per item and mistake, shared only once reviewed;
+  - the request queue and route;
+  - the worker, which generates and reviews with keyframes and a vision critique;
+  - cost guards and a zero data retention gate in code;
+  - migration 0003.
+- **The eval suite:** 100 cases, a runner with a spending cap, thresholds, a cache benchmark and the precompute job.
+
+**Checks run (final run, on the final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, Prettier, dash check (359 files), cliché lint (163 files), typecheck, Vitest (scenes 207, ui 99, schemas 12, scene-check 10, web 9, infra 6, api-client 1), 186 hook and lint-rule tests, ruff, strict mypy (92 files), 800 pytest tests. |
+| `pnpm e2e` | 234 passed (7.7 minutes), axe with zero serious or critical findings at 375, 768 and 1280 px in light, dark and reduced motion. An earlier run under heavy machine load had 8 timeouts, which did not recur on a quiet machine. |
+| `pnpm scenes:check` | 13 scenes passed the static and DOM checks: 154 sample keyframes and 104 golden variants. |
+| `pnpm scenes:golden` and `pnpm evals` | Maths golden set 300/300; scene golden set 104 specs, 0 problems. Every reviewed scene also passes the stricter Tier L beat rules and the new narration checks. |
+| `pnpm maths:bench` and `pnpm maths:coverage` | Verification p95 3.9 ms, scene verification included (target 150 ms); maths-core coverage 91%. |
+| Pipeline probe | All 104 golden items through the real scene-check service and maths-core, with a stand-in for Claude returning the reviewed beats: 104 passed. |
+| `pnpm scenes:cache-bench` | 100 cache hits through `POST /v1/scenes/variants` with the real scene-check service: p50 27.4 ms, p95 38.4 ms (target 300 ms). |
+| `pnpm evals:tier-l` and `pnpm scenes:precompute` | Dry runs only: 100 cases, about £10; 39 variants, about £5.85. Nothing was sent to Claude. |
+
+**Screenshots**: the scene pages at 375, 768 and 1280 px in light, dark and reduced motion (`e2e-artifacts/screenshots/`). I looked at the phone light, tablet reduced-motion and laptop dark pages: the Voice toggle wraps cleanly with the other controls and keeps its 44 px target.
+
+**Fresh-context reviews**: `reviewer` (twice), `security-reviewer` and `pedagogy-critic`. Fixed:
+
+- **Security, high.** A burst of requests could slip past the cost caps and hold every database connection while Claude ran. The route now never waits for Claude:
+  - it serves a reviewed variant or Tier D at once;
+  - it queues a request (one open per student, by a unique index);
+  - the worker generates it after checking the budget again.
+- **Pedagogy, high.**
+  - The critique was told the numbers were verified; it now knows they are only traced, checks the maths first, and sees the item's facts.
+  - Unreviewed variants reached other students; only reviewed ones are shared now.
+  - Tone rules were prompt-only; blame words, gushing, exclamation marks and emoji are now checked in TypeScript and Python.
+  - Variants could mention one student's confidence or history and then be cached for others; the prompt forbids it and the checks catch it.
+- **Code, high.**
+  - The route did not check that the template's misconception and predicted answer matched the attempt. It now checks both, and scenes narrate only the predicted answer, so a student's own input never reaches Claude or another student.
+  - A short outage permanently failed queued scenes; errors now keep the claim and back off, and the worker waits for scene-check.
+- **Medium, across the reviews:**
+  - numbers written as words, superscripts and dollars escaped the number trace and are now caught;
+  - a prediction question could give the answer away;
+  - reading age was measured badly;
+  - UK spelling gaps;
+  - device voices could drop a minus sign, so narration is now spoken as words;
+  - stale speech events ended the next line early;
+  - pausing on the last line restarted the scene;
+  - a database connection was held across Claude calls;
+  - the eval undercounted cost and latency;
+  - unescaped data in prompt tags;
+  - `pnpm keys:dev` could drop lines;
+  - the 8 KB spec cap and the misconception check in the spec;
+  - the second review's two route bugs: a request handed back for the wrong attempt, and a failed variant still returned by its request.
+- **Low:** the zero data retention gate, a 32-character scene-check token, an index for the cost guards, transient and final errors told apart, and request expiry.
+
+**Recorded, not fixed in M6** (ADR-0030):
+
+- The safety classifier for model output arrives with M7. Until then, the first student sees a Tier L scene that has passed every automatic check but not yet the critique.
+- Qualitative statements in narration are judged by the critique, not verified.
+- Per-template parameter schemas are no longer on a path a model controls (parameters come from the item bank).
+- The keyframe worker's container hardening lands in M10.
+- Several players on one page cut each other's voice off (the admin gallery only).
+- An SSH tunnel to a real database on 127.0.0.1 would pass the local-database test; the zero data retention flag is the real gate.
+- The prompt prefix may be too short for Opus 4.8's prompt cache; the eval reports cached tokens.
+- The live eval, the critique against Claude and precompute have not run.
+
+**CI**: not run yet for this branch.

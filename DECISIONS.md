@@ -81,7 +81,7 @@ Status: Accepted (default approved with SPEC.md)
 
 ## ADR-0011: ElevenLabs narration first, Polly fallback
 
-Status: Accepted (chosen in interview)
+Status: Deferred by ADR-0029 (the device's own voice until a paid voice is chosen)
 
 - **Decision:** ElevenLabs with timestamps, converted to word timings for beat sync, cached in S3 by a hash of provider, voice, model and text. AWS Polly behind the same interface as a fallback. Captions always come from the same text.
 - **Consequences:** Another processor in the DPIA, outside the UK; narration text must never contain personal data. Until audio is ready, scenes play captions-first.
@@ -353,3 +353,53 @@ Status: Accepted (5 November 2026, during M5)
     - SPEC.md 6.7 gets retention rules for Tier L specs, narration, keyframes and TTS audio.
     - In its container the keyframe worker runs with Chromium's sandbox on, IMDSv2 with a hop limit of 1, and a role that can only write its screenshot prefix.
   - **For M8's content security policy:** scene positions and KaTeX output use inline `style` attributes, so the policy needs `style-src-attr 'unsafe-inline'` (and a KaTeX policy if Trusted Types arrive).
+
+## ADR-0029: Narration uses the device's own voice until a paid voice is chosen
+
+Status: Accepted (7 November 2026, start of M6). Defers ADR-0011.
+
+- **Context:** ADR-0011 chose ElevenLabs, with Polly as the fallback. There is no ElevenLabs account yet, and the Anthropic API has no speech output. Scenes already play captions-first, and every narration line is short, checked text.
+- **Options considered:**
+  - Captions only: the simplest, but no voice for students who would rather listen.
+  - A self-hosted open-source voice: one voice for everyone and no fee per use, but a model server to run and size, and more build time.
+  - Amazon Polly: another paid account and another processor.
+- **Decision:** The Player reads narration aloud with the browser's built-in speech synthesis.
+  - Only voices that run on the device (`localService`), so narration text never leaves it. British English first, then any English voice. With none, the voice control says so and the captions carry the scene.
+  - Speech starts only when the student presses play, follows the speed setting, and stops on pause, on a step and when the scene closes.
+  - A beat holds until its line has been spoken, so the voice never runs behind the picture. Captions always show the same text.
+  - The voice sits behind one small interface, so ElevenLabs or Polly can replace it later without touching any scene. The `audio_asset` table stays for that.
+- **Consequences:**
+  - No supplier, cost or audio storage for narration, and nothing new for the DPIA.
+  - The voice differs by device, and some devices have none. Word timings are not reliable across browsers, so beats sync by line, not by word.
+  - ADR-0011 stays the plan for a paid voice; choosing one reopens its DPIA entry and the S3 audio cache.
+
+## ADR-0030: The Tier L generation loop
+
+Status: Accepted (7 November 2026, M6; revised after the code, security and pedagogy reviews).
+
+- **Context:** SPEC.md section 7.2 describes Tier L: Claude adapts a scene for a student, and nothing reaches them until it is verified and laid out. The layout engine and the static checks are TypeScript (ADR-0028), Claude is called only from services/api (Python), and ADR-0028 listed what had to be true before model-written specs went through the scene code.
+- **Decision:**
+  - **Claude writes only the beats.** Each beat's kind, the elements it points at and its narration. The server takes the template, misconception, parameters and both answers from the Tier D spec for the same item, so a model cannot change which mistake is explained or any number in it.
+    - The structured output schema is built per template: its element ids and beat kinds are enums.
+    - Elements are first shown in the template's order (a beat may show several, and point again at earlier ones), every element is shown, a prediction question or recap shows nothing new, and exactly one beat is `reveal_correct`, the only beat that may first show the answer.
+    - Every template declares its beat kinds: those its Tier D scene uses, plus `ask_prediction`, `compare` and `recap`. The spec check enforces them, and a spec must name its template's misconception. A Tier L spec weighs at most 8 KB.
+    - An `ask_prediction` beat holds 2.5 s longer, as thinking time.
+  - **Scenes narrate the predicted answer, never the student's input.** The route asks maths-core whether the student's answer equals the answer the misconception predicts for the item (`POST /v1/answers/equivalent`), and only then serves a scene, built with that predicted answer. So a student's own text never reaches Claude, a stored scene or another student, and Tier D never says "you chose" something the student did not choose. Other answers get no scene yet (a classifier-suspected misconception needs tentative wording, later).
+  - **The route never waits for Claude.** `POST /v1/scenes/variants` serves at once a reviewed Tier L variant this student has not seen, or the Tier D scene ("Building another way to see it"). When it serves Tier D and Tier L is on, it queues a `scene_request`; the worker generates the variant and `GET /v1/scenes/requests/{id}` returns it. A partial unique index allows one open request per student, so a burst of requests cannot start parallel generations or race the cost guards, and no request holds a database connection while Claude thinks.
+  - **Cost guards.** At most 12 `scene.generate` calls per student a day and £5 a day across scene routes (both settings), checked before queueing and again by the worker before every job. The critique and any replacement a request leads to count against the student who asked. Tutor calls (M7) do not count against scenes.
+  - **Requests stay with their attempt.** The route hands back a request id only for a request made for this attempt, a request still queued after an hour expires, and a variant the review has failed is no longer returned by its request.
+  - **ZDR gate in code.** Tier L is on only with a key and either `ANTHROPIC_ZDR_CONFIRMED` or a local database, so real student data cannot reach Claude before zero data retention is confirmed (SPEC.md section 10).
+  - **The scene engine is served over HTTP** by workers/scene-check (`serve.ts`), on the private network with a shared service token (at least 32 characters, never the placeholder), 64 KB and depth caps, like maths-core. services/api asks it for a scene's context (the Tier D spec, the vocabulary, what each element shows and the maths claims), to assemble and check a spec, and in the background for keyframes. Starting Node per check would cost about a second each time; porting the engine to Python would mean two engines to keep identical.
+  - **maths-core verifies every Tier L spec** (`POST /v1/scenes/verify`) with the same check as the scene golden set: every claim true, both answers right, every number in the narration and labels traced.
+  - **Narration checks repeated in Python**, before anything is stored: words a beat, dashes, control and invisible characters, NFC, tone (blame and gushing words, exclamation marks, emoji, mirrored in packages/schemas), nothing about the student's confidence, earlier attempts or exams, UK spelling and GCSE words, money in pounds and pence, numbers in digits (a number word, superscript or vulgar fraction only where the reviewed narration has it, as maths-core traces digits), a reading age of 13 or below and within 2 grades of the reviewed scene (each beat a sentence, no beat above grade 10, taught maths words counted as two syllables), nothing that looks like contact details, and a new version must not repeat six words in a row in half or more of its beats from a version the student has seen. Every reviewed scene passes.
+  - **Structured feedback.** Any problem from any check goes back to Claude in the same conversation, up to three attempts; a cut-off or malformed answer is a failed attempt, a refusal ends the run. Every value placed in a prompt tag is JSON with `<`, `>` and `&` escaped, so data cannot close a tag.
+  - **Caching.** A variant is stored once (`hash` over template, misconception, parameters, the narrated answer and beats) and found by `variant_key` (template, misconception, parameters). Another student gets a cached variant only once it has passed review; a student never sees the same variant twice, and a stored row identical to one that failed review is not used. The prompt tells Claude never to mention the reason or confidence, so a variant suits any student who made the same slip.
+  - **Background review.** The queues are tables (`scene_request`, and `scene_spec` rows in PENDING), claimed with `FOR UPDATE SKIP LOCKED` and a ten-minute lease. A transient error (Claude unavailable, a service down) keeps the claim, so the job waits out the lease (a back-off), and a job that errors three times is failed; an error that will not go away (a refused or malformed request) fails the job at once. The worker does nothing while scene-check is down, holds no transaction while Claude works, and saves a review's verdict before paying for a replacement. Before writing an outcome the worker checks the claim is still its own. The worker waits for scene-check at start-up and survives unexpected errors. The CDK `SceneCheckJobs` queue stays unused until volume needs it.
+  - **Review.** The worker draws every beat at every width in both themes and checks the DOM boxes (Chromium's sandbox on with `SCENE_CHECK_CHROMIUM_SANDBOX=1`); any mismatch fails without paying for a critique. Otherwise Claude critiques the light keyframes at 1152 and 343 px with the scene's facts beside them, against a checklist that starts with "the maths is true", because the number trace cannot judge what is said about the numbers. A failure triggers a replacement with the reasons as feedback, at most three generations.
+  - **The device voice reads speakable text:** signs, fractions, powers and symbols become words ("negative 8", "3 over 5", "12 squared"), so a voice cannot drop a minus sign or read a fraction as a date. Captions keep the text as written.
+- **Consequences:**
+  - A cached scene costs nothing; a new one costs one to three Claude calls, reported by the eval.
+  - The prompt and template block are about 1,000 tokens, close to Opus 4.8's 1,024-token minimum for caching, so caching may not engage; the eval reports cached input tokens. At this size the cost of an uncached prefix is under a penny a call.
+  - Qualitative statements in narration ("more than", "to the right of") are judged by the critique, not verified: the maths check traces numbers, as in M5. Until the critique has passed a variant, only the student it was made for sees it.
+  - From ADR-0028's list: Claude supplies only the beats (met); parameters come only from the verified item bank, so per-template parameter schemas are no longer on the path a model controls (recorded, not built); narration checks in Python (met); templates declare beat kinds (met); retention for Tier L material (SPEC.md section 6.7, met); the keyframe worker's container hardening (Chromium sandbox switch built; IMDSv2 and a role with no S3 access, since keyframes stay in memory, land with the first deployment in M10).
+  - The SPEC's safety classifier for model output (section 9.2) arrives with M7; scenes then pass their narration through it before the first student sees them.

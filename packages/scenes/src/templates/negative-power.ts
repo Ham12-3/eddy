@@ -3,7 +3,7 @@ import { regionRect, type Rect, type SceneFormat } from "../canvas";
 import { bottomOf, markBeside, stack, text } from "../layout/geometry";
 import type { MathNode, SceneElement } from "../layout/types";
 import { digitIn, placeValueChart, powerOfTen } from "../primitives/place-value-slider";
-import { decimal, integer, LABEL, layoutFor, WORKING } from "./shared";
+import { decimal, integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** SF_NEGATIVE_POWER_DIRECTION: "8.2 × 10 to the power -3 = 8200": the digits moved the wrong way. */
@@ -211,6 +211,14 @@ export const negativePower: SceneTemplate<Params> = {
   itemTemplate: "n9-standard-to-ordinary",
   title: "Standard form with a negative power",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const m = decimal(item, "m", 1, 9.9);

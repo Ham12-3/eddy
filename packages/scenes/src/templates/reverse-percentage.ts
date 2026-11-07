@@ -4,7 +4,7 @@ import { formatNumber, MINUS } from "../layout/format";
 import { bottomOf, markBeside, stack } from "../layout/geometry";
 import type { SceneElement } from "../layout/types";
 import { bar, brace, braceHeight, fitsInPart, partLabel } from "../primitives/bar-model";
-import { gcd, integer, LABEL, layoutFor, WORKING } from "./shared";
+import { gcd, integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** PCT_REVERSE_APPLY_TO_NEW: "20% off gave £400, so the price before was £400 + 20% of £400." */
@@ -201,6 +201,14 @@ export const reversePercentage: SceneTemplate<Params> = {
   itemTemplate: "r9-reverse-percentage",
   title: "Finding the price before a percentage change",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const original = integer(item, "original", 1, 100000);

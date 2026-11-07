@@ -23,7 +23,7 @@ from eddy_api.db.models.curriculum import (
 from eddy_api.db.models.english import LevelDescriptor, QuestionType, SetText
 from eddy_api.db.models.governance import AuditLog, DataRequest, SafeguardingEvent
 from eddy_api.db.models.learning import Attempt, MasteryState, MisconceptionState, ReviewCard
-from eddy_api.db.models.scenes import AudioAsset, SceneInstance, SceneSpec
+from eddy_api.db.models.scenes import AudioAsset, SceneInstance, SceneRequest, SceneSpec
 from eddy_api.db.models.tutor import LlmCall, TutorMessage, TutorSession
 
 __all__ = [
@@ -49,6 +49,7 @@ __all__ = [
     "ReviewCard",
     "SafeguardingEvent",
     "SceneInstance",
+    "SceneRequest",
     "SceneSpec",
     "Session",
     "SetText",

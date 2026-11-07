@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, SmallInteger, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -50,6 +50,8 @@ class LlmCall(Base):
     """One model call: metadata only, never the prompt or response text (ADR-0009)."""
 
     __tablename__ = "llm_call"
+    # The Tier L cost guards sum the last 24 hours (ADR-0030).
+    __table_args__ = (Index("ix_llm_call_created_at", "created_at"),)
 
     id: Mapped[uuid.UUID] = uuid_pk()
     route: Mapped[str] = mapped_column(String(64))

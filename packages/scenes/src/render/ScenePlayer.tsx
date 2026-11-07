@@ -13,15 +13,20 @@ import {
 } from "react";
 import { SCENE_FORMATS } from "../canvas";
 import type { BuiltScene } from "../templates/template";
-import { beatAt, beatTimings, frameAt, totalDuration } from "../timeline/timeline";
+import { beatAt, beatPauses, beatTimings, frameAt, totalDuration } from "../timeline/timeline";
 import { SceneCanvas } from "./SceneCanvas";
 import { SceneErrorBoundary } from "./SceneErrorBoundary";
+import { speakable, useDeviceVoice, type NarrationVoice } from "./voice";
 
 /**
  * Plays a scene (SPEC.md section 8.4, ADR-0027). It never starts on its own: it opens paused on
  * the first beat. Controls: play and pause, step back and forward one beat, replay, speed,
  * captions and transcript. Keyboard on the scene: Space or K plays and pauses, the arrow keys
  * step, R replays. With reduced motion each beat cross-fades in 150 ms and nothing moves.
+ *
+ * Narration is read aloud by the device's own voice when there is one (ADR-0029): only after the
+ * student presses play, at the chosen speed, and a beat holds until its line has been spoken.
+ * Pausing, stepping and replaying stop the voice. Captions always show the same text.
  */
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
@@ -46,6 +51,8 @@ export interface ScenePlayerProps {
   scene: BuiltScene;
   /** The in-app setting; when left out, the system preference decides. */
   reducedMotion?: boolean;
+  /** The voice to read narration; the device's own voice when left out, none when null. */
+  voice?: NarrationVoice | null;
 }
 
 export function ScenePlayer(props: ScenePlayerProps): ReactElement {
@@ -56,13 +63,16 @@ export function ScenePlayer(props: ScenePlayerProps): ReactElement {
   );
 }
 
-function Player({ scene, reducedMotion }: ScenePlayerProps): ReactElement {
+function Player({ scene, reducedMotion, voice: givenVoice }: ScenePlayerProps): ReactElement {
   const systemReduced = usePrefersReducedMotion();
+  const deviceVoice = useDeviceVoice();
+  const voice = givenVoice === undefined ? deviceVoice : givenVoice;
   const reduced = reducedMotion ?? systemReduced;
   const narrations = useMemo(() => scene.spec.beats.map((beat) => beat.narration), [scene]);
+  const pauses = useMemo(() => beatPauses(scene.spec.beats.map((beat) => beat.kind)), [scene]);
   const timings = useMemo(
-    () => beatTimings(narrations, { reducedMotion: reduced }),
-    [narrations, reduced],
+    () => beatTimings(narrations, { reducedMotion: reduced, pauses }),
+    [narrations, reduced, pauses],
   );
   const total = totalDuration(timings);
   const last = timings.length - 1;
@@ -74,6 +84,18 @@ function Player({ scene, reducedMotion }: ScenePlayerProps): ReactElement {
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
   const [captions, setCaptions] = useState(true);
   const [transcript, setTranscript] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
+  // The beat whose line was last started, and the beat still being spoken (or -1).
+  const spokenBeat = useRef(-1);
+  const speaking = useRef(-1);
+  const timingsRef = useRef(timings);
+  useEffect(() => {
+    timingsRef.current = timings;
+  }, [timings]);
+  const voiceActive = useRef(false);
+  useEffect(() => {
+    voiceActive.current = Boolean(givenVoice === undefined ? deviceVoice : givenVoice) && voiceOn;
+  }, [givenVoice, deviceVoice, voiceOn]);
 
   useEffect(() => {
     timeRef.current = time;
@@ -102,9 +124,23 @@ function Player({ scene, reducedMotion }: ScenePlayerProps): ReactElement {
         // A background tab pauses animation frames; cap each step so returning does not skip
         // to the end of the scene.
         const step = Math.min(now - previous, MAX_FRAME_MS) * speed;
-        const next = Math.min(timeRef.current + step, stopAt.current);
+        // While a line is being spoken, its beat holds just before its end.
+        const held = speaking.current;
+        const hold = held < 0 ? Infinity : (timingsRef.current[held]?.end ?? Infinity) - 1;
+        const next = Math.min(
+          timeRef.current + step,
+          stopAt.current,
+          Math.max(hold, timeRef.current),
+        );
+        // A beat just entered is held from its first frame, before the effect starts its line.
+        const entered = beatAt(timingsRef.current, next);
+        if (voiceActive.current && speaking.current < 0 && spokenBeat.current !== entered) {
+          speaking.current = entered;
+        }
         setTime(next);
         if (next >= stopAt.current) {
+          // At the very end every line has been spoken: playing again starts afresh.
+          if (next >= (timingsRef.current.at(-1)?.end ?? 0)) spokenBeat.current = -1;
           setPlaying(false);
           return;
         }
@@ -117,28 +153,56 @@ function Player({ scene, reducedMotion }: ScenePlayerProps): ReactElement {
   }, [playing, speed, setTime]);
 
   const beat = beatAt(timings, time);
-  const atEnd = time >= total - 1;
+  // The very end, not the voice hold just before it: pausing while the last line is spoken and
+  // pressing play finishes the scene rather than restarting it.
+  const atEnd = time >= total;
+
+  const stopVoice = useCallback(() => {
+    speaking.current = -1;
+    spokenBeat.current = -1;
+    voice?.stop();
+  }, [voice]);
+
+  // Each beat's line is spoken once as playback reaches it.
+  useEffect(() => {
+    if (!playing || !voice || !voiceOn || spokenBeat.current === beat) return;
+    spokenBeat.current = beat;
+    speaking.current = beat;
+    voice.speak(speakable(narrations[beat] ?? ""), speed, () => {
+      if (speaking.current === beat) speaking.current = -1;
+    });
+  }, [playing, beat, voice, voiceOn, narrations, speed]);
+
+  // A new scene, a motion switch or leaving the page stops the voice.
+  useEffect(() => stopVoice, [stopVoice, timings]);
 
   const playPause = () => {
     if (playing) {
       setPlaying(false);
+      stopVoice();
       return;
     }
-    if (atEnd) setTime(0);
+    if (atEnd) {
+      stopVoice();
+      setTime(0);
+    }
     stopAt.current = total;
     setPlaying(true);
   };
   const replay = () => {
+    stopVoice();
     setTime(0);
     stopAt.current = total;
     setPlaying(true);
   };
   const stepBack = () => {
+    stopVoice();
     setPlaying(false);
     setTime(timings[Math.max(0, beat - 1)]?.settled ?? 0);
   };
   const stepForward = () => {
     if (beat >= last) return;
+    stopVoice();
     setTime(timings[beat + 1]?.start ?? total);
     stopAt.current = timings[beat + 1]?.settled ?? total;
     setPlaying(true);
@@ -198,6 +262,12 @@ function Player({ scene, reducedMotion }: ScenePlayerProps): ReactElement {
         onCaptionsChange={setCaptions}
         transcript={transcript}
         onTranscriptChange={setTranscript}
+        voice={voiceOn}
+        voiceAvailable={voice !== null}
+        onVoiceChange={(on) => {
+          if (!on) stopVoice();
+          setVoiceOn(on);
+        }}
       />
       <CaptionsPanel
         current={narrations[beat] ?? ""}

@@ -7,6 +7,7 @@ import {
   StepBackIcon,
   StepForwardIcon,
   TranscriptIcon,
+  VoiceIcon,
 } from "./icons";
 
 export const PLAYBACK_SPEEDS = [0.75, 1, 1.25] as const;
@@ -28,6 +29,13 @@ export interface PlayerControlsProps {
   onCaptionsChange: (on: boolean) => void;
   transcript: boolean;
   onTranscriptChange: (on: boolean) => void;
+  /**
+   * Narration read aloud by the device's own voice (ADR-0029). The toggle appears only when
+   * `onVoiceChange` is given; without a voice on the device it reads "No voice" and does nothing.
+   */
+  voice?: boolean;
+  onVoiceChange?: (on: boolean) => void;
+  voiceAvailable?: boolean;
 }
 
 const iconButton =
@@ -50,6 +58,9 @@ export function PlayerControls({
   onCaptionsChange,
   transcript,
   onTranscriptChange,
+  voice = false,
+  onVoiceChange,
+  voiceAvailable = true,
 }: PlayerControlsProps) {
   return (
     <div
@@ -130,6 +141,20 @@ export function PlayerControls({
         <TranscriptIcon />
         <span className="text-caption font-semibold">Transcript</span>
       </button>
+      {onVoiceChange ? (
+        <button
+          type="button"
+          aria-pressed={voiceAvailable && voice}
+          aria-disabled={!voiceAvailable}
+          onClick={voiceAvailable ? () => onVoiceChange(!voice) : undefined}
+          className={cx(iconButton, pressed)}
+        >
+          <VoiceIcon />
+          <span className="text-caption font-semibold">
+            {voiceAvailable ? "Voice" : "No voice"}
+          </span>
+        </button>
+      ) : null}
     </div>
   );
 }

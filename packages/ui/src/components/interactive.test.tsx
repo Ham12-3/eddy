@@ -221,5 +221,41 @@ describe("PlayerControls", () => {
     );
     await user.click(screen.getByRole("button", { name: "1.25x" }));
     expect(onSpeedChange).toHaveBeenCalledWith(1.25);
+    // No voice toggle unless the player asks for one.
+    expect(screen.queryByRole("button", { name: "Voice" })).not.toBeInTheDocument();
+  });
+
+  it("offers the device voice, or says there is none", async () => {
+    const user = userEvent.setup();
+    const onVoiceChange = vi.fn();
+    const controls = (available: boolean) => (
+      <PlayerControls
+        playing={false}
+        onPlayPause={() => {}}
+        onReplay={() => {}}
+        onStepBack={() => {}}
+        onStepForward={() => {}}
+        speed={1}
+        onSpeedChange={() => {}}
+        captions
+        onCaptionsChange={() => {}}
+        transcript={false}
+        onTranscriptChange={() => {}}
+        voice
+        onVoiceChange={onVoiceChange}
+        voiceAvailable={available}
+      />
+    );
+    const { rerender } = render(controls(true));
+    const voice = screen.getByRole("button", { name: "Voice" });
+    expect(voice).toHaveAttribute("aria-pressed", "true");
+    await user.click(voice);
+    expect(onVoiceChange).toHaveBeenCalledWith(false);
+    rerender(controls(false));
+    const none = screen.getByRole("button", { name: "No voice" });
+    expect(none).toHaveAttribute("aria-disabled", "true");
+    expect(none).toHaveAttribute("aria-pressed", "false");
+    await user.click(none);
+    expect(onVoiceChange).toHaveBeenCalledTimes(1);
   });
 });

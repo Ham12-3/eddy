@@ -7,6 +7,8 @@ export { bounds, contains, overlaps } from "./layout/geometry";
 export type * from "./layout/types";
 export * from "./timeline/timeline";
 export * from "./templates/template";
+export * from "./templates/tier-l";
+export { REFOCUS_KINDS } from "./templates/shared";
 export { TEMPLATES, TEMPLATES_BY_KEY } from "./templates/registry";
 export {
   CHECKS,

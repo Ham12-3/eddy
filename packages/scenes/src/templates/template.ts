@@ -1,4 +1,10 @@
-import { sceneSpecSchema, specProblems, type JsonValue, type SceneSpec } from "@eddy/schemas";
+import {
+  sceneSpecSchema,
+  specProblems,
+  type BeatKind,
+  type JsonValue,
+  type SceneSpec,
+} from "@eddy/schemas";
 import { CANVAS, SCENE_FORMATS, type SceneFormat } from "../canvas";
 import type { SceneElement, SceneLayout } from "../layout/types";
 
@@ -35,8 +41,13 @@ export interface SceneTemplate<P = unknown> {
   itemTemplate: string;
   /** For the gallery and the static diagram's heading. */
   title: string;
-  /** Ids a beat may focus on; every element the template draws belongs to one of them. */
+  /**
+   * Ids a beat may focus on; every element the template draws belongs to one of them. Their order
+   * is the order of the explanation: a Tier L spec reveals them in this order (ADR-0030).
+   */
   focusIds: readonly string[];
+  /** The beat kinds this template supports (SPEC.md section 8.1); the spec check enforces them. */
+  beatKinds: readonly BeatKind[];
   /** Validates and reads the item's parameters. Throws when the scene cannot explain them. */
   params(item: ItemParams): P;
   /** Tier D: the whole spec, with narration from reviewed sentence templates. */
@@ -86,7 +97,18 @@ export function sceneFromSpec<P>(template: SceneTemplate<P>, spec: SceneSpec): B
   if (parsed.template !== `${template.key}@${template.version}`) {
     throw new Error(`Spec is for ${parsed.template}, not ${template.key}@${template.version}`);
   }
+  if (parsed.misconception !== template.misconception) {
+    throw new Error(`Spec explains ${parsed.misconception}, not ${template.misconception}`);
+  }
   const problems = specProblems(parsed, new Set(template.focusIds));
+  parsed.beats.forEach((beat, i) => {
+    if (!template.beatKinds.includes(beat.kind)) {
+      problems.push({
+        path: `beats.${i}.kind`,
+        message: `${template.key} has no "${beat.kind}" beat`,
+      });
+    }
+  });
   if (problems.length > 0) {
     throw new Error(problems.map((p) => `${p.path}: ${p.message}`).join("; "));
   }

@@ -34,6 +34,22 @@ export interface KeyframeOptions {
   themes?: Theme[];
   /** Stage widths per format; STAGE_WIDTHS when left out. */
   widths?: Partial<Record<SceneFormat, number[]>>;
+  /** Receives a PNG of each keyframe it accepts (the vision critique uses some of them). */
+  capture?: Capture;
+}
+
+export interface Keyframe {
+  scene: string;
+  format: SceneFormat;
+  theme: Theme;
+  width: number;
+  beat: number;
+}
+
+/** Says which keyframes it wants, and takes their PNGs. */
+export interface Capture {
+  wants(frame: Keyframe): boolean;
+  take(frame: Keyframe, png: Buffer): void;
 }
 
 // Plain script text: the TypeScript runner adds helpers to named functions that a page lacks.
@@ -77,7 +93,11 @@ export async function checkKeyframes(
   const problems: KeyframeProblem[] = [];
   // JavaScript off and every request aborted: the page is inlined, so it needs nothing else, and
   // a hostile spec (Tier L, M6) could not make the checker fetch a file or an address.
-  const browser = await chromium.launch();
+  // Chromium's own sandbox on where the host allows it (the container in M10 sets this; CI
+  // runners and some desktops lack the kernel features it needs).
+  const browser = await chromium.launch({
+    chromiumSandbox: process.env.SCENE_CHECK_CHROMIUM_SANDBOX === "1",
+  });
   try {
     const context = await browser.newContext({ deviceScaleFactor: 1, javaScriptEnabled: false });
     await context.route("**/*", (route) => route.abort());
@@ -127,12 +147,17 @@ export async function checkKeyframes(
                   beat,
                 });
               }
-              if (options.screenshots) {
-                const directory = join(options.screenshots, scene.template.key);
-                mkdirSync(directory, { recursive: true });
-                await page.locator(".eddy-scene-canvas").screenshot({
-                  path: join(directory, `${format}-${theme}-${width}-beat${beat + 1}.png`),
-                });
+              const frame = { scene: scene.template.key, format, theme, width, beat };
+              const wanted = options.capture?.wants(frame) ?? false;
+              if (options.screenshots || wanted) {
+                let path: string | undefined;
+                if (options.screenshots) {
+                  const directory = join(options.screenshots, scene.template.key);
+                  mkdirSync(directory, { recursive: true });
+                  path = join(directory, `${format}-${theme}-${width}-beat${beat + 1}.png`);
+                }
+                const png = await page.locator(".eddy-scene-canvas").screenshot({ path });
+                if (wanted) options.capture?.take(frame, png);
               }
             }
           }

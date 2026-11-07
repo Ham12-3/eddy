@@ -123,10 +123,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/scenes/requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scene Request */
+        get: operations["getSceneRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/scenes/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scene Variant */
+        post: operations["getSceneVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Beat */
+        Beat: {
+            /** Focus */
+            focus: components["schemas"]["ElementId"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "show_given" | "ask_prediction" | "show_student_working" | "highlight_slip" | "build" | "transform" | "compare" | "reveal_correct" | "recap";
+            /** Narration */
+            narration: string;
+        };
         /** DetectionRule */
         DetectionRule: {
             /** Rule */
@@ -137,6 +183,8 @@ export interface components {
              */
             type: "distractor" | "structure" | "classifier";
         };
+        /** ElementId */
+        ElementId: string;
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -164,6 +212,12 @@ export interface components {
             /** Subject */
             subject: string;
         };
+        /** JsonValue */
+        JsonValue: string | components["schemas"]["JsonValue1"] | number | boolean | (components["schemas"]["JsonValue"] | null)[] | {
+            [key: string]: components["schemas"]["JsonValue"] | null;
+        } | null;
+        /** JsonValue1 */
+        JsonValue1: number;
         /** MisconceptionOut */
         MisconceptionOut: {
             /** Code */
@@ -263,6 +317,54 @@ export interface components {
             /** Strength */
             strength: number;
         };
+        /** RequestOut */
+        RequestOut: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            scene: components["schemas"]["SceneOut"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "done" | "failed";
+        };
+        /** SceneOut */
+        SceneOut: {
+            /**
+             * Scene Spec Id
+             * Format: uuid
+             */
+            scene_spec_id: string;
+            spec: components["schemas"]["SceneSpec"];
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "DETERMINISTIC" | "LLM";
+        };
+        /** SceneSpec */
+        SceneSpec: {
+            /** Beats */
+            beats: components["schemas"]["Beat"][];
+            correctAnswer: components["schemas"]["JsonValue"] | null;
+            /** Misconception */
+            misconception: string;
+            /** Params */
+            params: {
+                [key: string]: components["schemas"]["JsonValue"] | null;
+            };
+            /**
+             * Schema
+             * @constant
+             */
+            schema: "scene-spec/1";
+            studentAnswer: components["schemas"]["JsonValue"] | null;
+            /** Template */
+            template: string;
+        };
         /** Spec */
         Spec: {
             /**
@@ -316,6 +418,40 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VariantIn */
+        VariantIn: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "another_way" | "recurred";
+        };
+        /** VariantOut */
+        VariantOut: {
+            /** Request Id */
+            request_id: string | null;
+            /**
+             * Scene Spec Id
+             * Format: uuid
+             */
+            scene_spec_id: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "cache" | "tier_d";
+            spec: components["schemas"]["SceneSpec"];
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "DETERMINISTIC" | "LLM";
         };
     };
     responses: never;
@@ -492,6 +628,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HelloResponse"];
+                };
+            };
+        };
+    };
+    getSceneRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSceneVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VariantIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VariantOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

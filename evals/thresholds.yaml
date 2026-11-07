@@ -1,0 +1,10 @@
+# Pass marks for the LLM eval suites (SPEC.md section 7.6). A prompt or model change needs its
+# suite to meet these before merge.
+
+scenes_tier_l:
+  # PLAN.md M6: at least 95 of the 100 cases pass every check on the first or second attempt.
+  pass_within_two: 0.95
+  # SPEC.md section 7.2: a cold Tier L scene within 8 s (the critique runs after serving).
+  cold_p95_ms: 8000
+  # SPEC.md section 7.2: a cached scene within 300 ms.
+  cache_hit_p95_ms: 300

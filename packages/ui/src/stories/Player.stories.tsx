@@ -22,6 +22,7 @@ export const Controls: Story = {
     const [speed, setSpeed] = useState<PlaybackSpeed>(1);
     const [captions, setCaptions] = useState(true);
     const [transcript, setTranscript] = useState(true);
+    const [voice, setVoice] = useState(true);
     return (
       <div className="flex max-w-3xl flex-col gap-4">
         <PlayerControls
@@ -39,6 +40,8 @@ export const Controls: Story = {
           onCaptionsChange={setCaptions}
           transcript={transcript}
           onTranscriptChange={setTranscript}
+          voice={voice}
+          onVoiceChange={setVoice}
         />
         <CaptionsPanel
           current={NARRATION[step] ?? ""}
@@ -50,4 +53,30 @@ export const Controls: Story = {
       </div>
     );
   },
+};
+
+/** A device with no suitable voice: captions carry the scene (ADR-0029). */
+export const NoVoice: Story = {
+  render: () => (
+    <div className="max-w-3xl">
+      <PlayerControls
+        playing={false}
+        onPlayPause={() => {}}
+        onReplay={() => {}}
+        onStepBack={() => {}}
+        onStepForward={() => {}}
+        canStepBack={false}
+        stepLabel={`Step 1 of ${NARRATION.length}`}
+        speed={1}
+        onSpeedChange={() => {}}
+        captions
+        onCaptionsChange={() => {}}
+        transcript={false}
+        onTranscriptChange={() => {}}
+        voice={false}
+        onVoiceChange={() => {}}
+        voiceAvailable={false}
+      />
+    </div>
+  ),
 };

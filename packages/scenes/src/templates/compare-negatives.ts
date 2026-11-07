@@ -4,7 +4,7 @@ import { formatNumber } from "../layout/format";
 import { bounds, stack, text } from "../layout/geometry";
 import type { SceneElement } from "../layout/types";
 import { numberLine, pointsOn } from "../primitives/number-line";
-import { integer, LABEL, layoutFor, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** NEG_ORDER_BY_DIGIT: "6 is smaller than 13, so −6 is smaller than −13." */
@@ -39,6 +39,13 @@ export const compareNegatives: SceneTemplate<Params> = {
   itemTemplate: "n1-order-negatives",
   title: "Which negative number is smaller",
   focusIds: ["question", "student", "line", "slip", "answer"],
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "reveal_correct",
+  ),
 
   params(item) {
     const a = integer(item, "a", 1, 50);

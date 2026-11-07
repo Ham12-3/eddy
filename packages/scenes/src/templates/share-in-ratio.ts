@@ -5,7 +5,7 @@ import { bottomOf, bounds, stack } from "../layout/geometry";
 import { LINE_HEIGHT, measureText } from "../layout/measure";
 import type { SceneElement, TextElement } from "../layout/types";
 import { bar, brace, braceHeight, fitsInPart, partLabel } from "../primitives/bar-model";
-import { integer, LABEL, layoutFor, oneOf, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, oneOf, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** RATIO_DIVIDE_BY_EACH_PART: "£42 in the ratio 1 : 2, so Ben gets £42 ÷ 2." */
@@ -281,6 +281,14 @@ export const shareInRatio: SceneTemplate<Params> = {
   itemTemplate: "r5-share-in-ratio",
   title: "Sharing an amount in a ratio",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const a = integer(item, "a", 1, 7);

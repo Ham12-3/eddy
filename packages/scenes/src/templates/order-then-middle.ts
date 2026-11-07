@@ -4,7 +4,7 @@ import { formatNumber } from "../layout/format";
 import { bounds, ringRound, stack, type StackItem, text } from "../layout/geometry";
 import type { MarkElement, RectElement, SceneElement } from "../layout/types";
 import { cardRow } from "../primitives/data-chart";
-import { integers, LABEL, layoutFor, WORKING } from "./shared";
+import { integers, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** MEDIAN_UNORDERED: "the median of 20, 1, 1, 27, 16 is the middle one, 1." */
@@ -167,6 +167,14 @@ export const orderThenMiddle: SceneTemplate<Params> = {
   itemTemplate: "s4-median",
   title: "Order the numbers, then find the middle",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const values = integers(item, "values", 0, 99, [3, 9]);

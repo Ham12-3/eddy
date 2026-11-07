@@ -31,3 +31,12 @@ routes:
     model: claude-opus-4-8
     thinking: adaptive
     effort: medium
+
+# List prices in US dollars per million tokens, for the cost estimates in llm_call (SPEC.md
+# section 6.5). Writing to the 5-minute prompt cache costs 1.25 times the input price and reading
+# from it a tenth. Check them against the pricing page when a model changes.
+pricing:
+  usd_to_gbp: 0.79 # an estimate: llm_call costs are estimates, not invoices
+  models:
+    claude-opus-4-8: { input: 5.00, output: 25.00, cache_write: 6.25, cache_read: 0.50 }
+    claude-haiku-4-5: { input: 1.00, output: 5.00, cache_write: 1.25, cache_read: 0.10 }

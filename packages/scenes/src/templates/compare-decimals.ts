@@ -3,7 +3,7 @@ import { regionRect, type Rect, type SceneFormat } from "../canvas";
 import { bottomOf, markBeside, stack, text } from "../layout/geometry";
 import type { SceneElement } from "../layout/types";
 import { numberLine, pointsOn } from "../primitives/number-line";
-import { decimal, LABEL, layoutFor, WORKING } from "./shared";
+import { decimal, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** DEC_LONGER_IS_BIGGER: "397 is bigger than 5, so 0.397 is bigger than 0.5." */
@@ -197,6 +197,14 @@ export const compareDecimals: SceneTemplate<Params> = {
   itemTemplate: "n1-order-decimals",
   title: "Which decimal is larger",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "compare",
+    "reveal_correct",
+  ),
 
   params(item) {
     const short = decimal(item, "short", 0, 1);

@@ -71,7 +71,7 @@ Eddy is an adaptive GCSE Maths tutor for students around the grade 3/4 boundary.
 | Claude access | **Anthropic API with zero data retention (ZDR)** and no training on inputs. Pseudonymous IDs only in prompts. |
 | Models | **Claude Opus 4.8** (`claude-opus-4-8`) for tutoring, scene specs and vision critique. **Claude Haiku 4.5** (`claude-haiku-4-5`) for safety classification, misconception fallback classification and bulk eval judging. |
 | Auth | **Auth.js** in Next.js. Next.js is the backend-for-frontend (BFF). |
-| Narration | **ElevenLabs first**, AWS Polly as fallback behind the same interface. |
+| Narration | **The device's own voice** (on-device speech synthesis in the browser, ADR-0029) until a paid voice is chosen. ElevenLabs first with a Polly fallback stays the plan for that (ADR-0011). |
 
 ### 3.2 Defaults I chose (override any of these in review)
 
@@ -154,9 +154,9 @@ All accounts get Children's Code defaults regardless of age. Nothing in the prod
      Alembic migrations, background worker process (SQS)
         |                 |                  |                |
         v                 v                  v                v
- services/maths-core   Anthropic API     ElevenLabs      workers/scene-check
- (FastAPI, SymPy,      (Opus 4.8,        (narration,     (Node + Playwright:
-  stateless, no DB)     Haiku 4.5, ZDR)   Polly fallback)  keyframes, DOM checks)
+ services/maths-core   Anthropic API     (narration is   workers/scene-check
+ (FastAPI, SymPy,      (Opus 4.8,        spoken on the   (Node + Playwright:
+  stateless, no DB)     Haiku 4.5, ZDR)   device, 0029)    keyframes, DOM checks)
 
  Data: PostgreSQL 16, Redis 7, S3, SQS
  Local: docker compose (postgres, redis, S3Mock for S3, ElasticMQ for SQS (ADR-0016), mailpit)
@@ -172,9 +172,9 @@ All accounts get Children's Code defaults regardless of age. Nothing in the prod
 | `packages/scenes` | React, SVG | Primitives, templates, layout engine (pure TypeScript), the time-based scene renderer (ADR-0027), static checks, Player and controls, reduced-motion stepped renderer, static diagram renderer. |
 | `packages/schemas` | zod | Source of truth for SceneSpec, TutorMessage, every LLM output, English marking output. Emits JSON Schema; pydantic models are generated from it. |
 | `packages/api-client` | generated | TypeScript client generated from the `services/api` OpenAPI document. |
-| `services/api` | FastAPI, SQLAlchemy 2, Alembic, pydantic v2, LangGraph, `anthropic` SDK | Everything stateful. Owns the database. Runs an HTTP process and a worker process (TTS jobs, critique jobs, privacy jobs). |
+| `services/api` | FastAPI, SQLAlchemy 2, Alembic, pydantic v2, LangGraph, `anthropic` SDK | Everything stateful. Owns the database. Runs an HTTP process and a worker process (critique jobs and privacy jobs). |
 | `services/maths-core` | FastAPI, SymPy, Hypothesis | Item generation, answer equivalence, step checking, distractors, misconception detection rules, MathJSON to SymPy conversion, verification of every number in scenes and tutor messages. No database. |
-| `workers/scene-check` | Node, Playwright | Renders scenes headless, confirms DOM boxes match the computed layout, captures keyframes to S3. |
+| `workers/scene-check` | Node, Playwright | Serves the scene engine's checks to services/api over HTTP (context, assembly and static checks, ADR-0030). Renders scenes headless, confirms DOM boxes match the computed layout, and returns keyframes for the background critique. |
 
 ### 5.2 Schema directions
 
@@ -216,7 +216,7 @@ The brief's tables (docs/brief.md, Deliverable B section 3) are adopted as writt
 
 ### 6.4 Scenes and narration
 
-- `scene_spec`: as in the brief, plus `tier [DETERMINISTIC|LLM]`, `prompt_version`, `model`.
+- `scene_spec`: as in the brief, plus `tier [DETERMINISTIC|LLM]`, `prompt_version`, `model`, `variant_key` (template, misconception and item parameters, to find a cached variant) and the background review's claim columns (ADR-0030).
 - `scene_instance`: as in the brief, plus `step_backs`.
 - **New** `audio_asset(id, provider, voice_id, provider_model, text_hash, s3_key, word_timings jsonb, duration_ms)`.
 
@@ -236,6 +236,8 @@ The brief's tables (docs/brief.md, Deliverable B section 3) are adopted as writt
 
 - Raw `tutor_message` content: deleted after 90 days (configurable). Anonymised aggregates kept.
 - `llm_call`: metadata kept 12 months, then aggregated.
+- Scene specs (Tier D and Tier L) hold no personal data: no student text, and the wrong answer is the one the misconception predicts for the item. They are kept like curriculum content. Which student watched which scene (`scene_instance`) is deleted with the account.
+- Keyframes are held in memory for the critique and never stored. Narration audio is spoken on the device and never stored (ADR-0029).
 - Deleted accounts: personal data removed within 30 days; aggregates keep no user id.
 - `safeguarding_event`: default 12 months with a minimised excerpt. **Open question**, to settle with safeguarding advice in the DPIA.
 
@@ -289,15 +291,15 @@ Two tiers.
 Tier L pipeline:
 
 1. Pick the template for (node, misconception).
-2. Claude returns a SceneSpec through structured output. It may use only template keys, element ids, beat kinds and parameters from the schema. No coordinates, colours or styling.
-3. Validate: schema; at most 6 beats; at most 25 narration words per beat; reading-age check (target UK reading age 13 or below); UK spelling and no-dash lint.
+2. Claude returns the beats through structured output: each beat's kind, the elements it points at and its narration, from enums built for the template. The server keeps the template, misconception, parameters and answers from the Tier D spec (ADR-0030). No coordinates, colours or styling.
+3. Validate: schema; at most 6 beats; at most 25 narration words per beat; reading-age check (target UK reading age 13 or below); UK spelling, tone and no-dash lint; numbers in digits; different from what the student has seen (ADR-0030).
 4. maths-core verifies every number and expression: parameters, labels and every numeric claim extracted deterministically from the narration. Any mismatch is a hard fail.
 5. The layout engine places every element in template-defined regions for 16:9 and 4:5, measuring text with real font metrics.
 6. Static checks on the computed layout: overlap, off-canvas, 6% safe margins, text overflow, minimum font size, contrast of every colour role on both themes, colour semantics, at most 3 moving elements per beat, no flashing above 3 per second.
-7. **Serve.** The Player renders it in the browser. The hot path ends here.
-8. **Background:** the scene-check worker renders keyframes (end state of each beat, both aspect ratios, light and dark), confirms DOM boxes match the layout, stores screenshots. Opus 4.8 critiques the keyframes against the checklist (signalling, coherence, one idea per beat, matches narration). On failure the spec is evicted from the cache and regenerated with structured feedback (at most 3 attempts); the Tier D scene is used meanwhile.
-9. **Narration:** ElevenLabs with timestamps, converted to word timings, cached by `hash(provider, voice, model, text)`. Beats sync to word timings. Captions always come from the same text. Until audio is ready, the scene plays captions-first with reading-time holds.
-10. **Cache key:** `hash(template@version, misconception, params, narration)`. Precompute: the top 3 Tier L variants per seeded misconception at build time, through the full pipeline including critique.
+7. **Serve.** The route never waits for Claude: it serves a reviewed Tier L variant this student has not seen, or the Tier D scene at once, and queues a request that the worker generates through steps 2 to 6; the student's app fetches it when it is ready. The Player renders it in the browser. Scenes narrate the answer the misconception predicts, after maths-core confirms the student's answer equals it (ADR-0030).
+8. **Background:** the scene-check worker renders keyframes (end state of each beat, both aspect ratios, light and dark) and confirms DOM boxes match the layout. Opus 4.8 critiques the light keyframes at a laptop and a phone width, with the scene's facts, against the checklist (the maths is true, signalling, coherence, one idea per beat, matches narration). Other students get a variant only once it has passed. On failure the spec is evicted from the cache and regenerated with structured feedback (at most 3 generations); the Tier D scene is used meanwhile. The queue is the `scene_spec` table itself (ADR-0030).
+9. **Narration:** the device's own voice (ADR-0029). The Player speaks each beat's line with on-device speech synthesis, and a beat holds until its line is spoken. Captions always come from the same text and carry the scene on devices with no voice. A paid voice (ElevenLabs with word timings, cached by `hash(provider, voice, model, text)`, ADR-0011) can replace it behind the same interface.
+10. **Cache key:** `hash(template@version, misconception, params, beats)` for one scene, and `variant_key = hash(template@version, misconception, params)` to find every variant for an item and mistake; a student never sees the same variant twice. Precompute (`pnpm scenes:precompute`): 3 Tier L variants per seeded misconception, through the full pipeline including critique.
 11. **Telemetry:** watch time, replays, step-backs and re-check result per variant, so we can compare variants, and Tier D against Tier L, in evals and the pilot.
 
 Latency targets: cache hit under 300 ms; Tier D under 300 ms; Tier L cold under 8 s, with the Tier D scene or a static diagram shown immediately ("Building another way to see it"). No spinner for longer than 2 s without content.
@@ -487,7 +489,7 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 
 - **Children's Code:** all 15 standards apply to every account, whatever the age. Profiling only for the core adaptive-learning purpose, justified in the DPIA. No nudges, streaks or guilt copy. Geolocation never collected. Parental visibility always signalled to the student.
 - **Lawful basis (proposed, needs legal review):** legitimate interests for the core tutoring service and adaptive profiling, with a documented balancing test in the DPIA. Parent linking is the student's own choice. Under-13s are blocked rather than routed to parental consent.
-- **International transfers:** Anthropic and ElevenLabs are processors outside the UK. Data processing agreements, UK transfer mechanisms (IDTA or the UK Addendum, or adequacy where it applies), ZDR with Anthropic, and only pseudonymous, minimised data sent. Narration text sent to ElevenLabs never contains personal data.
+- **International transfers:** Anthropic is a processor outside the UK. Data processing agreements, UK transfer mechanisms (IDTA or the UK Addendum, or adequacy where it applies), ZDR with Anthropic, and only pseudonymous, minimised data sent. Narration is spoken on the student's device, so its text goes to no supplier (ADR-0029). If a paid voice is added, its supplier joins this list and narration text must never contain personal data.
 - **No student data used to train any model**, ours or a supplier's.
 - **DfE generative AI product safety standards:** compliance matrix in `/compliance/dfe-standards.md`, mapping each standard to features, tests and evidence.
 - **Online Safety Act:** no user-to-user content and no live search in the MVP. Scoping decision documented.
@@ -549,6 +551,6 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 1. **Safeguarding route for B2C:** who is Eddy's named safeguarding lead, what response time applies, and when do we contact emergency services? Needs advice from a safeguarding professional before any real student uses the tutor.
 2. **Legal review** of the lawful basis, the DPIA and the privacy notices before launch.
 3. **Remotion licence:** resolved. It could not be obtained, so scenes use our own renderer (ADR-0027).
-4. **ZDR with Anthropic** and the **ElevenLabs** data processing agreement and voice choice (a British voice).
+4. **ZDR with Anthropic.** A paid voice (the ElevenLabs data processing agreement and a British voice) waits until one is chosen (ADR-0029).
 5. **School pilot:** partner and timing, which decides when the teacher-facing reports in the DfE matrix matter.
 6. **Retention** of safeguarding excerpts.

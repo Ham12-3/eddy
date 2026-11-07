@@ -1,0 +1,126 @@
+"""Clients for the two services a Tier L scene needs (ADR-0030).
+
+- workers/scene-check: the scene engine (TypeScript). Context, assembly with every engine check,
+  and keyframes for the background critique.
+- services/maths-core: verifies every claim, both answers and every number the narration states.
+
+Both are private and take a shared service token. Any failure raises SceneServiceError, and the
+caller falls back to the Tier D scene.
+"""
+
+from dataclasses import dataclass
+from typing import Any
+
+import httpx
+
+from eddy_api.config import Settings
+
+FAST_TIMEOUT_S = 10.0
+KEYFRAME_TIMEOUT_S = 300.0
+
+JsonValue = Any
+
+
+class SceneServiceError(Exception):
+    """A service failed or refused. `status` is its HTTP status, or None when unreachable."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+def _json(response: httpx.Response) -> Any:
+    try:
+        return response.json()
+    except ValueError:
+        return None
+
+
+def _post(client: httpx.Client, path: str, body: dict[str, Any], timeout: float) -> dict[str, Any]:
+    try:
+        response = client.post(path, json=body, timeout=timeout)
+    except httpx.HTTPError as error:
+        raise SceneServiceError(f"{path}: {type(error).__name__}") from error
+    data = _json(response)
+    if response.status_code != 200:
+        detail = data.get("detail", "") if isinstance(data, dict) else ""
+        raise SceneServiceError(
+            f"{path}: HTTP {response.status_code} {detail}"[:300], response.status_code
+        )
+    if not isinstance(data, dict):
+        raise SceneServiceError(f"{path}: expected a JSON object", response.status_code)
+    return data
+
+
+@dataclass
+class SceneCheckClient:
+    client: httpx.Client
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "SceneCheckClient":
+        token = settings.scene_check_service_token.get_secret_value()
+        return cls(
+            httpx.Client(base_url=settings.scene_check_base_url, headers={"X-Service-Token": token})
+        )
+
+    def context(
+        self, template: str, item: dict[str, JsonValue], answer: JsonValue
+    ) -> dict[str, Any]:
+        body = {"template": template, "item": item, "studentAnswer": answer}
+        return _post(self.client, "/v1/scenes/context", body, FAST_TIMEOUT_S)
+
+    def check(
+        self,
+        template: str,
+        item: dict[str, JsonValue],
+        answer: JsonValue,
+        beats: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        body = {"template": template, "item": item, "studentAnswer": answer, "beats": beats}
+        return _post(self.client, "/v1/scenes/check", body, FAST_TIMEOUT_S)
+
+    def keyframes(self, template: str, spec: dict[str, Any]) -> dict[str, Any]:
+        body = {"template": template, "spec": spec}
+        return _post(self.client, "/v1/scenes/keyframes", body, KEYFRAME_TIMEOUT_S)
+
+    def healthy(self) -> bool:
+        try:
+            return self.client.get("/health", timeout=FAST_TIMEOUT_S).status_code == 200
+        except httpx.HTTPError:
+            return False
+
+
+@dataclass
+class MathsCoreClient:
+    client: httpx.Client
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "MathsCoreClient":
+        token = settings.maths_core_service_token.get_secret_value()
+        return cls(
+            httpx.Client(base_url=settings.maths_core_base_url, headers={"X-Service-Token": token})
+        )
+
+    def verify_scene(
+        self,
+        *,
+        spec: dict[str, Any],
+        answer: JsonValue,
+        predicted: JsonValue,
+        claims: list[JsonValue],
+        labels: list[str],
+    ) -> dict[str, Any]:
+        body = {
+            "spec": spec,
+            "answer": answer,
+            "predicted": predicted,
+            "claims": claims,
+            "labels": labels,
+        }
+        return _post(self.client, "/v1/scenes/verify", body, FAST_TIMEOUT_S)
+
+    def equivalent(self, left: JsonValue, right: JsonValue) -> bool:
+        body = {"left": left, "right": right}
+        return bool(
+            _post(self.client, "/v1/answers/equivalent", body, FAST_TIMEOUT_S)["equivalent"]
+        )

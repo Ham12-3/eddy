@@ -3,7 +3,7 @@ import { regionRect, type SceneFormat } from "../canvas";
 import { bounds, grow, slantedLine, stack, text } from "../layout/geometry";
 import type { MathNode, SceneElement } from "../layout/types";
 import { probabilityTree } from "../primitives/probability-tree";
-import { gcd, integer, LABEL, layoutFor, memoise, WORKING } from "./shared";
+import { gcd, integer, LABEL, layoutFor, memoise, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** TREE_ADD_ALONG_BRANCHES: "late and rain is 3/5 + 5/8." */
@@ -209,6 +209,14 @@ export const multiplyAlong: SceneTemplate<Params> = {
   itemTemplate: "p8-tree-and",
   title: "Multiply along the branches",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const n = integer(item, "n", 2, 20);
