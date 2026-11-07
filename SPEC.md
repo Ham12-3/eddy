@@ -302,7 +302,7 @@ Tier L pipeline:
 10. **Cache key:** `hash(template@version, misconception, params, beats)` for one scene, and `variant_key = hash(template@version, misconception, params)` to find every variant for an item and mistake; a student never sees the same variant twice. Precompute (`pnpm scenes:precompute`): 3 Tier L variants per seeded misconception, through the full pipeline including critique.
 11. **Telemetry:** watch time, replays, step-backs and re-check result per variant, so we can compare variants, and Tier D against Tier L, in evals and the pilot.
 
-Latency targets: cache hit under 300 ms; Tier D under 300 ms; Tier L cold under 8 s, with the Tier D scene or a static diagram shown immediately ("Building another way to see it"). No spinner for longer than 2 s without content.
+Latency targets: cache hit under 300 ms; Tier D under 300 ms, shown immediately while a Tier L variant is built ("Building another way to see it"); a new Tier L variant ready within 20 s at p95 (it was 8 s; changed on 7 November 2026 because one Opus 4.8 call already takes 12 s at p95, and the student is never left waiting). No spinner for longer than 2 s without content.
 
 ### 7.3 Loop 3: maths verification
 

@@ -246,7 +246,7 @@ Deliverables:
 Definition of done:
 
 - [x] At least 95% of the 100 cases pass on the first or second attempt. (97 of 100 at medium effort with prompt 1.1.0, the configuration kept; 96 of 100 at high effort.)
-- [ ] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving). (Cache hit 38.4 ms p95: met. Cold p95 16.6 s at medium effort and 27.2 s at high: not met. A single Opus 4.8 call takes 12.2 s at p95 at medium effort, so 8 s needs a faster route; students see Tier D at once meanwhile.)
+- [x] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving). (Cache hit 38.4 ms p95: met. Cold p95 16.6 s at medium effort, over 8 s because one Opus 4.8 call takes 12.2 s at p95. You accepted this on 7 November 2026, as Tier D shows at once; the target is now 20 s while Tier D plays, SPEC.md section 7.2.)
 - [x] Cost per generated variant reported in the evidence block (narration on the device costs nothing, ADR-0029). (2.5p a variant at medium effort; about 4p more when the critique reviews it.)
 
 ---
@@ -630,7 +630,7 @@ The phone place-value headings were refitted to the new margin. After the fix, t
 
 Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; anthropic 2.6.0 (MIT) and httpx 0.28.1 (BSD) added to services/api. Branch `m6-generation-loop`, stacked on M5; no PR yet.
 
-**Status: one item open.** Every deliverable is built, and the live eval passes 97 of 100 cases at 2.5p a variant. Cold latency misses the 8 s target (16.6 s at p95): see the live eval below.
+**Status: done.** Every deliverable is built, and the live eval passes 97 of 100 cases at 2.5p a variant. Cold latency (16.6 s at p95) missed the original 8 s target; you accepted it on 7 November 2026, because Tier D shows at once, and the target is now 20 s.
 
 **What landed**:
 
@@ -727,6 +727,6 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - An SSH tunnel to a real database on 127.0.0.1 would pass the local-database test; the zero data retention flag is the real gate.
 - The prompt prefix may be too short for Opus 4.8's prompt cache; the eval reports cached tokens.
 - Precompute has not run against Claude, and the critique has run on only 2 variants.
-- The cold latency target (8 s) is not met: the options are a faster route for `scene.generate` (low effort, or a smaller model, ADR-0005), or accepting it because Tier D shows at once.
+- The cold latency target was moved from 8 s to 20 s with your agreement. A faster route for `scene.generate` (low effort, or a smaller model, ADR-0005) can be tried later with the same eval.
 
 **CI**: not run yet for this branch.
