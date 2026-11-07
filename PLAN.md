@@ -245,9 +245,9 @@ Deliverables:
 
 Definition of done:
 
-- [ ] At least 95% of the 100 cases pass on the first or second attempt. (Not run: it needs your Anthropic key and your go-ahead to spend about £10 to £20.)
-- [ ] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving). (Cache hit measured at 38.4 ms p95; the cold figure needs the live eval.)
-- [ ] Cost per generated variant reported in the evidence block (narration on the device costs nothing, ADR-0029). (Needs the live eval.)
+- [x] At least 95% of the 100 cases pass on the first or second attempt. (97 of 100 at medium effort with prompt 1.1.0, the configuration kept; 96 of 100 at high effort.)
+- [ ] Cache-hit p95 under 300 ms; Tier L cold p95 under 8 s (critique excluded, as it runs after serving). (Cache hit 38.4 ms p95: met. Cold p95 16.6 s at medium effort and 27.2 s at high: not met. A single Opus 4.8 call takes 12.2 s at p95 at medium effort, so 8 s needs a faster route; students see Tier D at once meanwhile.)
+- [x] Cost per generated variant reported in the evidence block (narration on the device costs nothing, ADR-0029). (2.5p a variant at medium effort; about 4p more when the critique reviews it.)
 
 ---
 
@@ -630,7 +630,7 @@ The phone place-value headings were refitted to the new margin. After the fix, t
 
 Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; anthropic 2.6.0 (MIT) and httpx 0.28.1 (BSD) added to services/api. Branch `m6-generation-loop`, stacked on M5; no PR yet.
 
-**Status: not done.** Every deliverable is built and checked without calling Claude. The three definition-of-done items that need real Claude calls (pass rate, cold latency, cost per variant) wait for your Anthropic key and your go-ahead to spend on the live eval.
+**Status: one item open.** Every deliverable is built, and the live eval passes 97 of 100 cases at 2.5p a variant. Cold latency misses the 8 s target (16.6 s at p95): see the live eval below.
 
 **What landed**:
 
@@ -660,7 +660,30 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 | `pnpm maths:bench` and `pnpm maths:coverage` | Verification p95 3.9 ms, scene verification included (target 150 ms); maths-core coverage 91%. |
 | Pipeline probe | All 104 golden items through the real scene-check service and maths-core, with a stand-in for Claude returning the reviewed beats: 104 passed. |
 | `pnpm scenes:cache-bench` | 100 cache hits through `POST /v1/scenes/variants` with the real scene-check service: p50 27.4 ms, p95 38.4 ms (target 300 ms). |
-| `pnpm evals:tier-l` and `pnpm scenes:precompute` | Dry runs only: 100 cases, about £10; 39 variants, about £5.85. Nothing was sent to Claude. |
+| `pnpm scenes:precompute` | Dry run only: 39 variants, about £5.85. Not yet run against Claude. |
+
+**Live eval (`pnpm evals:tier-l -- --live`, 7 November 2026)**, Claude Opus 4.8, 100 cases, at most 2 attempts each:
+
+| Run | Passed within two | First time | Cold p50 / p95 | Cost |
+|---|---|---|---|---|
+| Smoke test, 3 cases, effort high | 3 of 3 | 1 of 3 | 10.4 s / 10.9 s | £0.07 |
+| Effort high, prompt 1.0.0 | 87 of 100 | 41 | 13.3 s / 26.8 s | £3.18 |
+| After loosening four over-strict checks, effort high | 96 of 100 | 74 | 11.6 s / 27.2 s | £2.68, 2.8p a variant |
+| **Effort medium, prompt 1.1.0 (kept)** | **97 of 100** | 43 | **9.3 s / 16.6 s** | **£2.40, 2.5p a variant** |
+| Critique smoke test, 2 cases with the vision critique | 2 of 2, critique passed 2 of 2 | 1 | 6.9 s / 7.1 s | £0.12 (about 4p a critique) |
+
+- **Total spent:** £8.45 of the £20 you approved.
+- **The first run's failures were mostly the checks being too strict, not bad narration:**
+  - "two" was flagged as a number word ("the two sides");
+  - the too-close-to-what-was-seen rule matched six-word runs (it now needs eight-word runs in more than half the beats);
+  - "cm²" was read as a power;
+  - "again" was banned outright (now only "slip again" and the like).
+  All 104 reviewed scenes still pass.
+- **Claude repeated "wrong"** (about a method) eight times at high effort, even after feedback. The prompt itself said "the wrong answer"; version 1.1.0 avoids the word, and the medium run had none.
+- **The checks that still fail cases are real:** a prediction beat that shows something new, more than 6 beats, a number the reviewed scene never states (such as 90° as a benchmark for 89°), and a beat out of order.
+- **Prompt caching works.** About 317,000 input tokens were read from the cache in the medium run.
+- **Latency:** at medium effort a single call takes 5.5 s at p50 and 12.2 s at p95, and 57 of the 100 cases needed a second attempt, so the 8 s cold target is out of reach with Opus 4.8 as configured. Students see Tier D at once and the variant arrives when it is ready.
+- **Reports:** `e2e-artifacts/evals/` (not committed).
 
 **Screenshots**: the scene pages at 375, 768 and 1280 px in light, dark and reduced motion (`e2e-artifacts/screenshots/`). I looked at the phone light, tablet reduced-motion and laptop dark pages: the Voice toggle wraps cleanly with the other controls and keeps its 44 px target.
 
@@ -703,6 +726,7 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - Several players on one page cut each other's voice off (the admin gallery only).
 - An SSH tunnel to a real database on 127.0.0.1 would pass the local-database test; the zero data retention flag is the real gate.
 - The prompt prefix may be too short for Opus 4.8's prompt cache; the eval reports cached tokens.
-- The live eval, the critique against Claude and precompute have not run.
+- Precompute has not run against Claude, and the critique has run on only 2 variants.
+- The cold latency target (8 s) is not met: the options are a faster route for `scene.generate` (low effort, or a smaller model, ADR-0005), or accepting it because Tier D shows at once.
 
 **CI**: not run yet for this branch.

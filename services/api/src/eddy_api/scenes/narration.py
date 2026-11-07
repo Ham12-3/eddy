@@ -16,11 +16,10 @@ student has already watched.
   US grade plus 5), and no harder than the reviewed scene by more than 2 grades; each beat ends a
   sentence, no single beat reads above grade 10, and taught maths words count as two syllables.
 - Nothing that looks like personal data: an email address, a web address or a phone number.
-- Different from what the student has seen: no more than half the beats may share a run of six
-  words with an earlier version.
+- Different from what the student has seen: no more than half the beats may share a run of
+  eight words with an earlier version.
 """
 
-import math
 import re
 import unicodedata
 from collections.abc import Sequence
@@ -30,7 +29,7 @@ MAX_GRADE = 8.0
 MIN_GRADE_ALLOWANCE = 5.0
 GRADE_MARGIN = 2.0
 MAX_BEAT_GRADE = 10.0
-SHARED_RUN = 6
+SHARED_RUN = 8
 DASHES = re.compile(f"[{chr(0x2012)}-{chr(0x2015)}]")
 ZERO_WIDTH = re.compile("[" + "".join(map(chr, (0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF))) + "]")
 APOSTROPHES = "'" + chr(0x2019)
@@ -58,7 +57,9 @@ HISTORY_WORDS = (
     "unsure",
     "you were sure",
     "you felt",
-    "again",
+    "slip again",
+    "mistake again",
+    "this slip before",
     "last time",
     "second time",
     "exam",
@@ -112,12 +113,14 @@ US_PHRASES = {
 }
 # -ize and -yze words are US spellings, except these.
 IZE_ALLOWED = {"size", "sizes", "sized", "prize", "prizes", "seize", "capsize", "resize"}
+# "one", "once" and "two" are left out: they are far more often a pronoun or a count of what is
+# drawn ("which one", "the two sides") than a stated value, and maths-core traces every digit.
 NUMBER_WORDS = {
-    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "zero", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
     "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen",
     "nineteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
     "hundred", "thousand", "million", "half", "halves", "quarter", "quarters", "third", "thirds",
-    "double", "twice", "triple", "once",
+    "double", "twice", "triple",
 }  # fmt: skip
 # GCSE words a student is taught and must hear: the reading-age formula counts them as two
 # syllables rather than penalising the exact word the maths needs.
@@ -189,9 +192,10 @@ def _runs(text: str) -> set[tuple[str, ...]]:
 
 
 def _too_close(lines: Sequence[str], version: Sequence[str]) -> bool:
+    """More than half the beats repeat a run of eight words from an earlier version."""
     earlier = set().union(*(_runs(line) for line in version)) if version else set()
     shared = sum(1 for line in lines if _runs(line) & earlier)
-    return bool(lines) and shared >= math.ceil(len(lines) / 2)
+    return bool(lines) and shared > len(lines) / 2
 
 
 def _line_problems(i: int, line: str, reference_words: set[str], reference: str) -> list[str]:
@@ -233,7 +237,10 @@ def _line_problems(i: int, line: str, reference_words: set[str], reference: str)
         problems.append(
             f'Beat {i}: write "{US_PHRASES[phrase.group(1).lower()]}", not "{phrase.group(1)}".'
         )
-    for char in {c for c in line if unicodedata.category(c) == "No"}:
+    # A superscript or vulgar fraction after a digit is a number the trace cannot read (10 to
+    # the 3, a half); after a letter it is part of a unit (cm squared), which is fine.
+    numeric = {m.group(1) for m in re.finditer(r"(?<![A-Za-z])(\S)", line)}
+    for char in {c for c in numeric if unicodedata.category(c) == "No"}:
         if char not in reference:
             problems.append(
                 f'Beat {i}: write "{char}" the way the reviewed scene writes numbers and powers.'
@@ -271,8 +278,8 @@ def narration_problems(
     for version in seen:
         if _too_close(lines, version):
             problems.append(
-                "This version is too close to one the student has already seen: half or more of "
-                "its beats repeat six words in a row. Find a different way in."
+                "This version is too close to one the student has already seen: more than half "
+                "of its beats repeat eight words in a row. Find a different way in."
             )
             break
     return problems

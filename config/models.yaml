@@ -10,7 +10,7 @@ routes:
   scene.generate:
     model: claude-opus-4-8
     thinking: adaptive
-    effort: high
+    effort: medium # high passed 96/100 but took 27 s at p95 (M6 eval)
   scene.critique:
     model: claude-opus-4-8
     thinking: adaptive

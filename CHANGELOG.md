@@ -10,6 +10,7 @@ Changed:
 - Every scene template declares its beat kinds, and the spec check enforces them and the template's misconception. Narration may not blame, gush, use exclamation marks or emoji, in Tier D and Tier L alike.
 - `pnpm keys:dev` adds missing keys to existing .env files and keeps every other line, including your own `ANTHROPIC_API_KEY`.
 - A prediction question holds the scene 2.5 s longer, as thinking time.
+- `scene.generate` runs at medium effort, and `prompts/scene-spec.md` is version 1.1.0 (it no longer says "wrong" itself). The live eval: 97 of 100 cases pass within two attempts, at 2.5p a variant.
 
 Added:
 

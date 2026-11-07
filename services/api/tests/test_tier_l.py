@@ -209,13 +209,21 @@ def test_a_version_too_close_to_what_was_seen_goes_back() -> None:
         student_answer=-2,
         answer=-7,
         reason="another_way",
-        seen=[["Look closely: which number is the smaller one here?", "So -7 is the smaller one."]],
+        seen=[
+            [
+                "Look closely: which number is the smaller one here?",
+                "So the number further to the left is always the smaller one.",
+            ]
+        ],
     )
     close = json.dumps(
         {
             "beats": [
                 {**TIER_D[0], "narration": "Look closely: which number is the smaller one here?"},
-                TIER_D[1],
+                {
+                    **TIER_D[1],
+                    "narration": "So the number further to the left is always the smaller one.",
+                },
             ]
         }
     )
