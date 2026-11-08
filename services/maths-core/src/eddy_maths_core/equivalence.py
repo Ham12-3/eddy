@@ -44,8 +44,21 @@ def _sample_points(symbols: Iterable[sympy.Symbol]) -> dict[sympy.Symbol, sympy.
     }
 
 
+def _singular(expr: sympy.Expr, point: dict[sympy.Symbol, sympy.Rational]) -> bool:
+    """Whether some divisor in the expression is exactly zero at the point.
+
+    evalf does not return nan there: for (x^2 - 1)/(x - 1) at x = 1 it returns a number with no
+    precision ("0.e+3", 1024 as a float), which would make two equal expressions look different.
+    """
+    return any(
+        power.exp.is_negative and power.base.subs(point).is_zero for power in expr.atoms(sympy.Pow)
+    )
+
+
 def _evaluate(expr: sympy.Expr, point: dict[sympy.Symbol, sympy.Rational]) -> float | None:
     """The value at a point to DIGITS significant figures, or None if it has no real value."""
+    if _singular(expr, point):
+        return None
     value = expr.evalf(DIGITS, subs=point)
     if not value.is_number or value.has(sympy.zoo, sympy.nan) or not value.is_finite:
         return None

@@ -174,6 +174,26 @@ def test_claims_and_answer_leaks() -> None:
     assert not results[0].leaks_answer
 
 
+def test_a_sample_on_a_removable_singularity_is_skipped(monkeypatch: pytest.MonkeyPatch) -> None:
+    """x = 1 is drawn as 3/3, 7/7 and so on: about one call in ten before this was fixed."""
+    from eddy_maths_core import equivalence
+
+    x = sympy.Symbol("x")
+    draws = iter([sympy.Rational(3, 3), *(sympy.Rational(k, 7) for k in range(2, 60))])
+    monkeypatch.setattr(equivalence, "_sample_points", lambda symbols: {x: next(draws)})
+    assert equivalence.numerically_zero((x**2 - 1) / (x - 1) - (x + 1))
+    draws = iter([sympy.Rational(3, 3), *(sympy.Rational(k, 7) for k in range(2, 120))])
+    assert equivalence._constant_multiple((x**2 - 1) / (x - 1), 2 * (x + 1))
+
+
+def test_a_statement_that_is_not_real_at_the_answer_is_unverified() -> None:
+    item = TEMPLATES["a17-two-step"].generate(3)  # x = 4
+    statement = ["Less", 0, ["Sqrt", ["Negate", "x"]]]  # found by the fuzz test
+    for role in ("claim", "given", "step"):
+        (result,) = verify_claims([(role, statement)], item)
+        assert not result.verified
+
+
 def test_answers_are_written_in_the_asked_form() -> None:
     assert answer_mathjson(sympy.Rational(7, 10), AnswerFormat(form="decimal")) == {"num": "0.7"}
     assert answer_mathjson(sympy.Rational(1, 3), AnswerFormat(dp=2)) == {"num": "0.33"}

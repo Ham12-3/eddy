@@ -55,6 +55,8 @@ jobs:
         run: pnpm maths:coverage
       - name: Verification latency (p95 under 150 ms)
         run: pnpm maths:bench
+      - name: Learner model coverage (85% or more)
+        run: pnpm learner:coverage
       - name: API client matches services/api
         run: pnpm api-client:generate && git diff --exit-code -- packages/api-client
       - name: CDK synth (no deploy)

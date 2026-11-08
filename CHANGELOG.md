@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### M4: Learner model (5 November 2026)
+
+Added:
+
+- `eddy_api.learner`, pure functions with no database access (ADR-0026):
+  - BKT per node, with guessing that follows the number of options and aided attempts at half weight.
+  - SECURE after 3 counted correct answers spaced over 2 UK days, with no open misconception, and each misconception an item can reveal tested twice.
+  - NEEDS_REVIEW with hysteresis and a lapse rule, and a review that stays owed until a correct answer given without help and not marked as a guess.
+  - Prerequisite propagation capped below SECURE.
+  - The two-failure prerequisite diagnostic, at most once per node per session.
+- Elo item difficulty and per-strand ability, with item choice aimed at 70 to 85% predicted success, away from recently seen families, and towards misconceptions not yet tested.
+- FSRS review cards (the `fsrs` package, MIT licence), scheduled in days at 0.9 target retention and at most 120 days apart, rated from correctness, confidence, help, time and extra time.
+- The misconception state machine:
+  - an unsure choice is a weak first sign;
+  - closing needs 3 or more clean re-checks, one of them in a later session;
+  - each recurrence gets a different scene variant;
+  - a remediation queue puts confident mistakes first, then the current node's.
+- Node selection that finishes a started node first, looks through nodes without items to the practisable ones behind them, and is not locked by reviews falling due; repair reviews; interleaving by strand once 3 nodes are secured; and today's plan.
+- A synthetic student simulator and `pnpm learner:report`, with tests for every rule and for the M4 definition of done, including the real curriculum with the real templates.
+- `pnpm learner:coverage` in CI.
+
+Fixed (maths-core, found by its own tests during M4 runs):
+
+- Answer sampling landed on removable singularities such as x = 1 in (x^2 - 1)/(x - 1), where SymPy returns a number with no precision instead of nan, so about one check in ten called equal expressions different. Such points are now skipped.
+- A claim with no real value at the answer, such as 0 < sqrt(-x) when x = 4, raised an error instead of coming back unverified.
+
 ### M3: Maths core (5 November 2026)
 
 Added:
