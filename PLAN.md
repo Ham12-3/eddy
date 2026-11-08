@@ -118,19 +118,19 @@ Depends on: M0. Estimate: 1.5 weeks. Runs alongside M3.
 
 Deliverables:
 
-- [ ] Tokens as CSS variables for light, dark, dyslexia mode and reduced motion. Tailwind v4 theme mapped to our tokens only (no default palette available to components).
-- [ ] Self-hosted fonts: Fraunces (variable), Atkinson Hyperlegible Next, Caveat, OpenDyslexic (optional download). Type scale with `clamp()`, tabular numerals.
-- [ ] Components: Button, Link, Card, QuestionCard (margin rule, small-caps command word), WorkingPad, MathField (MathLive themed, custom Foundation keyboard), Maths (KaTeX with MathML), Feedback (kind misconception naming), ConfidencePicker, ProgressMap node, Chip, Toggle, Dialog and Sheet, Toast (no confetti), Skeleton, EmptyState, ErrorState, Tabs, form fields, Captions panel, Player controls.
-- [ ] Storybook with every component in every theme, plus Playwright visual snapshots.
-- [ ] Contrast test computing every token pair actually used, in both themes. Resolves the four issues flagged in SPEC.md section 11 (token changes proposed to you before they land).
-- [ ] `scripts/lint-cliches`: fails on purple or blue-to-purple gradients, `backdrop-filter` or blur glass, emoji in UI copy, Inter-only font stacks, "Unlock your potential", sparkle icons, text shadows, neon glows, pill buttons outside toggles, confetti packages.
+- [x] Tokens as CSS variables for light, dark, dyslexia mode and reduced motion. Tailwind v4 theme mapped to our tokens only (no default palette available to components).
+- [x] Self-hosted fonts: Fraunces (variable), Atkinson Hyperlegible Next, Caveat, OpenDyslexic (optional download). Type scale with `clamp()`, tabular numerals.
+- [x] Components: Button, Link, Card, QuestionCard (margin rule, small-caps command word), WorkingPad, MathField (MathLive themed, custom Foundation keyboard), Maths (KaTeX with MathML), Feedback (kind misconception naming), ConfidencePicker, ProgressMap node, Chip, Toggle, Dialog and Sheet, Toast (no confetti), Skeleton, EmptyState, ErrorState, Tabs, form fields, Captions panel, Player controls.
+- [x] Storybook with every component in every theme, plus Playwright visual snapshots. (Screenshots plus axe for every story; pixel-diff baselines deferred, ADR-0020.)
+- [x] Contrast test computing every token pair actually used, in both themes. Resolves the four issues flagged in SPEC.md section 11 (token changes proposed to you before they land).
+- [x] `scripts/lint-cliches`: fails on purple or blue-to-purple gradients, `backdrop-filter` or blur glass, emoji in UI copy, Inter-only font stacks, "Unlock your potential", sparkle icons, text shadows, neon glows, pill buttons outside toggles, confetti packages.
 
 Definition of done:
 
-- [ ] Contrast test passes for all pairs.
-- [ ] Cliché lint passes and runs in CI.
-- [ ] Storybook snapshots at 3 viewports in light, dark, reduced motion and dyslexia mode; I review them against the brief's section 6 and log findings.
-- [ ] MathField works by keyboard only and announces its content to screen readers (automated checks plus a manual checklist for you).
+- [x] Contrast test passes for all pairs.
+- [x] Cliché lint passes and runs in CI.
+- [x] Storybook snapshots at 3 viewports in light, dark, reduced motion and dyslexia mode; I review them against the brief's section 6 and log findings.
+- [x] MathField works by keyboard only and announces its content to screen readers (automated checks plus a manual checklist for you). (Automated checks pass; the manual checklist is in `docs/accessibility/screen-reader-checklist.md` and has not been run yet.)
 
 ---
 
@@ -383,3 +383,37 @@ Environment: Windows 11, Node 22.15, Python 3.12.10, pnpm 10.6.5, uv 0.11.14, Do
 **Deviations**: ADR-0016 (S3Mock and ElasticMQ instead of LocalStack), ADR-0017 (TypeScript 5.9 and ESLint 9), ADR-0018 (the `system` role and route role lists).
 
 **CI**: the first run (41906393567, commit 4f6e484, PR #1) passed both jobs, "Lint, typecheck, unit tests, synth" and "Playwright E2E and axe", and uploaded the `e2e-artifacts` bundle (576 KB). Every M0 definition-of-done item is now met.
+
+### M1: Design system (5 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14. Branch `m1-design-system`, stacked on M0; PR #2.
+
+**Decisions with Abdulhamid during M1**: brand colours stay paper, ink and orange. Light accent #F08C4A and dark accent #FFA552, both fills with dark text and at least 30 CIELAB units from the misconception red. Dark highlighter #6B5410; new `--field-border` and `--on-accent` tokens (ADR-0019). Visual checks are screenshots plus axe, not pixel diffs (ADR-0020).
+
+**Checks run (final run)**
+
+| Command | Result |
+|---|---|
+| `pnpm check` | Exit 0. ESLint, Prettier, dash check (163 files), cliché lint (84 files); typecheck of every project; Vitest 118 tests (98 in `ui`, including 68 colour-pairing checks across light, dark and dyslexia); 186 hook and lint-rule tests; ruff, strict mypy, 32 pytest tests. |
+| `pnpm e2e:storybook` | 25 stories in 14 modes: 3 widths in light, dark, reduced motion and dyslexia, plus a forced dark theme and dyslexia on dark. 350 story checks passed with zero serious or critical axe violations, and a screenshot each. The 6 keyboard and screen reader checks pass (MathField by keyboard with its name, hint and error on the focused textbox; label click; dialog focus and Escape; busy button focus; toggle; confidence picker). The first full run failed only the dialog check, whose rule was stricter than native `<dialog>` behaviour; it was corrected and rerun. |
+| `pnpm e2e` (web app on the design system) | 27 passed. |
+| CI run 42000300185 on b1be67e (PR #2) | All three jobs passed, including the new "Design system stories, axe and screenshots" job on Linux; `storybook-artifacts` uploaded (19.6 MB). |
+
+**Screenshot review** (gallery and new stories, by eye): light, dark, phone-width dyslexia, the Foundation keyboard and the open sheet in dark mode. Fixed: KaTeX's italic `\pounds` (now an upright £), and the hello page's subject id wrapping on mobile after the move to the design system. Noted: the degree key's symbol is small on the on-screen keyboard.
+
+**Fresh-context review** (`reviewer` agent). Fixed:
+
+- MathField's hint and error never reached the focused textbox inside MathLive's shadow DOM (high). They are now set on it as `aria-description` and `aria-invalid`, a new error is announced through a live region, and the test checks the element that has focus.
+- Feedback relied on a live region that arrives already filled: now there is a `LiveRegion` to keep mounted.
+- Pressable chips were 32px tall (now 44px). A busy button dropped keyboard focus (now `aria-disabled`). The toggle's name was read twice. Toasts disappeared under focus (now they pause). Tabs with an unknown default were unreachable.
+- The SPEC.md section 11 table had stale rows contradicting ADR-0019.
+- Cliché lint gaps (Inter through next/font, Heroicons sparkles, confetti package variants, React shadow styles, `drop-shadow()`, `rounded-[9999px]`, named colours, .js/.jsx/.svg files) and false positives (`href="#add"`, the copyright sign): all covered by tests now.
+- Missing states (open sheet, visible toast, the on-screen keyboard) now have stories; the theme override and dyslexia on dark have their own projects.
+- KaTeX error colour, placeholder contrast, real OpenDyslexic bold, the 150ms reduced-motion cross-fade, the dialog backdrop in dark mode, `sideEffects` and barrel-import optimisation for `@eddy/ui`, the label click on MathField, a units row on the Foundation keyboard, and test hygiene.
+
+**Recorded, not fixed in M1**
+
+- MathLive's own animations sit in its shadow DOM, out of reach of the reduced-motion rules.
+- Hover colour mixes (`bg-ink/85`, `bg-accent/85`) are not in `contrast-pairs.ts`; computed at 10.1:1 and 7.3:1.
+- `aria-description` support varies by screen reader; the manual checklist covers it.
+- The manual screen reader checklist has not been run yet (needs a person with NVDA and VoiceOver).

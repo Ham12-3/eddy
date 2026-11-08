@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AA_BODY_TEXT, contrastRatio, relativeLuminance } from "./contrast";
-import { placeholderPalette } from "./placeholder-palette";
+import { contrastRatio, deltaE76, relativeLuminance } from "./contrast";
 
 describe("contrastRatio", () => {
   it("matches the WCAG extremes", () => {
@@ -19,19 +18,18 @@ describe("contrastRatio", () => {
     expect(() => relativeLuminance("teal")).toThrow(/#rrggbb/);
   });
 
-  it("confirms the accent text issue flagged in SPEC.md section 11", () => {
-    expect(contrastRatio("#D9480F", "#F6F3EA")).toBeLessThan(AA_BODY_TEXT);
+  it("reproduces the brief's failing accent text (SPEC.md section 11)", () => {
+    expect(contrastRatio("#D9480F", "#F6F3EA")).toBeLessThan(4.5);
   });
 });
 
-describe("placeholder palette", () => {
-  for (const [mode, colours] of Object.entries(placeholderPalette)) {
-    it(`${mode}: ink and muted ink meet AA body text on paper and raised paper`, () => {
-      for (const text of [colours.ink, colours.inkMuted]) {
-        for (const background of [colours.paper, colours.paperRaised]) {
-          expect(contrastRatio(text, background)).toBeGreaterThanOrEqual(AA_BODY_TEXT);
-        }
-      }
-    });
-  }
+describe("deltaE76", () => {
+  it("is zero for identical colours and large for black against white", () => {
+    expect(deltaE76("#336699", "#336699")).toBe(0);
+    expect(deltaE76("#000000", "#FFFFFF")).toBeCloseTo(100, 0);
+  });
+
+  it("flags the brief's dark accent and misconception red as too close", () => {
+    expect(deltaE76("#FF7A3D", "#FF7A66")).toBeLessThan(25);
+  });
 });
