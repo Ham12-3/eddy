@@ -1,21 +1,14 @@
 /**
- * The scene-check worker (M5) renders the end state of every beat headless. This works out which
- * frames those are; the Playwright renderer and SQS consumer arrive in M5.
+ * The scene-check worker (SPEC.md section 7.2, step 8; ADR-0027). It draws each beat's end state
+ * in headless Chromium and confirms the DOM matches the layout. M6 adds the SQS consumer that runs
+ * it after a Tier L scene is served.
  */
-
-/** Frame index of the last frame of each beat, given beat durations in milliseconds. */
-export function beatEndFrames(beatDurationsMs: readonly number[], fps: number): number[] {
-  if (!Number.isInteger(fps) || fps <= 0) {
-    throw new Error("fps must be a positive integer");
-  }
-  const frames: number[] = [];
-  let elapsedMs = 0;
-  for (const duration of beatDurationsMs) {
-    if (duration <= 0) {
-      throw new Error("Beat durations must be positive");
-    }
-    elapsedMs += duration;
-    frames.push(Math.max(0, Math.round((elapsedMs / 1000) * fps) - 1));
-  }
-  return frames;
-}
+export { compareText, INK_TOLERANCE_PX, POSITION_TOLERANCE_PX, type DomProblem } from "./compare";
+export { keyframeHtml, type Theme } from "./html";
+export {
+  checkKeyframes,
+  describeKeyframeProblem,
+  STAGE_WIDTHS,
+  THEMES,
+  type KeyframeProblem,
+} from "./keyframes";

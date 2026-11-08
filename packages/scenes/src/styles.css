@@ -1,0 +1,62 @@
+/*
+ * Scene styles. Import after "@eddy/ui/styles.css" (apps/web globals.css).
+ * Scene text stays in Atkinson Hyperlegible in every mode, because layouts are measured with its
+ * metrics; captions and the transcript sit outside the canvas and follow the reader's font.
+ */
+@source "./";
+
+.eddy-scene {
+  container: eddy-scene / inline-size;
+}
+
+.eddy-scene-canvas {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card, 8px);
+  background: var(--paper);
+}
+
+/* 4:5 below 640 px, 16:9 from there up. */
+.eddy-scene .eddy-scene-canvas[data-format="desktop"] {
+  display: none;
+}
+
+@container eddy-scene (min-width: 640px) {
+  .eddy-scene .eddy-scene-canvas[data-format="desktop"] {
+    display: block;
+  }
+  .eddy-scene .eddy-scene-canvas[data-format="mobile"] {
+    display: none;
+  }
+}
+
+.eddy-scene-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.eddy-scene-text {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  font-family:
+    "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible", system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.25;
+  white-space: pre;
+  overflow: visible;
+}
+
+.eddy-scene-pen {
+  font-family: var(--font-annotation-family);
+}
+
+/* KaTeX's em is the label size (the layout measures maths that way). */
+.eddy-scene-text .katex {
+  font-size: 1em;
+}

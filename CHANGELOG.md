@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### M5: Scenes engine (6 November 2026)
+
+Changed:
+
+- Scenes play on Eddy's own renderer instead of Remotion, whose licence could not be obtained (ADR-0027). A scene is a pure function of time: SVG shapes plus real DOM text, with no animation dependency.
+
+Added:
+
+- SceneSpec v1 in zod (`packages/schemas`), its generated JSON Schema, and pydantic models generated from that (`pnpm schemas:generate`; CI checks both are current).
+- `packages/scenes` (ADR-0028):
+  - text measured with the real font files;
+  - 16:9 and 4:5 layouts with 6% safe margins;
+  - 11 primitives (number line, bar model, balance, coordinate grid, transformation grid, angle diagram, area model, Pythagoras squares, probability tree, data chart, place-value slider);
+  - the timeline, with morphs, fades and a 150 ms stepped mode for reduced motion.
+- The scene player: play and pause, step back and forward, replay, three speeds, captions, transcript and keyboard control. It never autoplays. An error boundary falls back to the narration as text.
+- The static annotated diagram of every beat.
+- Static checks:
+  - overlap, off-canvas, safe margins and overflow;
+  - minimum text size, exponents included;
+  - contrast of every colour role on both themes, including text on tints and highlights;
+  - colour roles, with a pen mark and label on every faulty step;
+  - at most 3 moving elements, flash rate and focus ids;
+  - KaTeX rendering.
+- 13 default (Tier D) scenes, one per MVP topic, for its most common misconception. They were reviewed for teaching and revised.
+- `workers/scene-check` (`pnpm scenes:check`): every beat's end state drawn in headless Chromium, as a self-contained page with JavaScript and the network off. It confirms each DOM text box against the layout and that the fonts loaded, and saves screenshots. It covers the gallery samples at 5 widths in light and dark, plus all 104 golden variants.
+- The scene golden set: 104 specs built from real maths-core items and real wrong answers (`evals/golden/scenes/`). maths-core verifies every claim, the correct answer and the predicted wrong answer, and traces every stated number, sign included. It runs in `pnpm evals`.
+- The admin scene gallery at `/admin/scenes`, rendered per request behind the admin gate, with end-to-end tests for captions, transcript, keyboard and axe at every viewport and mode.
+- The `/new-template` skill.
+- `@eddy/ui/colour`, a React-free entry for colour tokens and contrast maths.
+
+Changed in the design system:
+
+- The player's step buttons stay focusable at the first and last beat (`aria-disabled`), so a keyboard user does not lose their place.
+
 ### M4: Learner model (5 November 2026)
 
 Added:

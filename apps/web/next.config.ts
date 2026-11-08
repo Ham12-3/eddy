@@ -13,9 +13,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   // Workspace packages export TypeScript source; Next compiles them.
-  transpilePackages: ["@eddy/api-client", "@eddy/schemas", "@eddy/ui"],
+  transpilePackages: ["@eddy/api-client", "@eddy/scenes", "@eddy/schemas", "@eddy/ui"],
   // Import only the components a page uses from the @eddy/ui barrel, not all of them.
-  experimental: { optimizePackageImports: ["@eddy/ui"] },
+  experimental: { optimizePackageImports: ["@eddy/ui", "@eddy/scenes"] },
   poweredByHeader: false,
   // Stop `next dev` writing AGENTS.md; agent guidance lives in CLAUDE.md and .claude/rules/.
   agentRules: false,

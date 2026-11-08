@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/SceneSpec",
+  "$defs": {
+    "SceneSpec": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "scene-spec/1"
+        },
+        "template": {
+          "type": "string",
+          "maxLength": 80,
+          "pattern": "^[a-z][a-z_]*\\.[a-z][a-z_]*@[0-9]+$"
+        },
+        "misconception": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "params": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        "studentAnswer": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "correctAnswer": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "beats": {
+          "minItems": 1,
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Beat"
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "template",
+        "misconception",
+        "params",
+        "studentAnswer",
+        "correctAnswer",
+        "beats"
+      ],
+      "additionalProperties": false
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          }
+        }
+      ]
+    },
+    "Beat": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "show_given",
+            "ask_prediction",
+            "show_student_working",
+            "highlight_slip",
+            "build",
+            "transform",
+            "compare",
+            "reveal_correct",
+            "recap"
+          ]
+        },
+        "focus": {
+          "minItems": 1,
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ElementId"
+          }
+        },
+        "narration": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "kind",
+        "focus",
+        "narration"
+      ],
+      "additionalProperties": false
+    },
+    "ElementId": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-zA-Z0-9_]*(\\.[a-z][a-zA-Z0-9_]*)*$"
+    }
+  },
+  "$id": "urn:eddy:schema:scene-spec:1",
+  "title": "SceneSpec"
+}
