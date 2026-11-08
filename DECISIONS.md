@@ -137,6 +137,7 @@ Status: Accepted (4 November 2026, during M0 review)
 - **Context:** SPEC.md section 6.2 lists the user roles `student`, `parent` and `admin`. The M0 hello page needs to call services/api with no signed-in user, and the security review flagged that an undefined `system` role, minted by a public page, could quietly gain trust later.
 - **Decision:** `system` is a service-token role for machine callers only (diagnostics now, scheduled jobs later). It is never stored on a user or given to a browser session. Every services/api route names the roles it accepts with `require_roles(...)`, so a role is trusted only where a route says so. The hello page's system check runs only in development or when `EDDY_SYSTEM_CHECK=1` (the E2E suite), never for production visitors. The signer checks role and subject at runtime as well as in types.
 - **Consequences:** Adding a route forces an explicit decision about who may call it. Jobs inside services/api do not need web-minted tokens at all.
+- **Amended in M2 (5 November 2026):** the admin preview pages serve a person, so they sign as `admin` with the subject `preview:admin-curriculum`, never as `system`. The preview exists only under `next dev` or with `EDDY_ADMIN_PREVIEW=1`, and is checked in `src/proxy.ts`, in every page and `generateMetadata`, and before a token is signed. A layout's `notFound()` alone does not stop its pages rendering. M8 replaces the preview subject with the signed-in admin's own id.
 
 ## ADR-0019: Contrast-safe "Paper and Ink" tokens
 
@@ -160,3 +161,39 @@ Status: Accepted (4 November 2026, during M1)
 - **Context:** PLAN.md M1 asks for Playwright visual snapshots of every component in every mode. Pixel-diff baselines are platform specific: font rendering differs between the Windows dev machine and Linux CI, so baselines from one fail on the other.
 - **Decision:** `pnpm e2e:storybook` opens every story at 375, 768 and 1280 px in light, dark, reduced motion and dyslexia mode. For each it runs axe (zero serious or critical violations allowed) and saves a full-page screenshot, which CI uploads as an artifact. Two extra projects cover the `data-theme` override and dyslexia mode on dark. Every component, including open dialogs and sheets, a visible toast and the on-screen maths keyboard, has a story; a gallery story gathers the main ones on one page for review by eye. Pixel-diff regression (`toHaveScreenshot`) is deferred until baselines can be produced on the CI platform, for example in the Playwright Docker image.
 - **Consequences:** Visual regressions are caught by review and axe, not automatically. Revisit when the scene engine (M5) adds many more visuals.
+
+## ADR-0021: One curriculum node per DfE statement, seeded from YAML by natural key
+
+Status: Accepted (5 November 2026, during M2)
+
+- **Context:** AQA 8300, Edexcel 1MA1 and OCR J560 all teach the same DfE GCSE mathematics subject content (N1 to S6). Copying nodes per board would triple the graph, split mastery between duplicate nodes and make prerequisite edges drift. The curriculum also has to be reviewable in pull requests and reloadable without losing student data.
+- **Decision:** `curriculum_node` holds one row per DfE statement (97), attached to a DFE `curriculum_spec`. Exam board specs are separate `curriculum_spec` rows whose `content_spec_id` points at the DfE spec; their papers, marks and calculator rules sit in `papers`. The curriculum lives in `curriculum/` as YAML, each file with a JSON Schema in `curriculum/schemas/`, and is loaded by `python -m eddy_api.seed`: schema validation, then cross-file checks (known codes, a prerequisite DAG, every MVP node's ancestors declared, at least four misconceptions per MVP topic), then an idempotent upsert keyed on natural keys (spec board, code and version; node code; misconception code; topic slug; set text board and title; question type spec, paper and number). Link rows (prerequisite edges, topic nodes, level descriptors) are kept exactly in step with the YAML. Entity rows missing from the YAML are reported as orphaned, never deleted, because attempts and states point at them. `--dry-run` runs the same upsert inside a transaction and rolls back. Node titles and descriptions are our own paraphrases of the DfE content (Open Government Licence v3.0). Two columns differ from the brief: `misconception.remediation_template` names a scene template (`primitive.template`) rather than an id, and `recheck_family` names an item family rather than listing item ids, because items are generated from families in M3.
+- **Consequences:** Mastery is tracked once per idea whatever the board. Board-specific content differences (rare at GCSE) will need a node flag rather than a copy. Nodes, topics, misconceptions and set texts that leave the YAML are retired (`retired_at`, added after the M2 review) and no longer served; one that returns is restored. The seed and `pnpm dev` refuse a database that is not on this machine unless told otherwise, and E2E uses its own `eddy_e2e` database.
+
+## ADR-0022: A three-part rule language for misconception detection
+
+Status: Accepted (5 November 2026, during M2)
+
+- **Context:** SPEC.md section 6.1 asks for detection rules that maths-core can run deterministically, with the Haiku classifier as a fallback that can only ever suspect. Rules must be data in the YAML, not free code, so a new misconception is a reviewed YAML change plus one named function.
+- **Decision:** `misconception.detection_rules` is a list of rules, any of which may match:
+  - `{type: distractor, rule: <name>}`: the student's answer equals `rule(item params)`. Every name must be implemented by maths-core (M3); a test lists every name the YAML uses. The same function generates the item's distractor for that misconception, so detection and distractors cannot drift.
+  - `{type: structure, rule: <name>}`: a named pattern over the MathJSON of the student's working (for example both numerators and denominators added). Reserved in M2; maths-core adds the matchers when step checking needs them.
+  - `{type: classifier}`: eligible for the Haiku fallback. A classifier match can only make the misconception SUSPECTED, never CONFIRMED.
+  Rule names are snake_case identifiers, never expressions, so nothing from the YAML is ever evaluated.
+- **Consequences:** The library has 85 misconceptions, 82 distinct distractor rules and 2 structure rules (`sf_not_normalised`, where the value is right and only the form is wrong, and `probability_over_one`, a range check that matches only when no distractor rule does) for M3 to implement. A wrong answer is matched only against the misconceptions of the item's own template, so two codes never claim the same answer in one item. Student text names the idea, not the item's numbers, so it never gives away an answer.
+
+## ADR-0023: Auth.js tables in our own schema conventions
+
+Status: Accepted (5 November 2026, during M2)
+
+- **Context:** Auth.js (ADR-0008) ships adapters that expect its own table and column names (camelCase, text ids). The rest of the schema uses UUID primary keys, snake_case columns and named constraints, and Python owns the migrations.
+- **Decision:** `users`, `accounts`, `sessions` and `verification_token` are created by our Alembic migrations with UUID keys and snake_case columns, alongside our own columns (role, deactivation, a unique index on `lower(email)`). In M8 apps/web gets a small custom Auth.js adapter that maps Auth.js fields to these columns, instead of the stock Postgres adapter creating its own tables. This amends the "Postgres adapter" wording in ADR-0008.
+- **Consequences:** One migration history and one naming style. The custom adapter is roughly a hundred lines that M8 must test against the Auth.js adapter test suite.
+
+## ADR-0024: Account and audit hardening that waits for M8
+
+Status: Accepted (5 November 2026, after the M2 review)
+
+- **Context:** The M2 security review found three things the schema alone cannot settle. The audit log is append-only by trigger, but SPEC.md 6.5 also asks for database grants, and every process connects as the table owner. Auth.js's email provider creates a `users` row when the magic link is used, which SPEC.md 4.1 puts before the age check, so an under-13's email would be stored. And the retention of `audit_log` and `safeguarding_event` rows is an open DPIA question.
+- **Decision:** Fixed in M2 (migration 0002): deleting an account no longer cascades to `safeguarding_event` (RESTRICT) or `data_request` (SET NULL); sessions store a token hash; the OAuth token columns are gone; `parent_link` and `invite_code` have integrity checks. Moved to M8, before any real row is written: a migrator role that owns the schema and a runtime role with only SELECT and INSERT on `audit_log`, with a test that the runtime role cannot update it or disable the trigger; the age check before any email is stored (or a pending state that is hard-deleted on failure), with expired verification tokens purged; and the retention rule for `audit_log` and `safeguarding_event`, from the DPIA.
+- **Consequences:** Until M8 the audit log's protection is the trigger only, which is enough while no real data exists. M8 cannot start sign-up until these are in place; PLAN.md M8 lists them.

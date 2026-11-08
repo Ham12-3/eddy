@@ -1,0 +1,56 @@
+# The MVP's learning topics (SPEC.md section 2.2): the brief's 12 shortlisted topics, with ratio
+# and percentages as separate topics. `primitive` is the scene primitive that teaches it (M5).
+
+topics:
+  - slug: negative-numbers
+    title: Negative numbers
+    nodes: [N1, N2]
+    primitive: number_line
+  - slug: fractions-and-decimals
+    title: Fractions and decimals on a number line
+    nodes: [N1, N2, N10]
+    primitive: number_line
+  - slug: standard-form
+    title: Standard form
+    nodes: [N9]
+    primitive: place_value_slider
+  - slug: percentages
+    title: Percentages, including reverse percentages
+    nodes: [N11, N12, R9]
+    primitive: bar_model
+  - slug: ratio
+    title: Ratio
+    nodes: [R4, R5, R6, R7]
+    primitive: bar_model
+  - slug: linear-equations
+    title: Linear equations
+    nodes: [A17]
+    primitive: balance
+  - slug: straight-line-graphs
+    title: y = mx + c
+    nodes: [A9, A10]
+    primitive: coordinate_grid
+  - slug: angles
+    title: Angles and parallel lines
+    nodes: [G3]
+    primitive: angle_diagram
+  - slug: transformations
+    title: Transformations
+    nodes: [G7]
+    primitive: transformation_grid
+  - slug: area-and-perimeter
+    title: Area and perimeter
+    nodes: [G16, G17]
+    primitive: area_model
+  - slug: pythagoras
+    title: Pythagoras
+    nodes: [G20]
+    primitive: pythagoras_squares
+  - slug: probability-trees
+    title: Probability trees
+    nodes: [P7, P8]
+    primitive: probability_tree
+  - slug: averages
+    title: Averages
+    nodes: [S4]
+    primitive: data_chart

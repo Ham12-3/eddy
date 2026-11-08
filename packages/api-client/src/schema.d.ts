@@ -21,6 +21,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/curriculum/misconceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Misconceptions */
+        get: operations["listMisconceptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculum/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Nodes */
+        get: operations["listCurriculumNodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculum/nodes/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Node */
+        get: operations["getCurriculumNode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculum/specs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Specs */
+        get: operations["listCurriculumSpecs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/curriculum/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Topics */
+        get: operations["listCurriculumTopics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/hello": {
         parameters: {
             query?: never;
@@ -42,6 +127,21 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** DetectionRule */
+        DetectionRule: {
+            /** Rule */
+            rule?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "distractor" | "structure" | "classifier";
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** HealthResponse */
         HealthResponse: {
             /**
@@ -63,6 +163,159 @@ export interface components {
             role: "student" | "parent" | "admin" | "system";
             /** Subject */
             subject: string;
+        };
+        /** MisconceptionOut */
+        MisconceptionOut: {
+            /** Code */
+            code: string;
+            /** Detection Rules */
+            detection_rules: components["schemas"]["DetectionRule"][] | null;
+            /** Evidence Source */
+            evidence_source: string;
+            /** Node */
+            node: string;
+            /** Recheck Family */
+            recheck_family: string | null;
+            /** Remediation Template */
+            remediation_template: string | null;
+            /** Student Facing Description */
+            student_facing_description: string;
+            /** Teacher Description */
+            teacher_description: string | null;
+            /** Title */
+            title: string;
+        };
+        /** NodeDetail */
+        NodeDetail: {
+            /** Code */
+            code: string;
+            /** Dependents */
+            dependents: string[];
+            /** Description */
+            description: string;
+            /** Higher Extension */
+            higher_extension: string | null;
+            /** Misconception Count */
+            misconception_count: number;
+            /** Misconceptions */
+            misconceptions: components["schemas"]["MisconceptionOut"][];
+            /** Prerequisites */
+            prerequisites: components["schemas"]["Prerequisite"][];
+            /**
+             * Strand
+             * @enum {string}
+             */
+            strand: "NUMBER" | "ALGEBRA" | "RATIO" | "GEOMETRY" | "PROBABILITY" | "STATISTICS";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "FOUNDATION" | "HIGHER_ONLY";
+            /** Title */
+            title: string;
+            /** Topics */
+            topics: string[];
+            /** Visual Suitability */
+            visual_suitability: number;
+        };
+        /** NodeSummary */
+        NodeSummary: {
+            /** Code */
+            code: string;
+            /** Misconception Count */
+            misconception_count: number;
+            /** Prerequisites */
+            prerequisites: components["schemas"]["Prerequisite"][];
+            /**
+             * Strand
+             * @enum {string}
+             */
+            strand: "NUMBER" | "ALGEBRA" | "RATIO" | "GEOMETRY" | "PROBABILITY" | "STATISTICS";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "FOUNDATION" | "HIGHER_ONLY";
+            /** Title */
+            title: string;
+            /** Visual Suitability */
+            visual_suitability: number;
+        };
+        /** Paper */
+        Paper: {
+            /** Calculator */
+            calculator?: boolean | null;
+            /** Focus */
+            focus?: string | null;
+            /** Marks */
+            marks: number;
+            /** Minutes */
+            minutes: number;
+            /** Paper */
+            paper: string;
+            /** Tiers */
+            tiers?: ("FOUNDATION" | "HIGHER")[] | null;
+        };
+        /** Prerequisite */
+        Prerequisite: {
+            /** Code */
+            code: string;
+            /** Strength */
+            strength: number;
+        };
+        /** Spec */
+        Spec: {
+            /**
+             * Board
+             * @enum {string}
+             */
+            board: "DFE" | "AQA" | "EDEXCEL" | "OCR";
+            /** Papers */
+            papers: components["schemas"]["Paper"][];
+            /**
+             * Qualification
+             * @enum {string}
+             */
+            qualification: "MATHS" | "ENG_LANG" | "ENG_LIT";
+            /** Spec Code */
+            spec_code: string;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Version */
+            version: string;
+        };
+        /** TopicOut */
+        TopicOut: {
+            /** Nodes */
+            nodes: string[];
+            /** Scene Primitive */
+            scene_primitive: string;
+            /** Slug */
+            slug: string;
+            /** Sort Order */
+            sort_order: number;
+            /** Title */
+            title: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
         };
     };
     responses: never;
@@ -89,6 +342,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    listMisconceptions: {
+        parameters: {
+            query?: {
+                /** @description Only this node's misconceptions. */
+                node?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MisconceptionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listCurriculumNodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeSummary"][];
+                };
+            };
+        };
+    };
+    getCurriculumNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeDetail"];
+                };
+            };
+            /** @description No node has this code. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listCurriculumSpecs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Spec"][];
+                };
+            };
+        };
+    };
+    listCurriculumTopics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicOut"][];
                 };
             };
         };

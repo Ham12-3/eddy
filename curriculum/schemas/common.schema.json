@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eddy:curriculum:common",
+  "title": "Shared definitions for the curriculum files",
+  "$defs": {
+    "board": { "enum": ["DFE", "AQA", "EDEXCEL", "OCR"] },
+    "specRef": {
+      "type": "object",
+      "required": ["board", "spec_code", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "board": { "$ref": "#/$defs/board" },
+        "spec_code": { "$ref": "#/$defs/specCode" },
+        "version": { "$ref": "#/$defs/version" }
+      }
+    },
+    "specCode": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9-]{1,31}$" },
+    "version": { "type": "string", "pattern": "^[0-9]{4}$" },
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "nodeCode": { "type": "string", "pattern": "^[NARGPS][1-9][0-9]?$" },
+    "prose": {
+      "description": "Text a person reads. UK English, and never an en or em dash (scripts/check-dashes.mjs).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600,
+      "pattern": "^[^\\u2013\\u2014]*$"
+    },
+    "primitive": {
+      "description": "A scene primitive (M5). Keep in step with sceneTemplate below.",
+      "enum": [
+        "number_line",
+        "place_value_slider",
+        "bar_model",
+        "balance",
+        "coordinate_grid",
+        "angle_diagram",
+        "transformation_grid",
+        "area_model",
+        "pythagoras_squares",
+        "probability_tree",
+        "data_chart"
+      ]
+    },
+    "sceneTemplate": {
+      "description": "<primitive>.<template>: the scene that remediates a misconception.",
+      "type": "string",
+      "pattern": "^(number_line|place_value_slider|bar_model|balance|coordinate_grid|angle_diagram|transformation_grid|area_model|pythagoras_squares|probability_tree|data_chart)\\.[a-z][a-z0-9_]*$"
+    }
+  }
+}

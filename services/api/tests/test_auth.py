@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 import time
 from collections.abc import Iterator
 from typing import Annotated, Any
@@ -9,6 +10,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi import Depends, FastAPI
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from eddy_api.auth import Caller, require_roles
@@ -179,3 +181,11 @@ def test_settings_do_not_print_secrets() -> None:
     settings = Settings(maths_core_service_token="x" * 40)
     assert "x" * 40 not in repr(settings)
     assert "eddy:eddy@" not in repr(settings)
+
+
+def test_every_v1_route_requires_a_token(client: TestClient) -> None:
+    for route in create_app().routes:
+        if isinstance(route, APIRoute) and route.path.startswith("/v1/"):
+            path = re.sub(r"\{[^}]+\}", "x", route.path)
+            for method in route.methods or ():
+                assert client.request(method, path).status_code == 401, (method, route.path)

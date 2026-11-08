@@ -140,23 +140,23 @@ Depends on: M0. Estimate: 1.5 weeks. Runs after M1 on track B.
 
 Deliverables:
 
-- [ ] SQLAlchemy models and Alembic migrations for every table in SPEC.md section 6, including the Auth.js tables and the append-only `audit_log`.
-- [ ] `curriculum/` YAML with a JSON Schema per file:
+- [x] SQLAlchemy models and Alembic migrations for every table in SPEC.md section 6, including the Auth.js tables and the append-only `audit_log`.
+- [x] `curriculum/` YAML with a JSON Schema per file:
   - the full DfE maths map (N1 to N16, A1 to A25, R1 to R16, G1 to G25, P1 to P9, S1 to S6) with tiers and visual suitability;
   - specification mappings for AQA 8300, Edexcel 1MA1 and OCR J560 (papers, marks, calculator rules), versioned;
   - prerequisite edges for the 13 MVP nodes and all their ancestors, with strengths;
   - at least 60 misconceptions (about 5 per MVP node), each with student-facing and teacher descriptions, detection rules in the rule language, an evidence source, and a planned re-check item family;
   - English: set texts with copyright status and display policy, question types, paraphrased level descriptors.
-- [ ] Seed loader: idempotent upsert by natural key, with a dry-run diff mode.
-- [ ] Read-only admin curriculum browser in `apps/web` (local-only access until M8 auth).
-- [ ] `/new-misconception` skill (YAML entry, detection rule, re-check item, default scene stub).
+- [x] Seed loader: idempotent upsert by natural key, with a dry-run diff mode.
+- [x] Read-only admin curriculum browser in `apps/web` (local-only access until M8 auth).
+- [x] `/new-misconception` skill (YAML entry, detection rule, re-check item, default scene stub).
 
 Definition of done:
 
-- [ ] DAG cycle test passes (and fails on a planted cycle).
-- [ ] Seed runs twice; the second run reports zero changes.
+- [x] DAG cycle test passes (and fails on a planted cycle).
+- [x] Seed runs twice; the second run reports zero changes.
 - [ ] YAML schema validation runs in CI.
-- [ ] Admin browser screenshots reviewed; axe clean.
+- [x] Admin browser screenshots reviewed; axe clean.
 
 ---
 
@@ -282,6 +282,7 @@ Depends on: M1, M5, M7. Estimate: 2 weeks.
 Deliverables:
 
 - [ ] Auth.js email magic links (Mailpit locally), invite codes, the age gate, child-friendly and full privacy notices with versioned acknowledgement.
+- [ ] Before any real sign-up (ADR-0024): a migrator role and a runtime role with SELECT and INSERT only on `audit_log`, tested; the age check before any email is stored, and expired verification tokens purged; the custom Auth.js adapter (ADR-0023) storing session token hashes; retention for `audit_log` and `safeguarding_event` from the DPIA.
 - [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map.
 - [ ] Settings: accessibility preferences, download my data, delete my account, report a concern.
 - [ ] Designed empty, error and loading states for every screen.
@@ -417,3 +418,39 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14. Branch `m1-design-
 - Hover colour mixes (`bg-ink/85`, `bg-accent/85`) are not in `contrast-pairs.ts`; computed at 10.1:1 and 7.3:1.
 - `aria-description` support varies by screen reader; the manual checklist covers it.
 - The manual screen reader checklist has not been run yet (needs a person with NVDA and VoiceOver).
+
+### M2: Curriculum and data (5 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, PostgreSQL 16.15 in Docker. Branch `m2-curriculum-data`, stacked on M1. Not pushed yet, so no CI run exists: "YAML schema validation runs in CI" stays unticked until the first CI run on this branch passes.
+
+**What landed**: 32 tables and two migrations (0001 schema, 0002 review fixes); the curriculum YAML (97 DfE nodes, 6 specifications, 71 prerequisite edges, 13 topics, 85 misconceptions, 28 set texts, 16 English question types with 66 level descriptors), each file with a JSON Schema; the seed loader with dry run; the read-only curriculum API and admin browser; the `/new-misconception` skill; ADR-0021 to ADR-0024.
+
+**Checks run (final run)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. ESLint, Prettier, dash check (218 files), cliché lint (93 files); typecheck of every project; Vitest (ui 98, web 9, infra 6, scenes 3, schemas 2, scene-check 2, api-client 1); 186 hook and lint-rule tests; ruff, strict mypy (33 files), 87 pytest tests including the database tests. |
+| `pnpm e2e` | 81 passed across 3 widths in light, dark and reduced motion: the hello page, the curriculum browser and a node page (axe: zero serious or critical), unknown nodes as 404, and a second production server without the preview flag answering every admin path with a bare 404 for HTML and RSC requests. Run once more after a type-only fix to that test file. |
+| `pnpm db:seed` twice on the dev database | First run: 99 changes (the review edits, 2 misconceptions retired). Second run: 0 changes. |
+| `pnpm curriculum:check` | Valid. Planted faults are caught by tests: a cycle, an unknown code, an undeclared ancestor, a duplicate key, an alias, a code with a trailing newline, an impossible date, an en dash, an in-copyright text shown in full. |
+| Migrations | Up, down to base and up again; 0002 down and up again; the models match the migrations (autogenerate finds no difference); the audit trigger refuses UPDATE, DELETE and TRUNCATE. |
+
+**Screenshot review**: the curriculum browser and a node page at 375, 768 and 1280 px in light, dark and reduced motion, by eye. Fixed: rules on the node facts broke at the column gap on wide screens; evidence showed raw keys (`practice`) instead of words; topic numbers ran into their titles for screen readers.
+
+**Fresh-context reviews**: `reviewer`, `security-reviewer` and `pedagogy-critic`. Fixed:
+
+- High (security): in a production build the admin layout's `notFound()` did not stop its pages rendering, so the 404 still carried the curriculum and every visit signed a token. Now gated in `src/proxy.ts`, in every page and `generateMetadata`, and before any token is signed, and proven by the gated E2E server. The preview signs as `admin`, not `system` (ADR-0018 amended), and only runs under `next dev` or with the flag.
+- The seed left edges touching a removed node, and removed rows stayed live. Edges are now deleted, and removed rows are retired and no longer served.
+- Deleting an account would have deleted its safeguarding events and the record of the erasure request (migration 0002: RESTRICT and SET NULL). Session tokens are stored as hashes, OAuth token columns are gone, and parent links and invite codes have integrity checks.
+- Students and parents no longer receive teacher wording or detection rules.
+- E2E migrated and reseeded the developer's own database; it now has its own `eddy_e2e`. The seed refuses a non-local database without `--allow-remote`.
+- Misconception text: student wording no longer uses one item's numbers or states an answer; one statement of wrong maths fixed; two duplicate misconceptions replaced; order of operations moved to N3; detection types corrected (two structure rules, two new distractor rules). English level descriptors moved further from the board's wording, and the Literature ladder realigned by one level.
+- N16 is Foundation with a Higher extension and G8 is Higher only; two modern set texts added.
+
+**Recorded, not fixed in M2**
+
+- Audit log: the trigger is in place, but the database grants SPEC.md 6.5 also asks for (a runtime role with SELECT and INSERT only) arrive in M8 before any real row, with the age check before email storage and the retention rules (ADR-0024).
+- Evidence: 43 of 85 misconceptions are tagged `practice` (widely documented, no specific citation yet). The admin page says "to confirm against Eddy's own data".
+- N16 and G8 tiers follow two reviewers' reading of the DfE content; check them against the DfE PDF. The modern set texts are not yet checked against the board's current list (2024 additions).
+- The node page has no loading state: a route-level loading boundary would stream a 200 before an unknown code could answer 404. It blocks on one fast API call instead.
+- No `pip-audit` or `pnpm audit` step in CI yet (M10 hardening).

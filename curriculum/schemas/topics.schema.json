@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eddy:curriculum:topics",
+  "title": "The MVP learning topics, in the order a student sees them",
+  "type": "object",
+  "required": ["topics"],
+  "additionalProperties": false,
+  "properties": {
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["slug", "title", "nodes", "primitive"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+          "title": { "$ref": "urn:eddy:curriculum:common#/$defs/prose" },
+          "nodes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "urn:eddy:curriculum:common#/$defs/nodeCode" }
+          },
+          "primitive": { "$ref": "urn:eddy:curriculum:common#/$defs/primitive" }
+        }
+      }
+    }
+  }
+}
