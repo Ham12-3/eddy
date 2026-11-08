@@ -204,7 +204,7 @@ misconceptions:
   - code: FDP_DENOMINATOR_AS_DECIMAL
     node: N10
     title: "Writes the denominator as the decimal"
-    student: "A fraction is the numerator divided by the denominator. 1/2 is 1 divided by 2, which is 0.5, not 0.2. Do the same division for your fraction."
+    student: "A fraction is the numerator divided by the denominator, so 1/2 is 1 divided by 2, which is 0.5. Do the same division for your fraction."
     teacher: "Converts 1/n to 0.n."
     detect: [{ type: distractor, rule: fdp_denominator_as_decimal }]
     scene: number_line.fraction_to_decimal
@@ -242,7 +242,7 @@ misconceptions:
   - code: PCT_DIVIDE_BY_PERCENT
     node: N12
     title: "Divides by the percentage"
-    student: "15% means 15 out of every 100. Find 1% or 10% first, then build up."
+    student: "Per cent means out of every hundred. To find a percentage of an amount, find one per cent or ten per cent of the amount first, then build up to the percentage you need."
     teacher: "Computes 80 / 15 for 15% of 80."
     detect: [{ type: distractor, rule: pct_divide_by_percent }]
     scene: bar_model.percentage_of_amount
@@ -335,7 +335,7 @@ misconceptions:
     node: R4
     title: "Divides only one side when simplifying"
     student: "To simplify a ratio, divide both sides by the same number."
-    teacher: "Divides one part only, so 12 : 8 becomes 6 : 8."
+    teacher: "Divides one part only, so 12 : 8 becomes 3 : 8."
     detect: [{ type: distractor, rule: ratio_simplify_one_part }]
     scene: bar_model.simplify_ratio
     recheck: R4.simplify-ratio

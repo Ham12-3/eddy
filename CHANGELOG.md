@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### M3: Maths core (5 November 2026)
+
+Added:
+
+- A MathJSON to SymPy tree walker with an allow-list and size, depth, digit and exponent limits. No `eval`, `exec`, `sympify` or `parse_expr` anywhere in maths-core, enforced by a test that reads the source.
+- Equivalence by numeric sampling at 20 points that avoid singularities plus symbolic simplification; equations by solution set; ratios by proportion. Answer-format rules: decimal places, significant figures, fraction, decimal, mixed number, standard form, simplest form and units.
+- A step checker for expressions and equations, and claim verification with an answer-leak check for tutor messages and scenes.
+- 87 item templates covering every MVP node at least three times and every re-check family (ADR-0025), with 82 misconception rules for distractors and their reverse detection, plus 2 structure rules.
+- HTTP routes behind the service token: `/v1/templates`, `/v1/items`, `/v1/answers/check`, `/v1/steps/check`, `/v1/claims/verify`, with a 64 KB request limit.
+- A 300-item golden set in `evals/golden/maths`, checked by `pnpm evals` and in CI, with a hand-checked sample of 30.
+- Hypothesis property tests for every template and a fuzz test for the converter; a latency benchmark (`pnpm maths:bench`) and a coverage gate (`pnpm maths:coverage`, 85%), both in CI.
+
+Changed:
+
+- Two misconception texts reworded after the new property test found they could contain an item's answer.
+
+Fixed during M3 (found by the fresh-context review):
+
+- Some wrong answers crashed the API (a recurring decimal, the square root of a negative). Non-real values are refused, and the fuzz test now drives answer checks, step checks and claims, not only the converter. It found one more crash, in unit reading, now fixed.
+- Tiny requests could take seconds or minutes (nested powers, high-degree equations, expressions with no real value). Numbers are capped at 400 digits and expressions at degree 12, equations above degree 4 compare by sampling, and sampling gives up after 10 points with no real value.
+- "One third is 0.3" was coded as n/10. It is now 3n/10, and every rule has a hand-worked example test.
+- Correct answers were marked wrong: probability answers now accept any exact form, and the grouped mean asks for 1 decimal place. Mixed numbers must have a proper fraction. New "exact" and significant-figure templates are tested.
+- Distractors are written in the answer's form; numeric statements are checked whatever their role; restating the question is not counted as a leak unless it names the answer in the asked form.
+- Stems: the gradient-from-a-graph scale, co-interior angles, and no unsimplified fractions, "7/1" or "+ 0" in questions.
+- The golden set holds 300 distinct items, and the benchmark now times expansion, equation solving and symbolic claims.
+
+Fixed during M3 (found by the security review):
+
+- A letter in a power skipped every limit and could freeze the service for tens of seconds per request; powers must now be numbers. Expressions are limited to 3 letters and 4 roots or absolute values, sampling evaluates at bounded precision, and only polynomial or rational equations are solved.
+- False maths could come back verified: givens and first steps are now checked against the item's answer, sample points are fresh on every call, and rational expressions compare exactly (10.0000000001 is not 10).
+- Answer-leak bypasses closed: linear equations that pin the answer, coordinate parts, unrounded values of rounded answers, and any mention of the answer on choice questions.
+- The body limit counts bytes as they arrive; `/docs`, `/redoc` and `/openapi.json` are off; unexpected errors fail closed; three inputs that caused a 500 (long decimals, nested tuples, wrapped relations) and the cube root of a negative are handled.
+
 ### M2: Curriculum and data (5 November 2026)
 
 Added:

@@ -25,6 +25,8 @@
     "e2e:install": "playwright install chromium",
     "api-client:generate": "pnpm --filter @eddy/api-client generate",
     "evals": "node scripts/evals.mjs",
+    "maths:coverage": "uv run pytest services/maths-core/tests --cov=eddy_maths_core --cov-report=term-missing --cov-fail-under=85",
+    "maths:bench": "uv run --package eddy-maths-core python -m eddy_maths_core.bench",
     "e2e:storybook": "pnpm --filter @eddy/ui storybook:build && playwright test -c playwright.storybook.config.ts",
     "storybook": "pnpm --filter @eddy/ui storybook"
   },

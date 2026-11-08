@@ -7,11 +7,14 @@ import hmac
 from typing import Annotated, Literal
 
 import sympy
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from eddy_maths_core import __version__
+from eddy_maths_core.api import router
 from eddy_maths_core.config import Settings, get_settings
+from eddy_maths_core.limits import BodyLimit
 
 
 class HealthResponse(BaseModel):
@@ -46,16 +49,30 @@ def require_service_token(
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Eddy maths-core", version=__version__)
+    # No /docs, /redoc or /openapi.json: they would be served without the token.
+    app = FastAPI(
+        title="Eddy maths-core",
+        version=__version__,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+    app.add_middleware(BodyLimit)
 
     @app.get("/health")
     def health() -> HealthResponse:
         return HealthResponse(status="ok", version=__version__, sympy_version=sympy.__version__)
 
+    @app.exception_handler(Exception)
+    async def could_not_check(_request: Request, _error: Exception) -> JSONResponse:
+        # Fail closed and say nothing about why: callers treat this as unverified.
+        return JSONResponse({"detail": "That could not be checked."}, status_code=422)
+
     @app.get("/v1/hello", dependencies=[Depends(require_service_token)])
     def hello() -> HelloResponse:
         return HelloResponse(message="Eddy maths-core is reachable.")
 
+    app.include_router(router, dependencies=[Depends(require_service_token)])
     return app
 
 
