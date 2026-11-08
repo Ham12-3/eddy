@@ -1,0 +1,16 @@
+[project]
+name = "eddy-maths-core"
+version = "0.0.0"
+description = "Stateless maths generation and verification for Eddy (SPEC.md section 7.3)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "sympy>=1.13",
+]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.12"]
+build-backend = "uv_build"

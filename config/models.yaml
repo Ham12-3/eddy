@@ -1,0 +1,33 @@
+# The only place Claude model IDs live (SPEC.md section 10, ADR-0005).
+# Changing a route's model needs the matching eval suite to pass before merge.
+# Never add temperature, top_p or top_k: the API rejects them on every model.
+
+routes:
+  tutor.turn:
+    model: claude-opus-4-8
+    thinking: adaptive # must be explicit on Opus 4.8; omitting it means no thinking
+    effort: low # tuned by the pedagogy eval
+  scene.generate:
+    model: claude-opus-4-8
+    thinking: adaptive
+    effort: high
+  scene.critique:
+    model: claude-opus-4-8
+    thinking: adaptive
+    effort: medium
+  safety.input:
+    model: claude-haiku-4-5
+    thinking: none # Haiku 4.5 takes no effort parameter
+  safety.output:
+    model: claude-haiku-4-5
+    thinking: none
+  misconception.classify:
+    model: claude-haiku-4-5
+    thinking: none
+  eval.judge:
+    model: claude-haiku-4-5
+    thinking: none
+  eval.judge.calibration:
+    model: claude-opus-4-8
+    thinking: adaptive
+    effort: medium

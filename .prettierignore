@@ -1,0 +1,16 @@
+# Prose is reviewed by hand; Prettier would re-pad every table.
+**/*.md
+
+pnpm-lock.yaml
+uv.lock
+.venv/
+.next/
+dist/
+cdk.out/
+e2e-artifacts/
+playwright-report/
+test-results/
+
+# Generated from services/api
+packages/api-client/openapi.json
+packages/api-client/src/schema.d.ts

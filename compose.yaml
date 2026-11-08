@@ -1,0 +1,52 @@
+# Local development services. Host ports avoid 3000, 5432 and 8000, which are often taken.
+# Credentials here are for local containers only.
+name: eddy
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: eddy
+      POSTGRES_PASSWORD: eddy
+      POSTGRES_DB: eddy
+    ports:
+      - "127.0.0.1:5442:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eddy -d eddy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4.12-alpine
+    ports:
+      - "127.0.0.1:6390:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # S3 and SQS stand-ins that need no account (LocalStack now requires a licence, ADR-0016).
+  s3:
+    image: adobe/s3mock:5.2.3
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: eddy-assets
+    ports:
+      - "127.0.0.1:9590:9090"
+
+  sqs:
+    image: softwaremill/elasticmq-native:1.7.1
+    ports:
+      - "127.0.0.1:9324:9324"
+
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports:
+      - "127.0.0.1:8025:8025" # web UI
+      - "127.0.0.1:1025:1025" # SMTP
+
+volumes:
+  pgdata:

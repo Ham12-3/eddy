@@ -1,0 +1,8 @@
+{
+  "app": "tsx bin/eddy.ts",
+  "cli-telemetry": false,
+  "context": {
+    "eddy:stage": "staging",
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
+  }
+}
