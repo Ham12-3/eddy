@@ -6,9 +6,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { JsonValue } from "@eddy/schemas";
 import { checkScene, describeProblem } from "../src/checks/static-checks";
-import { mathsToWords } from "../src/layout/measure";
 import { TEMPLATES } from "../src/templates/registry";
 import { buildScene, type ItemParams } from "../src/templates/template";
+import { sceneLabels } from "../src/templates/tier-l";
 
 interface Input {
   seed: number;
@@ -41,16 +41,6 @@ for (const template of TEMPLATES) {
         console.error(`${template.key} seed ${row.seed}: ${describeProblem(problem)}`);
         failures += 1;
       }
-      const labels = new Set<string>();
-      for (const layout of Object.values(scene.layouts)) {
-        for (const frame of layout.frames) {
-          for (const element of frame.elements) {
-            // Axis and scale labels are the primitive's own scale, not statements to check.
-            if (element.type !== "text" || element.role === "structure") continue;
-            labels.add(element.maths ? mathsToWords(element.maths) : (element.text ?? ""));
-          }
-        }
-      }
       const params = template.params(row.params);
       const claims = template.claims(params, row.studentAnswer);
       const predicted = template.predicted(params);
@@ -62,7 +52,7 @@ for (const template of TEMPLATES) {
           answer: row.answer,
           predicted,
           claims,
-          labels: [...labels].sort(),
+          labels: sceneLabels(scene),
         }),
       );
     } catch (error) {

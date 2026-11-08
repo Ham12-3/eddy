@@ -1,6 +1,48 @@
 {
   "components": {
     "schemas": {
+      "Beat": {
+        "additionalProperties": false,
+        "properties": {
+          "focus": {
+            "items": {
+              "$ref": "#/components/schemas/ElementId"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Focus",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "show_given",
+              "ask_prediction",
+              "show_student_working",
+              "highlight_slip",
+              "build",
+              "transform",
+              "compare",
+              "reveal_correct",
+              "recap"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "narration": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Narration",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "focus",
+          "narration"
+        ],
+        "title": "Beat",
+        "type": "object"
+      },
       "DetectionRule": {
         "properties": {
           "rule": {
@@ -29,6 +71,12 @@
         ],
         "title": "DetectionRule",
         "type": "object"
+      },
+      "ElementId": {
+        "maxLength": 64,
+        "pattern": "^[a-z][a-zA-Z0-9_]*(\\.[a-z][a-zA-Z0-9_]*)*$",
+        "title": "ElementId",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
@@ -90,6 +138,58 @@
         ],
         "title": "HelloResponse",
         "type": "object"
+      },
+      "JsonValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/JsonValue1"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "JsonValue"
+      },
+      "JsonValue1": {
+        "maximum": 9007199254740991.0,
+        "minimum": -9007199254740991.0,
+        "title": "JsonValue1",
+        "type": "integer"
       },
       "MisconceptionOut": {
         "properties": {
@@ -413,6 +513,145 @@
         "title": "Prerequisite",
         "type": "object"
       },
+      "RequestOut": {
+        "properties": {
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "scene": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SceneOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "status",
+          "scene"
+        ],
+        "title": "RequestOut",
+        "type": "object"
+      },
+      "SceneOut": {
+        "properties": {
+          "scene_spec_id": {
+            "format": "uuid",
+            "title": "Scene Spec Id",
+            "type": "string"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/SceneSpec"
+          },
+          "tier": {
+            "enum": [
+              "DETERMINISTIC",
+              "LLM"
+            ],
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scene_spec_id",
+          "tier",
+          "spec"
+        ],
+        "title": "SceneOut",
+        "type": "object"
+      },
+      "SceneSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "beats": {
+            "items": {
+              "$ref": "#/components/schemas/Beat"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Beats",
+            "type": "array"
+          },
+          "correctAnswer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "misconception": {
+            "maxLength": 64,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Misconception",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "schema": {
+            "const": "scene-spec/1",
+            "title": "Schema",
+            "type": "string"
+          },
+          "studentAnswer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "maxLength": 80,
+            "pattern": "^[a-z][a-z_]*\\.[a-z][a-z_]*@[0-9]+$",
+            "title": "Template",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema",
+          "template",
+          "misconception",
+          "params",
+          "studentAnswer",
+          "correctAnswer",
+          "beats"
+        ],
+        "title": "SceneSpec",
+        "type": "object"
+      },
       "Spec": {
         "properties": {
           "board": {
@@ -558,6 +797,78 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VariantIn": {
+        "properties": {
+          "attempt_id": {
+            "format": "uuid",
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "another_way",
+              "recurred"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attempt_id",
+          "reason"
+        ],
+        "title": "VariantIn",
+        "type": "object"
+      },
+      "VariantOut": {
+        "properties": {
+          "request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "scene_spec_id": {
+            "format": "uuid",
+            "title": "Scene Spec Id",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "cache",
+              "tier_d"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/SceneSpec"
+          },
+          "tier": {
+            "enum": [
+              "DETERMINISTIC",
+              "LLM"
+            ],
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scene_spec_id",
+          "tier",
+          "spec",
+          "source",
+          "request_id"
+        ],
+        "title": "VariantOut",
         "type": "object"
       }
     },
@@ -813,6 +1124,100 @@
           }
         ],
         "summary": "Hello"
+      }
+    },
+    "/v1/scenes/requests/{request_id}": {
+      "get": {
+        "operationId": "getSceneRequest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Scene Request",
+        "tags": [
+          "scenes"
+        ]
+      }
+    },
+    "/v1/scenes/variants": {
+      "post": {
+        "operationId": "getSceneVariant",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VariantIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Scene Variant",
+        "tags": [
+          "scenes"
+        ]
       }
     }
   }

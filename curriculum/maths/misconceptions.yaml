@@ -18,7 +18,7 @@ misconceptions:
   - code: NEG_ORDER_BY_DIGIT
     node: N1
     title: "Orders negative numbers by their digits"
-    student: "It is easy to compare negative numbers by their digits alone. On a number line, numbers get smaller as you go left, so the further a negative number is from zero, the smaller it is."
+    student: "Comparing negative numbers by their digits alone does not work. On a number line, numbers get smaller as you go left, so the further a negative number is from zero, the smaller it is."
     teacher: "Compares negative numbers by magnitude, ignoring the sign."
     detect: [{ type: distractor, rule: neg_compare_by_magnitude }]
     scene: number_line.compare_negatives

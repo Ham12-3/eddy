@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### M6: Animation generation loop (7 November 2026)
+
+Changed:
+
+- Narration is read by the device's own voice (on-device speech synthesis only), not ElevenLabs, until a paid voice is chosen (ADR-0029). Beats hold until each line is spoken; signs, fractions and powers are spoken as words; captions are unchanged. The scene player has a Voice toggle, which says "No voice" on devices without one.
+- Every scene template declares its beat kinds, and the spec check enforces them and the template's misconception. Narration may not blame, gush, use exclamation marks or emoji, in Tier D and Tier L alike.
+- `pnpm keys:dev` adds missing keys to existing .env files and keeps every other line, including your own `ANTHROPIC_API_KEY`.
+- A prediction question holds the scene 2.5 s longer, as thinking time.
+- `scene.generate` runs at medium effort, and `prompts/scene-spec.md` is version 1.1.0 (it no longer says "wrong" itself). The live eval: 97 of 100 cases pass within two attempts, at 2.5p a variant. The Tier L latency target is now 20 s at p95 while Tier D plays (it was 8 s).
+
+Added:
+
+- The Claude client in services/api (`eddy_api.llm`): routes from `config/models.yaml` (now with list prices), a prompt registry with semver front matter, structured output, prompt caching, typed errors, and a metadata-only `llm_call` record of every billed call.
+- Tier L scenes (ADR-0030): Claude rewrites only a scene's beats, through a schema built for each template, and every version is checked by the Python narration checks, the scene engine (beat order, layout, static checks) and maths-core before it is stored, with structured feedback over up to three attempts. Prompts: `prompts/scene-spec.md` and `prompts/scene-critique.md`.
+- `workers/scene-check` serves the scene engine's checks over HTTP (`pnpm dev:scenes`, port 8320) with a service token.
+- maths-core: `POST /v1/scenes/verify` (the scene golden check for one scene) and `POST /v1/answers/equivalent`.
+- `POST /v1/scenes/variants` and `GET /v1/scenes/requests/{id}`: a scene for an attempt at once (a reviewed Tier L variant or Tier D), and a queued Tier L request the worker generates. One open request per student, daily cost guards, and Tier L only with zero data retention confirmed or a local database.
+- The worker (`pnpm dev:worker`): generates requested scenes, then reviews served ones (keyframes, DOM check and a vision critique), evicting and replacing any that fail.
+- Migration 0003: `scene_spec.variant_key` and review-queue columns, the `scene_request` table and an index on `llm_call.created_at`.
+- The Tier L eval suite: 100 cases (`evals/scenes-tier-l/cases.jsonl`), a runner with a spending cap (`pnpm evals:tier-l`, a dry run unless `--live`), thresholds in `evals/thresholds.yaml`, a cache-hit benchmark (`pnpm scenes:cache-bench`) and the precompute job (`pnpm scenes:precompute`).
+
 ### M5: Scenes engine (6 November 2026)
 
 Changed:

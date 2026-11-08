@@ -25,6 +25,16 @@ export interface BeatTiming {
 
 export interface TimelineOptions {
   reducedMotion?: boolean;
+  /** Extra hold per beat, in ms: thinking time after a prediction question. */
+  pauses?: readonly number[];
+}
+
+/** Thinking time after an ask_prediction beat, before the scene moves on. */
+export const PREDICTION_PAUSE_MS = 2500;
+
+/** The extra hold each beat gets: thinking time after a prediction question. */
+export function beatPauses(kinds: readonly string[]): number[] {
+  return kinds.map((kind) => (kind === "ask_prediction" ? PREDICTION_PAUSE_MS : 0));
 }
 
 export function beatTimings(
@@ -34,8 +44,9 @@ export function beatTimings(
   const transition = options.reducedMotion ? REDUCED_TRANSITION_MS : TRANSITION_MS;
   const timings: BeatTiming[] = [];
   let start = 0;
-  for (const narration of narrations) {
-    const hold = Math.max(MIN_HOLD_MS, READING_START_MS + narrationWords(narration) * MS_PER_WORD);
+  for (const [index, narration] of narrations.entries()) {
+    const reading = READING_START_MS + narrationWords(narration) * MS_PER_WORD;
+    const hold = Math.max(MIN_HOLD_MS, reading) + (options.pauses?.[index] ?? 0);
     timings.push({ start, settled: start + transition, end: start + transition + hold });
     start += transition + hold;
   }

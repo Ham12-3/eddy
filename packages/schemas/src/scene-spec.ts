@@ -99,6 +99,29 @@ export function narrationWords(text: string): number {
   return text.split(WORD_GAP).filter(Boolean).length;
 }
 
+/**
+ * Words that blame, belittle or gush (SPEC.md section 9.1). The prompt asks Claude to avoid them;
+ * this check makes sure, for every scene, Tier D included. services/api repeats it in Python.
+ */
+export const TONE_WORDS = [
+  "wrong",
+  "careless",
+  "easy",
+  "simple",
+  "just",
+  "obviously",
+  "silly",
+  "forgot",
+  "should have",
+  "well done",
+  "great job",
+  "amazing",
+  "brilliant",
+  "don't worry",
+] as const;
+const TONE = new RegExp(`\\b(${TONE_WORDS.join("|").replace("'", "['’]")})\\b`, "i");
+const PICTOGRAPHS = /\p{Extended_Pictographic}/u;
+
 export interface SpecProblem {
   path: string;
   message: string;
@@ -130,6 +153,19 @@ export function specProblems(spec: SceneSpec, declaredIds: ReadonlySet<string>):
     }
     if (beat.narration !== beat.narration.normalize("NFC")) {
       problems.push({ path: `${path}.narration`, message: "is not in Unicode NFC form" });
+    }
+    const tone = TONE.exec(beat.narration);
+    if (tone) {
+      problems.push({
+        path: `${path}.narration`,
+        message: `says "${tone[1]}"; name the slip, never the student`,
+      });
+    }
+    if (beat.narration.includes("!")) {
+      problems.push({ path: `${path}.narration`, message: "contains an exclamation mark" });
+    }
+    if (PICTOGRAPHS.test(beat.narration)) {
+      problems.push({ path: `${path}.narration`, message: "contains an emoji" });
     }
     for (const id of beat.focus) {
       if (!declaredIds.has(id)) {

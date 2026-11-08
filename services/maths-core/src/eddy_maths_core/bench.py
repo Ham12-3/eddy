@@ -2,7 +2,8 @@
 
 `python -m eddy_maths_core.bench [PATH]` times every verification path maths-core serves, from
 MathJSON in to a verdict out, over the golden set: the correct answer and each distractor per
-item, plus an expansion step, a quadratic solved step by step and a symbolic claim each time.
+item, plus an expansion step, a quadratic solved step by step and a symbolic claim each time,
+and every scene in the scene golden set as `/v1/scenes/verify` checks a served scene.
 It prints p50, p95 and the maximum, and exits 1 if p95 is 150 ms or more.
 """
 
@@ -13,10 +14,12 @@ import time
 from pathlib import Path
 
 from eddy_maths_core.items import TEMPLATES
+from eddy_maths_core.scene_golden import check_record
 from eddy_maths_core.verify import check_answer, check_steps, verify_claims
 
 TARGET_MS = 150.0
 DEFAULT_PATH = Path("evals/golden/maths/items.jsonl")
+SCENES_PATH = Path("evals/golden/scenes/specs.jsonl")
 # Work that reaches the slow paths: expansion, solving and symbolic simplification.
 EXPANSION = [["Power", ["Add", "x", 3], 2], ["Add", ["Power", "x", 2], ["Multiply", 6, "x"], 9]]
 EQUATION = [
@@ -47,6 +50,11 @@ def run(path: Path) -> list[float]:
         timed(
             lambda item=item: verify_claims([("claim", IDENTITY), ("given", ["Equal", 2, 2])], item)
         )
+    if SCENES_PATH.exists():
+        for line in SCENES_PATH.read_text(encoding="utf-8").splitlines():
+            if line:
+                record = json.loads(line)
+                timed(lambda record=record: check_record(record))
     return timings
 
 

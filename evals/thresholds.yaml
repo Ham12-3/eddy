@@ -1,0 +1,11 @@
+# Pass marks for the LLM eval suites (SPEC.md section 7.6). A prompt or model change needs its
+# suite to meet these before merge.
+
+scenes_tier_l:
+  # PLAN.md M6: at least 95 of the 100 cases pass every check on the first or second attempt.
+  pass_within_two: 0.95
+  # SPEC.md section 7.2: a new Tier L variant within 20 s at p95, built while Tier D plays (the
+  # critique runs after). It was 8 s until 7 November 2026; one Opus 4.8 call takes 12 s at p95.
+  cold_p95_ms: 20000
+  # SPEC.md section 7.2: a cached scene within 300 ms.
+  cache_hit_p95_ms: 300

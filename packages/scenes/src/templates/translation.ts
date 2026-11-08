@@ -24,7 +24,7 @@ import {
   transformationGrid,
   wash,
 } from "../primitives/transformation-grid";
-import { integer, LABEL, layoutFor, upOrDown, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, upOrDown, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 import { focusOf } from "./template";
 
@@ -684,6 +684,14 @@ export const translation: SceneTemplate<Params> = {
   itemTemplate: "g7-translation",
   title: "Translating by a column vector",
   focusIds: ["question", "grid", "point", "student", "slip", "across", "up", "answer"],
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const x = integer(item, "x", -5, 5);

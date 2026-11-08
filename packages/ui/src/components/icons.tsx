@@ -108,6 +108,15 @@ export const TranscriptIcon = (props: IconProps) => (
   </Icon>
 );
 
+/** A small speaker: narration read aloud. */
+export const VoiceIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 8v4h3l4 3.5v-11L6 8H3z" />
+    <path d="M13 7.5a3.5 3.5 0 0 1 0 5" />
+    <path d="M15.5 5a7 7 0 0 1 0 10" />
+  </Icon>
+);
+
 /** Three short exercise-book lines, for empty states. */
 export const RuledLinesIcon = (props: IconProps) => (
   <Icon width={40} height={40} {...props}>

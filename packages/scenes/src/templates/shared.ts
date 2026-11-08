@@ -1,4 +1,4 @@
-import type { JsonValue } from "@eddy/schemas";
+import { BEAT_KINDS, type BeatKind, type JsonValue } from "@eddy/schemas";
 import type { Region, SceneFormat } from "../canvas";
 import type { ItemParams } from "./template";
 import { formatNumber } from "../layout/format";
@@ -89,4 +89,16 @@ export function memoise<T>(compute: (key: string) => T, size = 16): (key: string
     }
     return value;
   };
+}
+
+/**
+ * Beat kinds that only point at what is already drawn (or about to be), so any template supports
+ * them: asking for a prediction, comparing two things on the canvas, and a closing recap.
+ */
+export const REFOCUS_KINDS = ["ask_prediction", "compare", "recap"] as const satisfies BeatKind[];
+
+/** A template's beat kinds: the ones its Tier D scene uses, plus the refocusing kinds. */
+export function withRefocusKinds(...kinds: BeatKind[]): readonly BeatKind[] {
+  const wanted = new Set<BeatKind>([...kinds, ...REFOCUS_KINDS]);
+  return BEAT_KINDS.filter((kind) => wanted.has(kind));
 }

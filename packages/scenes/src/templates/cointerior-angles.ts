@@ -4,7 +4,7 @@ import { bounds, ringRound, slantedLine, stack } from "../layout/geometry";
 import { MINUS } from "../layout/format";
 import type { SceneElement } from "../layout/types";
 import { angleArc, angleLabel, parallelLines } from "../primitives/angle-diagram";
-import { integer, LABEL, layoutFor, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** ANGLES_COINTERIOR_EQUAL: "p and q are both between the parallel lines, so q = p." */
@@ -199,6 +199,14 @@ export const cointeriorAngles: SceneTemplate<Params> = {
   itemTemplate: "g3-cointerior",
   title: "Co-interior angles add to 180°",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const a = integer(item, "a", 1, 179);

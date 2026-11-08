@@ -10,8 +10,11 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, JsonValue
 
+from eddy_maths_core.equivalence import equivalent
 from eddy_maths_core.formats import AnswerFormat
 from eddy_maths_core.items import TEMPLATES, Item, TemplateError
+from eddy_maths_core.mathjson import to_sympy
+from eddy_maths_core.scene_golden import check_record
 from eddy_maths_core.serialize import answer_mathjson, to_latex, to_mathjson
 from eddy_maths_core.verify import (
     AnswerCheck,
@@ -232,3 +235,66 @@ def claims(request: ClaimsRequest) -> ClaimsOut:
             for r in results
         ],
     )
+
+
+class SceneVerifyRequest(BaseModel):
+    """A scene spec as served, with the facts it must agree with (ADR-0030).
+
+    services/api supplies the answer from its verified item bank, and the claims, predicted wrong
+    answer and canvas labels from the scene engine; only the narration came from a model.
+    """
+
+    spec: dict[str, JsonValue]
+    answer: MathJson
+    predicted: MathJson
+    claims: list[MathJson] = Field(max_length=100)
+    labels: list[Annotated[str, Field(max_length=500)]] = Field(max_length=300)
+
+
+class SceneVerifyOut(BaseModel):
+    verified: bool
+    problems: list[str]
+
+
+@router.post("/scenes/verify", operation_id="verifyScene")
+def scene(request: SceneVerifyRequest) -> SceneVerifyOut:
+    """Every claim true, both answers right, and every number in the narration and labels traced.
+
+    The same check as the scene golden set (`scene_golden.check_record`), run on one spec.
+    Anything malformed fails closed.
+    """
+    record = {
+        "spec": request.spec,
+        "answer": request.answer,
+        "predicted": request.predicted,
+        "claims": request.claims,
+        "labels": request.labels,
+    }
+    try:
+        problems = check_record(record)
+    except Exception:
+        problems = [COULD_NOT_CHECK]
+    return SceneVerifyOut(verified=not problems, problems=problems)
+
+
+class EquivalentRequest(BaseModel):
+    left: MathJson
+    right: MathJson
+
+
+class EquivalentOut(BaseModel):
+    equivalent: bool
+
+
+@router.post("/answers/equivalent", operation_id="answersEquivalent")
+def answers_equivalent(request: EquivalentRequest) -> EquivalentOut:
+    """Whether two MathJSON values are equal (symbolically and by sampling).
+
+    services/api uses it to confirm a student's answer is the one their misconception predicts
+    before a scene narrates it (ADR-0030). Anything that will not convert is not equivalent.
+    """
+    try:
+        same = equivalent(to_sympy(request.left), to_sympy(request.right))
+    except Exception:
+        same = False
+    return EquivalentOut(equivalent=bool(same))

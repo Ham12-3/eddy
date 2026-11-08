@@ -4,6 +4,7 @@ import { compareNegatives } from "../templates/compare-negatives";
 import { buildScene, type BuiltScene } from "../templates/template";
 import { beatTimings, totalDuration } from "../timeline/timeline";
 import { ScenePlayer } from "./ScenePlayer";
+import { speakable, type NarrationVoice } from "./voice";
 
 const scene: BuiltScene = buildScene(
   compareNegatives,
@@ -120,5 +121,97 @@ describe("ScenePlayer", () => {
     expect(screen.getByRole("region", { name: "Transcript" }).querySelectorAll("li")).toHaveLength(
       beats,
     );
+  });
+});
+
+/** A voice that speaks only when told to finish. */
+function fakeVoice() {
+  const spoken: { text: string; rate: number; done: () => void }[] = [];
+  const voice: NarrationVoice & { stops: number } = {
+    stops: 0,
+    speak(text, rate, done) {
+      spoken.push({ text, rate, done });
+    },
+    stop() {
+      voice.stops += 1;
+    },
+  };
+  return { voice, spoken };
+}
+
+describe("the device voice", () => {
+  it("says there is no voice when the device has none", () => {
+    render(<ScenePlayer scene={scene} voice={null} />);
+    expect(screen.getByRole("button", { name: "No voice" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("speaks nothing until play, then holds each beat until its line is spoken", () => {
+    const { voice, spoken } = fakeVoice();
+    render(<ScenePlayer scene={scene} voice={voice} />);
+    advance(3000);
+    expect(spoken).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    advance(100);
+    expect(spoken.map((s) => s.text)).toEqual([speakable(scene.spec.beats[0]!.narration)]);
+    // Well past the first beat's own length, it waits for the voice.
+    advance(timings[1]!.end + 5000);
+    expect(step()).toBe(`Step 1 of ${beats}`);
+    act(() => spoken[0]!.done());
+    advance(timings[1]!.settled - timings[0]!.end + 200);
+    expect(step()).toBe(`Step 2 of ${beats}`);
+    expect(spoken[1]!.text).toBe(speakable(scene.spec.beats[1]!.narration));
+  });
+
+  it("follows the speed, and stops when paused or switched off", () => {
+    const { voice, spoken } = fakeVoice();
+    render(<ScenePlayer scene={scene} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: "1.25x" }));
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    advance(100);
+    expect(spoken[0]!.rate).toBe(1.25);
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(voice.stops).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Voice" }));
+    expect(screen.getByRole("button", { name: "Voice" })).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    advance(totalDuration(timings) + 1000);
+    expect(spoken).toHaveLength(1);
+    expect(step()).toBe(`Step ${beats} of ${beats}`);
+  });
+
+  it("finishes the last line after a pause instead of restarting the scene", () => {
+    const { voice, spoken } = fakeVoice();
+    render(<ScenePlayer scene={scene} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    for (let i = 0; i < beats; i += 1) {
+      advance(20_000);
+      if (i < beats - 1) act(() => spoken[i]!.done());
+    }
+    expect(step()).toBe(`Step ${beats} of ${beats}`);
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    advance(100);
+    expect(step()).toBe(`Step ${beats} of ${beats}`);
+    expect(spoken.at(-1)!.text).toBe(speakable(scene.spec.beats[beats - 1]!.narration));
+  });
+
+  it("speaks again when played after the end", () => {
+    const { voice, spoken } = fakeVoice();
+    render(<ScenePlayer scene={scene} voice={voice} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    for (let i = 0; i < beats; i += 1) {
+      advance(20_000);
+      act(() => spoken.at(-1)!.done());
+    }
+    advance(20_000);
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
+    const before = spoken.length;
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    advance(100);
+    expect(spoken.length).toBe(before + 1);
+    expect(spoken.at(-1)!.text).toBe(speakable(scene.spec.beats[0]!.narration));
   });
 });

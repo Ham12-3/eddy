@@ -4,7 +4,7 @@ import { bounds, contains, grow, paragraph, ringRound, stack, text } from "../la
 import { measureText } from "../layout/measure";
 import type { RectElement, SceneElement, TextElement } from "../layout/types";
 import { labelInHypSquare, pythagorasFigure } from "../primitives/pythagoras-squares";
-import { integer, LABEL, layoutFor, memoise, WORKING } from "./shared";
+import { integer, LABEL, layoutFor, memoise, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 
 /** PYTH_NO_SQUARE_ROOT: "15² + 8² = 289, so the hypotenuse is 289 cm." */
@@ -260,6 +260,14 @@ export const findHypotenuse: SceneTemplate<Params> = {
   itemTemplate: "g20-hypotenuse",
   title: "The hypotenuse is a square root",
   focusIds: FOCUS,
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const a = integer(item, "a", 1, 100);

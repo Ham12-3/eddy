@@ -18,7 +18,7 @@ import {
   type Direction,
   type Spot,
 } from "../primitives/coordinate-grid";
-import { gcd, integer, LABEL, layoutFor, upOrDown, WORKING } from "./shared";
+import { gcd, integer, LABEL, layoutFor, upOrDown, withRefocusKinds, WORKING } from "./shared";
 import type { SceneTemplate } from "./template";
 import { focusOf } from "./template";
 
@@ -575,6 +575,14 @@ export const gradientTriangle: SceneTemplate<Params> = {
   itemTemplate: "a10-gradient-two-points",
   title: "Gradient is up over across",
   focusIds: ["question", "grid", "line", "student", "triangle", "slip", "rule", "answer"],
+  beatKinds: withRefocusKinds(
+    "show_given",
+    "show_student_working",
+    "highlight_slip",
+    "build",
+    "transform",
+    "reveal_correct",
+  ),
 
   params(item) {
     const x1 = integer(item, "x1", -5, 3);

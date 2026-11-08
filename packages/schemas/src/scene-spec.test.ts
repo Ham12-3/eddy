@@ -104,6 +104,23 @@ describe("narration that hides from the checks", () => {
     }
   });
 
+  it("refuses blame, gushing, exclamation marks and emoji, but not degrees", () => {
+    const messages = (text: string) =>
+      specProblems(withNarration(text), declared).map((p) => p.message);
+    expect(messages("You were careless here.")).toEqual([
+      'says "careless"; name the slip, never the student',
+    ]);
+    expect(messages("Don't worry about it.").join(" ")).toMatch(/don't worry/i);
+    expect(messages("Look at the bar!")).toEqual(["contains an exclamation mark"]);
+    expect(messages(`Nice ${String.fromCodePoint(0x1f600)}`)).toEqual(["contains an emoji"]);
+    expect(
+      messages(
+        `The angles are 89${String.fromCodePoint(0xb0)} and 91${String.fromCodePoint(0xb0)}.`,
+      ),
+    ).toEqual([]);
+    expect(messages("Adjust the scale.")).toEqual([]);
+  });
+
   it("accepts a version written in ASCII digits only", () => {
     const arabic = String.fromCodePoint(0x661);
     expect(

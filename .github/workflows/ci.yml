@@ -58,6 +58,8 @@ jobs:
           uv run --package eddy-maths-core python -m eddy_maths_core.scene_golden inputs evals/golden/scenes/inputs.json
           pnpm --filter @eddy/scenes fonts:generate
           test -z "$(git status --porcelain -- evals/golden/scenes packages/scenes/src/layout/font-metrics.json)" || (git diff && exit 1)
+      - name: Tier L eval cases match the golden inputs
+        run: uv run --package eddy-api python -m eddy_api.scenes.eval build && test -z "$(git status --porcelain -- evals/scenes-tier-l)" || (git diff -- evals/scenes-tier-l && exit 1)
       - name: maths-core coverage (85% or more)
         run: pnpm maths:coverage
       - name: Verification latency (p95 under 150 ms)

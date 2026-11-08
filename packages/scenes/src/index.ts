@@ -13,11 +13,13 @@ export * from "./timeline/timeline";
 // Templates
 export * from "./templates/template";
 export { TEMPLATES, TEMPLATES_BY_KEY } from "./templates/registry";
+export * from "./templates/tier-l";
 
 // Rendering
 export { SceneCanvas, type SceneCanvasProps } from "./render/SceneCanvas";
 export { SceneDiagram, type SceneDiagramProps } from "./render/SceneDiagram";
 export { ScenePlayer, usePrefersReducedMotion, type ScenePlayerProps } from "./render/ScenePlayer";
+export { pickVoice, useDeviceVoice, type NarrationVoice } from "./render/voice";
 export {
   CHECKS,
   checkScene,
