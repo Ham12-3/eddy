@@ -157,6 +157,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tutor/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["startTutorSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tutor/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["getTutorSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tutor/sessions/{session_id}/input": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send */
+        post: operations["sendTutorInput"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -212,12 +263,40 @@ export interface components {
             /** Subject */
             subject: string;
         };
-        /** JsonValue */
-        JsonValue: string | components["schemas"]["JsonValue1"] | number | boolean | (components["schemas"]["JsonValue"] | null)[] | {
-            [key: string]: components["schemas"]["JsonValue"] | null;
-        } | null;
+        /** InputIn */
+        InputIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "continue" | "answer" | "confidence" | "message" | "help" | "watched" | "pause";
+            mathjson?: components["schemas"]["JsonValue-Input"] | null;
+            /** Text */
+            text?: string | null;
+            /** Value */
+            value?: number | null;
+        };
+        "JsonValue-Input": unknown;
         /** JsonValue1 */
         JsonValue1: number;
+        /** LessonOut */
+        LessonOut: {
+            /** Ended */
+            ended: string | null;
+            /** Outbox */
+            outbox: {
+                [key: string]: components["schemas"]["pydantic__types__JsonValue"];
+            }[];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** State */
+            state: string;
+            /** Waiting For */
+            waiting_for: string[];
+        };
         /** MisconceptionOut */
         MisconceptionOut: {
             /** Code */
@@ -349,19 +428,19 @@ export interface components {
         SceneSpec: {
             /** Beats */
             beats: components["schemas"]["Beat"][];
-            correctAnswer: components["schemas"]["JsonValue"] | null;
+            correctAnswer: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
             /** Misconception */
             misconception: string;
             /** Params */
             params: {
-                [key: string]: components["schemas"]["JsonValue"] | null;
+                [key: string]: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
             };
             /**
              * Schema
              * @constant
              */
             schema: "scene-spec/1";
-            studentAnswer: components["schemas"]["JsonValue"] | null;
+            studentAnswer: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
             /** Template */
             template: string;
         };
@@ -392,6 +471,13 @@ export interface components {
             valid_to: string | null;
             /** Version */
             version: string;
+        };
+        /** StartIn */
+        StartIn: {
+            /** Node */
+            node?: string | null;
+            /** Student Id */
+            student_id?: string | null;
         };
         /** TopicOut */
         TopicOut: {
@@ -453,6 +539,11 @@ export interface components {
              */
             tier: "DETERMINISTIC" | "LLM";
         };
+        /** JsonValue */
+        eddy_api__scenes__spec__JsonValue: string | components["schemas"]["JsonValue1"] | number | boolean | (components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null)[] | {
+            [key: string]: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
+        } | null;
+        pydantic__types__JsonValue: unknown;
     };
     responses: never;
     parameters: never;
@@ -683,6 +774,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VariantOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    startTutorSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getTutorSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sendTutorInput: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InputIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonOut"];
                 };
             };
             /** @description Validation Error */

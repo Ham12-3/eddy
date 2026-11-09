@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "tutorMessage": {
+      "$ref": "#/$defs/TutorMessage"
+    },
+    "inputVerdict": {
+      "$ref": "#/$defs/InputVerdict"
+    },
+    "outputVerdict": {
+      "$ref": "#/$defs/OutputVerdict"
+    },
+    "pedagogyJudgement": {
+      "$ref": "#/$defs/PedagogyJudgement"
+    },
+    "englishMarking": {
+      "$ref": "#/$defs/EnglishMarking"
+    }
+  },
+  "required": [
+    "tutorMessage",
+    "inputVerdict",
+    "outputVerdict",
+    "pedagogyJudgement",
+    "englishMarking"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "TutorMessage": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "question",
+            "hint",
+            "feedback",
+            "worked_example_parallel",
+            "redirect"
+          ]
+        },
+        "hint_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "maths": {
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TutorMath"
+          }
+        },
+        "concern": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "kind",
+        "hint_level",
+        "maths",
+        "concern"
+      ],
+      "additionalProperties": false
+    },
+    "TutorMath": {
+      "type": "object",
+      "properties": {
+        "expr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "given",
+            "claim",
+            "step"
+          ]
+        }
+      },
+      "required": [
+        "expr",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "InputVerdict": {
+      "type": "object",
+      "properties": {
+        "safeguarding": {
+          "type": "string",
+          "enum": [
+            "none",
+            "concern",
+            "immediate"
+          ]
+        },
+        "safeguarding_category": {
+          "type": "string",
+          "enum": [
+            "self_harm",
+            "suicidal_thoughts",
+            "abuse",
+            "neglect",
+            "exploitation",
+            "bullying",
+            "danger",
+            "distress",
+            "other",
+            "none"
+          ]
+        },
+        "harmful_request": {
+          "type": "boolean"
+        },
+        "off_topic": {
+          "type": "boolean"
+        },
+        "prompt_injection": {
+          "type": "boolean"
+        },
+        "answer_demand": {
+          "type": "boolean"
+        },
+        "help_request": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "safeguarding",
+        "safeguarding_category",
+        "harmful_request",
+        "off_topic",
+        "prompt_injection",
+        "answer_demand",
+        "help_request"
+      ],
+      "additionalProperties": false
+    },
+    "OutputVerdict": {
+      "type": "object",
+      "properties": {
+        "safe": {
+          "type": "boolean"
+        },
+        "kind_and_respectful": {
+          "type": "boolean"
+        },
+        "gives_away_answer": {
+          "type": "boolean"
+        },
+        "problems": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "required": [
+        "safe",
+        "kind_and_respectful",
+        "gives_away_answer",
+        "problems"
+      ],
+      "additionalProperties": false
+    },
+    "PedagogyJudgement": {
+      "type": "object",
+      "properties": {
+        "no_answer_given": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "misconception_addressed": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "one_question_at_a_time": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "warmth": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "concise": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "uk_english": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "safeguarding_handled": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "responds_to_student": {
+          "$ref": "#/$defs/RubricScore"
+        },
+        "hint_ladder": {
+          "$ref": "#/$defs/RubricScore"
+        }
+      },
+      "required": [
+        "no_answer_given",
+        "misconception_addressed",
+        "one_question_at_a_time",
+        "warmth",
+        "concise",
+        "uk_english",
+        "safeguarding_handled",
+        "responds_to_student",
+        "hint_ladder"
+      ],
+      "additionalProperties": false
+    },
+    "RubricScore": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "score",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "EnglishMarking": {
+      "type": "object",
+      "properties": {
+        "question_type": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "marks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "max_marks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "overall_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "assessments": {
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EnglishAssessment"
+          }
+        },
+        "next_step": {
+          "type": "string",
+          "maxLength": 400
+        }
+      },
+      "required": [
+        "question_type",
+        "marks",
+        "max_marks",
+        "overall_level",
+        "assessments",
+        "next_step"
+      ],
+      "additionalProperties": false
+    },
+    "EnglishAssessment": {
+      "type": "object",
+      "properties": {
+        "objective": {
+          "type": "string",
+          "pattern": "^AO[1-6]$"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "evidence": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 400
+        }
+      },
+      "required": [
+        "objective",
+        "level",
+        "evidence",
+        "comment"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$id": "urn:eddy:schema:llm-io:1",
+  "title": "LlmIo"
+}

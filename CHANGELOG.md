@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### M7: Tutor (9 November 2026)
+
+Added:
+
+- Loop 1 as a LangGraph graph (ADR-0031). It runs from the session plan (a due re-check, remediation, reviews, new learning) through the worked example, faded step, independent practice, confidence before marking, the scene for a slip or a Socratic question, the reply, a re-check, then the learner model and review schedule. Interrupts for help (the hint ladder), messages, safeguarding and pause. Two failures queue a prerequisite diagnostic; a secured node raises its prerequisites and skips the worked example.
+- The checkpointer runs inside each request's transaction, so a turn commits or rolls back as one; free text never enters a checkpoint, and checkpoints are deleted with their lesson. Migrations 0004 (checkpoint tables, learner model state as JSON, item seeds) and 0005 (the event's lesson, the delete trigger).
+- `POST /v1/tutor/sessions`, `POST /v1/tutor/sessions/{id}/input` and `GET /v1/tutor/sessions/{id}`: one input at a time per lesson, only the inputs the lesson is waiting for, per-student Redis rate limits and daily cost guards for the tutor's Claude calls.
+- The safety pipeline: tripwires that see through spacing, invisible characters and look-alike letters; the Haiku 4.5 input classifier; Opus 4.8 tutor messages checked for word limits, tone, UK English, one question at a time, confirming a guess, links and contact details, untraced numbers, answer leaks (maths-core and the text), maths truth, and the Haiku 4.5 output classifier; two regenerations and templated fallbacks. It fails closed when anything cannot read a message.
+- Safeguarding: a static script with Childline, Shout and 999, a `safeguarding_event` written on its own connection, the lesson stopped, and the script again for any later message. The script and the tripwire list are drafts awaiting Eddy's safeguarding lead, and until then the tutor starts only in development and test (`EDDY_ENVIRONMENT`).
+- Prompts: `tutor.md` (1.4.0), `safety-input.md` (1.1.0), `safety-output.md` (1.2.0) and `pedagogy-judge.md` (1.2.0), tuned on the live eval. The judge scores each criterion in its own field. Every Claude output now has a zod schema in `packages/schemas` (`llm-io.ts`) and a generated pydantic model.
+- The pedagogy suite: 72 scripted conversations (lessons through every message, guessing, answer demands, off topic, distress screened three times, benign near-misses, injections), a Haiku judge with an Opus calibration sample, and thresholds (`pnpm evals:tutor`, with `--only` for chosen conversations). Live: no answer leaks, 14 of 14 distress scenarios handled, no false alarms, every injection held, every rubric mean 3.5 or above, judge agreement 0.84. A student input takes 14.8 s at p95, over the 3.5 s target.
+- English marking scaffolding: the output schema and agreement metrics (quadratic weighted kappa, exact and adjacent agreement).
+
+Changed:
+
+- maths-core lists each template's structure rules and whether it is a choice question, and each item says whether it is one.
+- The zero data retention gate's local-database exception now needs `EDDY_ENVIRONMENT` to be development or test. Run `pnpm keys:dev` once to add it to services/api/.env.
+
 ### M6: Animation generation loop (7 November 2026)
 
 Changed:

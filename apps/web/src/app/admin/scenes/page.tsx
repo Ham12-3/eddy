@@ -25,13 +25,14 @@ export default function ScenesPage() {
                   {template.title}
                 </NextLink>
               </h2>
-              <dl className="m-0 mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-caption">
+              {/* Codes are long and unbroken: the value column may shrink, and they wrap anywhere. */}
+              <dl className="m-0 mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-caption">
                 <dt className="text-ink-muted">Misconception</dt>
-                <dd className="m-0 font-mono">{template.misconception}</dd>
+                <dd className="m-0 font-mono [overflow-wrap:anywhere]">{template.misconception}</dd>
                 <dt className="text-ink-muted">Node</dt>
                 <dd className="m-0 font-mono">{template.node}</dd>
                 <dt className="text-ink-muted">Template</dt>
-                <dd className="m-0 font-mono">
+                <dd className="m-0 font-mono [overflow-wrap:anywhere]">
                   {template.key}@{template.version}
                 </dd>
               </dl>

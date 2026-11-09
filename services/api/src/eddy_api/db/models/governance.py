@@ -19,6 +19,10 @@ class SafeguardingEvent(Base):
     student_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True
     )
+    # The lesson it came from, for the reviewer (ADR-0031).
+    tutor_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tutor_session.id", ondelete="SET NULL"), index=True
+    )
     category: Mapped[str] = mapped_column(String(64))
     severity: Mapped[str] = mapped_column(
         checked_enum("safeguarding_severity", "LOW", "MEDIUM", "HIGH", "IMMEDIATE")
