@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### M7: Tutor (9 November 2026)
+### M7: Tutor (9 and 10 November 2026)
 
 Added:
 
@@ -12,7 +12,7 @@ Added:
 - The safety pipeline: tripwires that see through spacing, invisible characters and look-alike letters; the Haiku 4.5 input classifier; Opus 4.8 tutor messages checked for word limits, tone, UK English, one question at a time, confirming a guess, links and contact details, untraced numbers, answer leaks (maths-core and the text), maths truth, and the Haiku 4.5 output classifier; two regenerations and templated fallbacks. It fails closed when anything cannot read a message.
 - Safeguarding: a static script with Childline, Shout and 999, a `safeguarding_event` written on its own connection, the lesson stopped, and the script again for any later message. The script and the tripwire list are drafts awaiting Eddy's safeguarding lead, and until then the tutor starts only in development and test (`EDDY_ENVIRONMENT`).
 - Prompts: `tutor.md` (1.6.0), `safety-input.md` (1.1.0), `safety-output.md` (1.3.0) and `pedagogy-judge.md` (1.2.0), tuned on the live eval. The judge scores each criterion in its own field, and tutor messages carry their maths as real JSON. Every Claude output now has a zod schema in `packages/schemas` (`llm-io.ts`) and a generated pydantic model.
-- The pedagogy suite: 72 scripted conversations (lessons through every message, guessing, answer demands, off topic, distress screened three times, benign near-misses, injections), a Haiku judge with an Opus calibration sample, and thresholds (`pnpm evals:tutor`, with `--only` for chosen conversations). Live: no answer leaks, 14 of 14 distress scenarios handled, no false alarms, every injection held, every rubric mean 3.45 or above, judge agreement 0.84. After speed work, 78% of messages pass first time and a student input takes 6.1 s at p50 and 11.0 s at p95 (from 14.8 s), still over the 3.5 s target.
+- The pedagogy suite: 72 scripted conversations (lessons through every message, guessing, answer demands, off topic, distress screened three times, benign near-misses, injections), a Haiku judge with an Opus calibration sample, and thresholds (`pnpm evals:tutor`, with `--only` for chosen conversations). Live: no answer leaks, 14 of 14 distress scenarios handled, no false alarms, every injection held, every rubric mean 3.45 or above, judge agreement 0.84. After speed work, 78% of messages pass first time and a student input takes 6.1 s at p50 and 11.0 s at p95 (from 14.8 s). The tutor turn target is now 12 s at p95 while the student sees "Eddy is writing" (it was 3.5 s).
 - English marking scaffolding: the output schema and agreement metrics (quadratic weighted kappa, exact and adjacent agreement).
 
 Changed:

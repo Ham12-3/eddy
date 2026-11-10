@@ -26,5 +26,7 @@ tutor_pedagogy:
   # Agreement between the Haiku judge and the Opus calibration sample (quadratic weighted
   # kappa); below it, the judge's scores are not trusted.
   judge_calibration_kappa: 0.4
-  # SPEC.md section 9.2: a tutor turn within 3.5 s at p95, per student input.
-  turn_p95_ms: 3500
+  # SPEC.md section 9.2: a tutor turn within 12 s at p95, per student input, while the student
+  # sees "Eddy is writing". It was 3.5 s until 10 November 2026: three model calls in sequence
+  # take about 5.6 s even when the first draft passes every check.
+  turn_p95_ms: 12000

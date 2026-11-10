@@ -258,16 +258,16 @@ Depends on: M4, M6. Estimate: 2 weeks.
 Deliverables:
 
 - [x] LangGraph graph for Loop 1 with the Postgres checkpointer and every state and interrupt in SPEC.md section 7.1. (The checkpointer runs inside each request's transaction; tested on the real database.)
-- [x] `prompts/tutor.md` written from the brief's tutor behaviour spec; the hint ladder; structured `TutorMessage`. (Version 1.1.0; not yet run against Claude.)
-- [x] Safety pipeline: deterministic tripwires, Haiku 4.5 input and output classifiers, answer-leak check, maths verification, regeneration and templated fallback. (Tested with a stand-in for Claude.)
-- [ ] Safeguarding flow with the static approved script, `safeguarding_event`, and a draft runbook (lands in `/compliance` with your go-ahead).
+- [x] `prompts/tutor.md` written from the brief's tutor behaviour spec; the hint ladder; structured `TutorMessage`. (Version 1.6.0, tuned on the live eval.)
+- [x] Safety pipeline: deterministic tripwires, Haiku 4.5 input and output classifiers, answer-leak check, maths verification, regeneration and templated fallback. (Tested with a stand-in for Claude, and run live in the pedagogy eval.)
+- [ ] Safeguarding flow with the static approved script, `safeguarding_event`, and a draft runbook (lands in `/compliance` with your go-ahead). (The flow and events are built and evaluated; the runbook draft waits for your go-ahead, and the script and tripwires for Eddy's safeguarding lead.)
 - [x] Redis rate limits. (With daily cost guards for the tutor's Claude calls.)
-- [x] Pedagogy eval: 50 scripted conversations, Haiku 4.5 judge, Opus 4.8 calibration sample. (72 conversations; built and dry-run, not yet run live.)
+- [x] Pedagogy eval: 50 scripted conversations, Haiku 4.5 judge, Opus 4.8 calibration sample. (72 conversations, run live.)
 - [x] Loop 4 scaffolding: English marking output schemas and QWK, exact and adjacent agreement metrics with tests.
 
 Definition of done:
 
-- [ ] Pedagogy suite meets `evals/thresholds.yaml`. (Every threshold but one: turn p95 is 11.0 s against 3.5 s, awaiting your decision.)
+- [x] Pedagogy suite meets `evals/thresholds.yaml`. (The final run meets every threshold: turn p95 is 11.0 s against the 12 s target you accepted on 10 November 2026, which was 3.5 s. The judge's calibration, kappa 0.843, is from the run before, with the same judge prompt and models.)
 - [x] Zero answer leaks across every "demand the answer" scenario. (And in all 72 conversations, by the independent check and the judge.)
 - [x] Every distress scenario produces the approved response and a `safeguarding_event`. (14 of 14, each screened 3 times. The script is still a draft until Eddy's safeguarding lead approves it.)
 - [x] Prompt-injection scenarios do not change the tutor's behaviour. (7 of 7.)
@@ -283,7 +283,7 @@ Deliverables:
 
 - [ ] Auth.js email magic links (Mailpit locally), invite codes, the age gate, child-friendly and full privacy notices with versioned acknowledgement.
 - [ ] Before any real sign-up (ADR-0024): a migrator role and a runtime role with SELECT and INSERT only on `audit_log`, tested; the age check before any email is stored, and expired verification tokens purged; the custom Auth.js adapter (ADR-0023) storing session token hashes; retention for `audit_log` and `safeguarding_event` from the DPIA.
-- [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map.
+- [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map. The tutor panel shows "Eddy is writing" while a reply is checked (up to 12 s at p95).
 - [ ] Settings: accessibility preferences, download my data, delete my account, report a concern.
 - [ ] Designed empty, error and loading states for every screen.
 
@@ -321,6 +321,7 @@ Deliverables:
 
 - [ ] Rate limit review; OWASP ASVS Level 2 checklist; an automated baseline security scan; a prompt-injection red-team pass.
 - [ ] k6 load test against a production-like local stack.
+- [ ] Tutor latency revisited with the pedagogy eval: a faster model for `tutor.turn` (ADR-0005) or two drafts written at once.
 - [ ] Cost dashboard from `llm_call`, narration and infrastructure estimates.
 - [ ] DPIA and DfE standards matrix complete; Children's Code checklist complete; governance roles; runbooks for incidents, safeguarding and data breaches.
 - [ ] Staging deployment plan with CDK. Deploy only with your explicit go-ahead.
@@ -731,11 +732,11 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 
 **CI**: not run yet for this branch.
 
-### M7: Tutor (9 November 2026)
+### M7: Tutor (9 and 10 November 2026)
 
 Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; langgraph 1.2.20, langgraph-checkpoint-postgres 3.2.0 and redis 8.1.0 added to services/api. Branch `m7-tutor`; no PR yet.
 
-**Status: built, reviewed and evaluated live; two decisions and one sign-off open.** The tutor meets every pedagogy threshold except turn latency (11.0 s at p95 against 3.5 s, after speed work that brought it down from 14.8 s), which needs your decision. The safeguarding runbook waits for your go-ahead to enter `/compliance`, and the script and tripwires wait for Eddy's named safeguarding lead; until then the tutor starts only in development and test.
+**Status: done, except the safeguarding runbook.** The tutor meets every pedagogy threshold. Turn latency is 11.0 s at p95 after speed work that brought it down from 14.8 s; you accepted it on 10 November 2026, because the student sees "Eddy is writing", and the target is now 12 s (it was 3.5 s). The safeguarding runbook waits for your go-ahead to enter `/compliance`, and the script and tripwires wait for Eddy's named safeguarding lead; until then the tutor starts only in development and test.
 
 **What landed** (ADR-0031):
 
@@ -760,6 +761,7 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 | `pnpm e2e` | 234 passed (8.2 minutes), axe with zero serious or critical findings at 375, 768 and 1280 px in light, dark and reduced motion. After the admin card fix below, the scenes spec again: 135 passed. |
 | `packages/ui` alone | The Stop hook's run twice hit vitest worker-start timeouts while the eval and Docker loaded the machine; on its own with one worker, 99 of 99 passed. |
 | `pnpm evals:tutor` (dry run) | 72 conversations, about £4.70 estimated. |
+| The final live report summarised again against the 12 s target (no new calls) | Every threshold passes. |
 
 **Live eval (`pnpm evals:tutor -- --live`, 9 November 2026)**
 
@@ -829,7 +831,8 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 
 **Recorded, not fixed in M7** (ADR-0031):
 
-- Turn latency over the 3.5 s target, and cost per session over SPEC.md's estimate (your decision).
+- The turn latency target was moved from 3.5 s to 12 s at p95 with your agreement; students see "Eddy is writing" (M8). A faster model for `tutor.turn` (ADR-0005) or two drafts written at once can be tried later with the same eval (M10).
+- Cost per session, about £0.33, is a little over SPEC.md's estimate of 25 to 35 US cents; the M10 cost dashboard tracks it.
 - Elo item selection (needs a student ability table and real data, M8).
 - A new scene variant on recurrence goes through the scenes route.
 - No confidence question on a re-check.
@@ -837,3 +840,5 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - Redacting personal details before Claude, pip-audit in CI, and a reading-age check on tutor text.
 - A tutor turn holds a database connection while Claude writes (bounded per process).
 - The per-lesson lock is not tested under real concurrency.
+
+**CI**: not run yet for this branch.
