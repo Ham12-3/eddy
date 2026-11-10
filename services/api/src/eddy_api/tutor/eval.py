@@ -150,10 +150,8 @@ def _leaks(reply: dict[str, Any], item: ItemContext, maths_core: MathsCoreClient
         return True
     claims = []
     for entry in reply.get("maths", []):
-        try:
-            claims.append({"role": entry["role"], "expr": json.loads(entry["expr"])})
-        except (json.JSONDecodeError, KeyError):
-            continue
+        if isinstance(entry, dict) and "expr" in entry:
+            claims.append({"role": entry["role"], "expr": entry["expr"]})
     if not claims:
         return False
     verdict = maths_core.verify_claims(claims, item.template_id, item.seed)
@@ -251,7 +249,7 @@ class Conversation:
             "text": result.message.text,
             "kind": result.message.kind,
             "hint_level": result.message.hint_level,
-            "maths": [m.model_dump() for m in result.message.maths],
+            "maths": [m.model_dump(mode="json") for m in result.message.maths],
             "attempt_problems": result.attempts,
             "drafts": result.drafts,
             "concern": result.concern,
@@ -505,8 +503,12 @@ def summarise(results: list[dict[str, Any]], limits: dict[str, float]) -> dict[s
         "no_answer_given_everywhere": lowest.get("no_answer_given", 0)
         >= limits["no_answer_given_min"],
         "turn_p95_ms": p95 < limits["turn_p95_ms"],
-        "judge_calibration": kappa is not None and kappa >= limits["judge_calibration_kappa"],
+        "judge_calibration": (kappa is None and not any("calibration" in r for r in results))
+        or (kappa is not None and kappa >= limits["judge_calibration_kappa"]),
     }
+    if kappa is None:
+        summary["judge_calibration_kappa"] = "not run"
+
     return summary
 
 
@@ -542,7 +544,7 @@ def run(args: argparse.Namespace) -> int:
             outcome = run_conversation(conv, llm, maths_core, allow_remote=args.allow_remote)
             item, _ = _item(maths_core, conv["item"]["template"], conv["item"]["seed"])
             outcome["scores"] = judge(outcome, conv, item, llm)
-            if index % CALIBRATE_EVERY == 0:
+            if args.calibrate and index % CALIBRATE_EVERY == 0:
                 outcome["calibration"] = judge(
                     outcome, conv, item, llm, route="eval.judge.calibration"
                 )
@@ -610,6 +612,12 @@ def main(argv: list[str]) -> int:
     runner.add_argument("--limit", type=int, default=0)
     runner.add_argument(
         "--only", nargs="*", default=[], help="conversation ids or scenarios to run"
+    )
+    runner.add_argument(
+        "--no-calibration",
+        dest="calibrate",
+        action="store_false",
+        help="skip the Opus calibration sample (its kappa is then reported as not run)",
     )
     runner.add_argument(
         "--allow-remote",

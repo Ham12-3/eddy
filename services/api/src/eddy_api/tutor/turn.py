@@ -21,7 +21,6 @@ Steps the code starts with no student message (a worked example, a faded step, f
 steps 5 to 7.
 """
 
-import json
 import re
 import unicodedata
 import uuid
@@ -505,32 +504,40 @@ def answer_in_text(text: str, item: ItemContext) -> bool:
 def untraced_numbers(message: TutorMessage, request: TurnRequest) -> set[Fraction]:
     """Numbers in the text that are in neither the question (or the parallel problem) nor a
     maths claim: maths-core checks claims, so every number must be one of these."""
-    given = numbers_in(request.item.stem)
-    if request.parallel is not None:
-        given |= numbers_in(request.parallel.stem)
-    # A given number's size without its sign ("the 8 in -8") is still the question's number.
-    allowed = given | {abs(number) for number in given}
-    # The student's own answers can be talked about.
+    stems = [request.item.stem] + ([request.parallel.stem] if request.parallel else [])
+    given = {n for stem in stems for n in numbers_in(stem)}
+    # How many values a question lists is a fact about it too ("there are 9 values").
+    given |= {Fraction(len(NUMBER.findall(_clean(stem)))) for stem in stems}
+    # A given number with either sign is still the question's number ("x - 9" and "the -9").
+    allowed = given | {abs(n) for n in given} | {-n for n in given}
+    # The student's own answers and words can be talked about (the answer check still applies).
     for answer, _ in request.attempts:
         allowed |= numbers_in_json(answer)
+    if request.student_message:
+        allowed |= numbers_in(request.student_message)
+    # 0, 1 and, with percentages, 100 are reference points rather than results.
+    allowed |= {Fraction(0), Fraction(1)}
+    if "%" in message.text or "per cent" in message.text.lower():
+        allowed.add(Fraction(100))
     for entry in message.maths:
-        try:
-            allowed |= numbers_in_json(json.loads(entry.expr))
-        except json.JSONDecodeError:
-            continue
+        allowed |= numbers_in_json(expression(entry))
     return numbers_in(STEP_LABEL.sub(" ", message.text)) - allowed
+
+
+def repaired(message: TutorMessage, request: TurnRequest) -> TutorMessage:
+    """The kind and hint level the step asks for. They are labels the student never reads, so
+    a wrong one is corrected rather than sent back to the model (a reply may be a question or
+    a redirect)."""
+    kind, level = expected(request)
+    if request.purpose == "reply" and message.kind in ("question", "redirect"):
+        kind = message.kind
+    return message.model_copy(update={"kind": kind, "hint_level": level})
 
 
 def static_problems(message: TutorMessage, request: TurnRequest) -> list[str]:
     problems: list[str] = []
-    kind, level = expected(request)
+    kind, _ = expected(request)
     text = message.text
-    # A reply may end in a question or simply bring them back to the maths.
-    allowed_kinds = {"question", "redirect"} if request.purpose == "reply" else {kind}
-    if message.kind not in allowed_kinds:
-        problems.append(f'The step asks for kind "{kind}", not "{message.kind}".')
-    if message.hint_level != level:
-        problems.append(f"The step asks for hint level {level}, not {message.hint_level}.")
     limit = MAX_WORKED_EXAMPLE_WORDS if kind == "worked_example_parallel" else MAX_WORDS
     count = len(words(text))
     if count > limit:
@@ -579,24 +586,19 @@ def static_problems(message: TutorMessage, request: TurnRequest) -> list[str]:
     return problems
 
 
-SYMBOL = re.compile(r"[A-Za-z]")
+def expression(entry: Any) -> Any:
+    """A maths entry's MathJSON as plain JSON (integers stay integers)."""
+    value = entry.model_dump(mode="json")["expr"] if hasattr(entry, "model_dump") else entry
+    return value["expr"] if isinstance(value, dict) and "expr" in value else value
 
 
 def _claims(message: TutorMessage) -> tuple[list[dict[str, Any]], list[str]]:
-    claims: list[dict[str, Any]] = []
-    problems: list[str] = []
-    for index, entry in enumerate(message.maths, start=1):
-        try:
-            claims.append({"role": entry.role, "expr": json.loads(entry.expr)})
-        except json.JSONDecodeError:
-            # A bare variable ("x") is MathJSON's symbol, though not JSON on its own.
-            if SYMBOL.fullmatch(entry.expr.strip()):
-                claims.append({"role": entry.role, "expr": entry.expr.strip()})
-                continue
-            problems.append(
-                f'maths {index} is not MathJSON written as JSON (write a letter as "x" in '
-                'quotes, and a statement as ["Equal", left, right]).'
-            )
+    claims = [{"role": entry.role, "expr": expression(entry)} for entry in message.maths]
+    problems = [
+        f'maths {index} is a lone {value!r}; write MathJSON such as ["Equal", left, right].'
+        for index, value in enumerate((c["expr"] for c in claims), start=1)
+        if isinstance(value, str) and value.strip() in ("[", "]", "")
+    ]
     return claims, problems
 
 
@@ -703,7 +705,7 @@ def generate(request: TurnRequest, *, llm: LlmClient, maths_core: MathsCoreClien
         result.model = answer.record.model
         result.drafts.append(answer.text)
         try:
-            message = parse(TutorMessage, answer)
+            message = repaired(parse(TutorMessage, answer), request)
         except LlmError as error:
             result.attempts.append([str(error)])
             continue

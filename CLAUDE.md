@@ -14,7 +14,7 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | Maths core | `pnpm evals` (golden set, 100%), `pnpm maths:coverage` (85% or more), `pnpm maths:bench` (p95 under 150 ms) |
 | Learner model | `pnpm learner:coverage` (85% or more), `pnpm learner:report` (the synthetic-student numbers behind ADR-0026) |
 | Scenes | `pnpm scenes:check [key]` (static and DOM checks, keyframes in `e2e-artifacts/scenes/`), `pnpm scenes:golden` (scene maths verified), `/admin/scenes` gallery |
-| Tutor | `pnpm evals:tutor` (72 scripted conversations; a dry run unless `-- --live --max-gbp 8`, ask first) |
+| Tutor | `pnpm evals:tutor` (72 scripted conversations; a dry run unless `-- --live --max-gbp 8`, ask first; `--only <ids or scenarios>`, `--no-calibration`) |
 | Tier L scenes | `pnpm evals:tier-l` (dry run; `-- --live --max-gbp 20` calls Claude, ask first), `pnpm scenes:precompute` (dry run likewise), `pnpm scenes:cache-bench` |
 | Generated schemas | `pnpm schemas:generate` after changing `packages/schemas` (SceneSpec JSON Schema and pydantic; CI checks) |
 | All checks | `pnpm check` (ESLint, Prettier, dash check, typecheck, unit tests, ruff, mypy, pytest) |

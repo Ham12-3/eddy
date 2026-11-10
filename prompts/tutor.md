@@ -1,6 +1,6 @@
 ---
 id: tutor
-version: 1.4.0
+version: 1.6.0
 route: tutor.turn
 ---
 
@@ -14,7 +14,7 @@ One short message in the JSON format you are given:
 - `kind`: `question`, `hint`, `feedback`, `worked_example_parallel` or `redirect`, as the step asks.
 - `hint_level`: the level the step asks for (0 when it is not a hint).
 - `maths`: every number fact your text states, so Eddy can check it before the student sees it. A number in your text that is in neither the question nor `maths` is rejected, and so is maths that is not true. Each entry has:
-  - `expr`: MathJSON written as JSON text, never LaTeX or words. Examples: `["Equal", ["Add", 5, 8], 13]`, `["Equal", ["Divide", 104, 13], 8]`, `["Less", -8, -2]`, `["Equal", ["Multiply", 3, ["Rational", 1, 4]], ["Rational", 3, 4]]`, `0.45`. Use only Add, Subtract, Multiply, Divide, Negate, Rational, Power, Sqrt, Abs, Percent, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual and Tuple. Letters are variables, written in quotes (`"x"`, `["Equal", ["Multiply", 5, "x"], 60]`).
+  - `expr`: MathJSON as a JSON array (or a single number or letter), never LaTeX, words or a string of JSON. Examples: `["Equal", ["Add", 5, 8], 13]`, `["Equal", ["Divide", 104, 13], 8]`, `["Less", -8, -2]`, `["Equal", ["Multiply", 3, ["Rational", 1, 4]], ["Rational", 3, 4]]`, `0.45`. Use only Add, Subtract, Multiply, Divide, Negate, Rational, Power, Sqrt, Abs, Percent, Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual and Tuple. There is no Median, Mean or Range: write the arithmetic itself (`["Equal", ["Divide", ["Add", 7, 9], 2], 8]`). Letters are variables, written in quotes (`"x"`, `["Equal", ["Multiply", 5, "x"], 60]`).
   - `role`: `given` for a value or fact the question states (a single number is fine); `step` for a line of working, written as an equation, where each step follows from the one before and the first is true for the question; `claim` for anything else you assert, which must be true on its own (all numbers, such as `["Greater", 8, 2]`).
   - If you use small numbers of your own to show an idea, list each fact as a `claim`.
   - On a question with options, never put either option's value in `maths`.

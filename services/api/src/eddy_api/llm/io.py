@@ -8,12 +8,20 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
-class TutorMath(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    expr: Annotated[str, Field(max_length=400, min_length=1)]
-    role: Literal["given", "claim", "step"]
+class MathAtom1(RootModel[int]):
+    root: Annotated[int, Field(ge=-9007199254740991, le=9007199254740991)]
+
+
+class MathAtom2(RootModel[str]):
+    root: Annotated[str, Field(max_length=40)]
+
+
+class MathAtom(RootModel[MathAtom1 | float | MathAtom2]):
+    root: MathAtom1 | float | MathAtom2
+
+
+class MathNode1(RootModel[list[MathAtom]]):
+    root: Annotated[list[MathAtom], Field(max_length=12)]
 
 
 class InputVerdict(BaseModel):
@@ -76,15 +84,8 @@ class EnglishAssessment(BaseModel):
     comment: Annotated[str, Field(max_length=400)]
 
 
-class TutorMessage(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    text: Annotated[str, Field(max_length=1200, min_length=1)]
-    kind: Literal["question", "hint", "feedback", "worked_example_parallel", "redirect"]
-    hint_level: Annotated[int, Field(ge=0, le=4)]
-    maths: Annotated[list[TutorMath], Field(max_length=12)]
-    concern: bool
+class MathNode2(RootModel[list[MathAtom | MathNode1]]):
+    root: Annotated[list[MathAtom | MathNode1], Field(max_length=12)]
 
 
 class PedagogyJudgement(BaseModel):
@@ -112,6 +113,33 @@ class EnglishMarking(BaseModel):
     overall_level: Annotated[int, Field(ge=0, le=6)]
     assessments: Annotated[list[EnglishAssessment], Field(max_length=6)]
     next_step: Annotated[str, Field(max_length=400)]
+
+
+class MathNode3(RootModel[list[MathAtom | MathNode2]]):
+    root: Annotated[list[MathAtom | MathNode2], Field(max_length=12)]
+
+
+class MathNode4(RootModel[list[MathAtom | MathNode3]]):
+    root: Annotated[list[MathAtom | MathNode3], Field(max_length=12)]
+
+
+class TutorMath(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    expr: MathAtom | MathNode4
+    role: Literal["given", "claim", "step"]
+
+
+class TutorMessage(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    text: Annotated[str, Field(max_length=1200, min_length=1)]
+    kind: Literal["question", "hint", "feedback", "worked_example_parallel", "redirect"]
+    hint_level: Annotated[int, Field(ge=0, le=4)]
+    maths: Annotated[list[TutorMath], Field(max_length=12)]
+    concern: bool
 
 
 class LlmIo(BaseModel):

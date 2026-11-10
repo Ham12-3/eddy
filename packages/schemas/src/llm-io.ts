@@ -22,13 +22,31 @@ export const MAX_WORKED_EXAMPLE_WORDS = 150;
 /** 0 none, 1 nudge, 2 pointed question, 3 partial worked step, 4 parallel worked example. */
 export const MAX_HINT_LEVEL = 4;
 
+/**
+ * MathJSON nested at most four arrays deep, as real JSON. Structured output cannot take a
+ * recursive schema, and as a string of JSON the model often stopped after "[", so each level is
+ * spelled out. maths-core checks every expression against its allow-list.
+ */
+// Integers first, so 13 stays an integer (exact maths), not 13.0.
+const mathAtom = z.union([z.int(), z.number(), z.string().max(40)]).meta({ id: "MathAtom" });
+const mathNode1 = z.array(mathAtom).max(12).meta({ id: "MathNode1" });
+const mathNode2 = z
+  .array(z.union([mathAtom, mathNode1]))
+  .max(12)
+  .meta({ id: "MathNode2" });
+const mathNode3 = z
+  .array(z.union([mathAtom, mathNode2]))
+  .max(12)
+  .meta({ id: "MathNode3" });
+const mathNode4 = z
+  .array(z.union([mathAtom, mathNode3]))
+  .max(12)
+  .meta({ id: "MathNode4" });
+export const tutorExprSchema = z.union([mathAtom, mathNode4]);
+
 export const tutorMathSchema = z
   .object({
-    /**
-     * MathJSON written as JSON text ("[\"Add\", 2, 3]"): structured output cannot take a recursive
-     * schema, so services/api parses it and maths-core checks it against the allow-list.
-     */
-    expr: z.string().min(1).max(400),
+    expr: tutorExprSchema,
     role: z.enum(["given", "claim", "step"]),
   })
   .strict()

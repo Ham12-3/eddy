@@ -74,9 +74,14 @@
       "type": "object",
       "properties": {
         "expr": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 400
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MathAtom"
+            },
+            {
+              "$ref": "#/$defs/MathNode4"
+            }
+          ]
         },
         "role": {
           "type": "string",
@@ -92,6 +97,71 @@
         "role"
       ],
       "additionalProperties": false
+    },
+    "MathAtom": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 40
+        }
+      ]
+    },
+    "MathNode4": {
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/MathAtom"
+          },
+          {
+            "$ref": "#/$defs/MathNode3"
+          }
+        ]
+      }
+    },
+    "MathNode3": {
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/MathAtom"
+          },
+          {
+            "$ref": "#/$defs/MathNode2"
+          }
+        ]
+      }
+    },
+    "MathNode2": {
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/MathAtom"
+          },
+          {
+            "$ref": "#/$defs/MathNode1"
+          }
+        ]
+      }
+    },
+    "MathNode1": {
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/MathAtom"
+      }
     },
     "InputVerdict": {
       "type": "object",

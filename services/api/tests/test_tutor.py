@@ -58,6 +58,7 @@ from eddy_api.tutor.turn import (
     answer_in_text,
     fallback,
     generate,
+    repaired,
     screen,
     static_problems,
     user_message,
@@ -296,7 +297,7 @@ class FakeMathsCore:
         }
 
 
-def hint(text: str, level: int = 1, maths: list[dict[str, str]] | None = None) -> dict[str, Any]:
+def hint(text: str, level: int = 1, maths: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     return {
         "text": text,
         "kind": "hint",
@@ -410,7 +411,7 @@ def test_an_answer_leak_is_regenerated_then_templated() -> None:
 
 
 def test_a_claim_maths_core_flags_as_a_leak_is_refused() -> None:
-    claim = hint("Compare their positions.", maths=[{"role": "claim", "expr": '["Less", -8, -2]'}])
+    claim = hint("Compare their positions.", maths=[{"role": "claim", "expr": ["Less", -8, -2]}])
     assert run([claim, claim, claim], leaks=True).source == "fallback"
 
 
@@ -437,14 +438,22 @@ def test_static_checks() -> None:
     problems = " ".join(
         static_problems(message("That's wrong! What do you think? Why?", "question"), request)
     )
-    for expected in (
-        'kind "hint"',
-        "hint level 2",
-        "exclamation mark",
-        '"wrong"',
-        "more than one question",
-    ):
+    for expected in ("exclamation mark", '"wrong"', "more than one question"):
         assert expected in problems
+    # The kind and hint level are labels: repaired, not sent back to the model.
+    fixed = repaired(message("Look at the ratio.", "question", 3), request)
+    assert (fixed.kind, fixed.hint_level) == ("hint", 2)
+    top = repaired(message("Here is one like it.", "hint", 1), TurnRequest("hint", ITEM, 4))
+    assert (top.kind, top.hint_level) == ("worked_example_parallel", 4)
+    # A number the student said, a sign form of a given one, and percentages are traced.
+    said = TurnRequest(purpose="reply", item=ITEM, student_message="is it 20")
+    assert (
+        static_problems(message("You said 20. What did you do first?", "question", 0), said) == []
+    )
+    solve = TurnRequest(purpose="hint", item=SOLVE, hint_level=1)
+    assert static_problems(message("What undoes the +12 on the left?"), solve) == []
+    percent = TurnRequest(purpose="hint", item=ITEM, hint_level=1)
+    assert static_problems(message("The whole amount is 100%. What is one part?"), percent) == []
     for bad, expected in (
         ("Yes, that is it. Now check the ratio.", "guess"),
         ("You are getting close. Look at the ratio.", "guess"),
@@ -531,9 +540,9 @@ def test_a_level_four_hint_is_a_parallel_worked_example() -> None:
         "kind": "worked_example_parallel",
         "hint_level": 4,
         "maths": [
-            {"role": "step", "expr": '["Equal", ["Add", 3, 4], 7]'},
-            {"role": "step", "expr": '["Equal", ["Divide", 35, 7], 5]'},
-            {"role": "step", "expr": '["Equal", ["Multiply", 4, 5], 20]'},
+            {"role": "step", "expr": ["Equal", ["Add", 3, 4], 7]},
+            {"role": "step", "expr": ["Equal", ["Divide", 35, 7], 5]},
+            {"role": "step", "expr": ["Equal", ["Multiply", 4, 5], 20]},
         ],
         "concern": False,
     }
@@ -1265,3 +1274,28 @@ def test_the_suite_summary_applies_the_thresholds() -> None:
     # A distress scenario missed on any of its runs is not handled.
     flaky = [{**results[0], "distress_runs": [True, False, True]}, *results[1:]]
     assert not summarise(flaky, LIMITS)["meets"]["distress_handled"]
+
+
+def test_maths_arrives_as_real_json_and_keeps_its_integers() -> None:
+    core = FakeMathsCore()
+    stepped = hint(
+        "There are 5 parts in total.",
+        maths=[{"role": "step", "expr": ["Equal", ["Add", 2, 3], 5]}],
+    )
+    result = generate(
+        TurnRequest(purpose="hint", item=ITEM, hint_level=1),
+        llm=llm([stepped, SAFE]),
+        maths_core=cast(MathsCoreClient, core),
+    )
+    assert result.source == "model", result.attempts
+    _, _, claims = core.claims[0]
+    assert claims == [{"role": "step", "expr": ["Equal", ["Add", 2, 3], 5]}]
+    assert isinstance(claims[0]["expr"][2], int)
+    # A lone bracket (the old failure) is sent back with a clear note.
+    broken = hint("Count the parts.", maths=[{"role": "claim", "expr": "["}])
+    again = generate(
+        TurnRequest(purpose="hint", item=ITEM, hint_level=1),
+        llm=llm([broken, hint("Count the parts."), SAFE]),
+        maths_core=cast(MathsCoreClient, FakeMathsCore()),
+    )
+    assert any("lone" in p for p in again.attempts[0])

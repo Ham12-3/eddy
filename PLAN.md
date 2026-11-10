@@ -267,11 +267,11 @@ Deliverables:
 
 Definition of done:
 
-- [ ] Pedagogy suite meets `evals/thresholds.yaml`. (Every threshold but one: turn p95 is 14.8 s against 3.5 s, awaiting your decision.)
+- [ ] Pedagogy suite meets `evals/thresholds.yaml`. (Every threshold but one: turn p95 is 11.0 s against 3.5 s, awaiting your decision.)
 - [x] Zero answer leaks across every "demand the answer" scenario. (And in all 72 conversations, by the independent check and the judge.)
 - [x] Every distress scenario produces the approved response and a `safeguarding_event`. (14 of 14, each screened 3 times. The script is still a draft until Eddy's safeguarding lead approves it.)
 - [x] Prompt-injection scenarios do not change the tutor's behaviour. (7 of 7.)
-- [x] Measured tutor turn p95 and cost per session reported. (14.8 s at p95 per student input; about £0.44 a session.)
+- [x] Measured tutor turn p95 and cost per session reported. (11.0 s at p95 and 6.1 s at p50 per student input; about £0.33 a session.)
 
 ---
 
@@ -735,7 +735,7 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 
 Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; langgraph 1.2.20, langgraph-checkpoint-postgres 3.2.0 and redis 8.1.0 added to services/api. Branch `m7-tutor`; no PR yet.
 
-**Status: built, reviewed and evaluated live; two decisions and one sign-off open.** The tutor meets every pedagogy threshold except turn latency (14.8 s at p95 against 3.5 s), which needs your decision. The safeguarding runbook waits for your go-ahead to enter `/compliance`, and the script and tripwires wait for Eddy's named safeguarding lead; until then the tutor starts only in development and test.
+**Status: built, reviewed and evaluated live; two decisions and one sign-off open.** The tutor meets every pedagogy threshold except turn latency (11.0 s at p95 against 3.5 s, after speed work that brought it down from 14.8 s), which needs your decision. The safeguarding runbook waits for your go-ahead to enter `/compliance`, and the script and tripwires wait for Eddy's named safeguarding lead; until then the tutor starts only in development and test.
 
 **What landed** (ADR-0031):
 
@@ -771,9 +771,25 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 | **Full, 72 conversations (kept)** | **tutor 1.4.0, judge 1.2.0** | **No answer leaks (independent check and judge); distress 14 of 14, each screened 3 times, 14 events written; no false alarms; injections 7 of 7 held; every rubric mean 3.5 or above, `no_answer_given` 4 in every conversation; judge calibration kappa 0.843; first pass 56%; p95 14.8 s; 1 error, a dropped connection to maths-core** | **£2.43** |
 | Targeted, 16 conversations (stuck-06, off topic, benign) | safety-output 1.2.0 | All pass, no errors; "are you a real person" now answered "I am an AI tutor" | £0.39 |
 
-- **Total spent:** about £5.55 of the £8 you approved.
-- **Where the time goes** (the kept run, per call): Opus 4.8 at low effort 2.8 s at p50 and 4.8 s at p95; the input classifier 1.3 s; the output classifier 1.5 s. A message that passes first time takes about 5.6 s, and 44% of messages need at least one regeneration, so p95 per student input is 14.8 s.
-- **Cost:** 3.4p a conversation; a lesson item (judging included) 7.4p, so about £0.44 for a six-item session, over SPEC.md's estimate of 25 to 35 US cents. The tutor's prompts are below the minimum cacheable size, so caching does not help.
+- **Speed work (10 November 2026, at your request):**
+
+  | Change | Effect |
+  |---|---|
+  | MathJSON as real JSON, nested four deep (it was a string of JSON, which the model cut off after "[" in 28 of 167 first drafts) | The largest single cause of retries gone |
+  | Kind and hint level corrected in code, not retried | 7 retries a run gone |
+  | The number trace accepts sign forms of given numbers, the student's own words, counts of listed values and 100 with percentages | Fewer false retries |
+  | The output check told that a parallel worked example shows the method by design (safety-output 1.3.0); no Median operator (tutor 1.6.0) | Fewer false retries |
+  | Opus 4.8 with thinking off, measured on 8 turns each way | Not kept: no faster (3.2 s a call at p50 against 2.9 s), as at low effort it barely thinks |
+
+  | Run (72 conversations) | First pass | p50 / p95 per input | Fallbacks | Cost |
+  |---|---|---|---|---|
+  | Before (9 November, kept) | 56% | not recorded / 14.8 s | 13 | £2.43 |
+  | **After (10 November)** | **78%** | **6.1 s / 11.0 s** | **6** | **£1.85**, Opus calibration skipped |
+
+  The final run passes every other threshold: no answer leaks, distress 14 of 14 (each screened 3 times), injections 7 of 7, no false alarms, every rubric mean 3.45 or above, `no_answer_given` 4 in every conversation. The judge's calibration (kappa 0.843) comes from the run before.
+- **Total spent:** about £7.60 of the £8 you approved (£5.55 on 9 November, £0.19 on the thinking measurement and £1.85 on the final run).
+- **Where the time goes** (the final run, per call): Opus 4.8 at low effort 2.9 s at p50 and 4.7 s at p95; the input classifier 1.3 s; the output classifier 1.4 s. A message that passes first time takes about 5.6 s, and 22% of messages need at least one regeneration, so p95 per student input is 11.0 s.
+- **Cost:** 2.6p a conversation; a lesson item (judging included) 5.6p, so about £0.33 for a six-item session, near SPEC.md's estimate of 25 to 35 US cents. The tutor's prompts are below the minimum cacheable size, so caching does not help.
 - **What the runs found and fixed:**
   - the output classifier refused "I am an AI tutor", reading "no claim to be human" as "never say you are an AI" (safety-output 1.2.0);
   - faded steps and replies that laid out the whole method (tutor 1.4.0 and the step instructions);
