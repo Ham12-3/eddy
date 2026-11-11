@@ -14,6 +14,7 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | Maths core | `pnpm evals` (golden set, 100%), `pnpm maths:coverage` (85% or more), `pnpm maths:bench` (p95 under 150 ms) |
 | Learner model | `pnpm learner:coverage` (85% or more), `pnpm learner:report` (the synthetic-student numbers behind ADR-0026) |
 | Scenes | `pnpm scenes:check [key]` (static and DOM checks, keyframes in `e2e-artifacts/scenes/`), `pnpm scenes:golden` (scene maths verified), `/admin/scenes` gallery |
+| Tutor | `pnpm evals:tutor` (72 scripted conversations; a dry run unless `-- --live --max-gbp 8`, ask first; `--only <ids or scenarios>`, `--no-calibration`) |
 | Tier L scenes | `pnpm evals:tier-l` (dry run; `-- --live --max-gbp 20` calls Claude, ask first), `pnpm scenes:precompute` (dry run likewise), `pnpm scenes:cache-bench` |
 | Generated schemas | `pnpm schemas:generate` after changing `packages/schemas` (SceneSpec JSON Schema and pydantic; CI checks) |
 | All checks | `pnpm check` (ESLint, Prettier, dash check, typecheck, unit tests, ruff, mypy, pytest) |
@@ -46,7 +47,9 @@ Local services (`docker compose up -d --wait`): Postgres 127.0.0.1:5442 (eddy/ed
 - The hello page's system check only renders in development or with `EDDY_SYSTEM_CHECK=1` (ADR-0018). Routes in services/api name their accepted roles with `require_roles(...)`.
 - `next dev` would write an `AGENTS.md`; `agentRules: false` in `next.config.ts` stops it.
 - Claude calls need `ANTHROPIC_API_KEY` in services/api/.env, which the user adds and nobody reads. Without it Tier L is off and Tier D is served. Live evals and precompute cost money: always ask before `--live`.
-- `pnpm keys:dev` only adds missing keys to existing .env files; `--force` replaces the ones it manages and keeps the rest.
+- The safeguarding script and tripwires (`services/api/src/eddy_api/tutor/safeguarding.py`, `config/safeguarding/tripwires.yaml`) are drafts until Eddy's named safeguarding lead approves them; never change the script's wording without that approval.
+- `pnpm keys:dev` only adds missing keys to existing .env files; `--force` replaces the ones it manages and keeps the rest. It writes `EDDY_ENVIRONMENT=development` for services/api: settings default to production, where the ZDR gate's local-database exception and the unapproved safeguarding draft are off.
+- The tutor's checkpointer runs on the request's own connection inside its transaction (`routes/tutor.py` `graph_for`); never give it its own pool or autocommit, or a failed turn leaves the lesson stuck.
 - Run Prettier from the repo root only: from a package directory it skips `.prettierignore` and reformats generated files such as `font-metrics.json`, which then fail CI.
 - Scene text is measured with `packages/scenes/src/layout/font-metrics.json` (regular weight only); run `pnpm --filter @eddy/scenes fonts:generate` if a font changes. Scenes play on our own renderer, not Remotion (ADR-0027).
 

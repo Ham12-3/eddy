@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Creates local development secrets and writes them to the git-ignored .env files:
 //   apps/web/.env.local          service-token private key (web signs, ADR-0008)
-//   services/api/.env            service-token public key, service tokens, local database URL
+//   services/api/.env            service-token public key, service tokens, local database URL,
+//                                EDDY_ENVIRONMENT=development
 //   services/maths-core/.env     maths-core token
 //   workers/scene-check/.env     scene-check token (ADR-0030)
 // Prints file and key names only, never values.
@@ -97,6 +98,9 @@ const files = {
       MATHS_CORE_SERVICE_TOKEN: mathsCoreToken,
       SCENE_CHECK_BASE_URL: "http://127.0.0.1:8320",
       SCENE_CHECK_SERVICE_TOKEN: sceneCheckToken,
+      // Local development: the ZDR gate's local-database exception and the unapproved
+      // safeguarding draft are allowed here only (ADR-0031).
+      EDDY_ENVIRONMENT: "development",
     },
     ["SERVICE_TOKEN_PUBLIC_KEY_B64", "MATHS_CORE_SERVICE_TOKEN", "SCENE_CHECK_SERVICE_TOKEN"],
   ],
