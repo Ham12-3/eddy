@@ -435,6 +435,9 @@ def api(seeded: Session) -> Iterator[tuple[TestClient, Session, FakeSceneCheck]]
     app.dependency_overrides[get_settings] = lambda: Settings(
         service_token_public_key_b64=_PUBLIC_B64,
         anthropic_api_key=SecretStr("sk-test"),
+        # Explicit, not read from a local .env: settings default to production, where Tier L
+        # waits for confirmed zero data retention (ADR-0031).
+        eddy_environment="test",
     )
     app.dependency_overrides[get_session] = lambda: seeded
     app.dependency_overrides[get_scene_services] = lambda: SceneServices(
