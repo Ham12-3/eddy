@@ -171,6 +171,8 @@ class Item(Base):
     family_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("item_family.id"))
     template_id: Mapped[str] = mapped_column(String(128))
     params: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    # maths-core regenerates the item from its template and seed (M7).
+    seed: Mapped[int | None] = mapped_column(Integer)
     stem_markdown: Mapped[str] = mapped_column(Text)
     answer_canonical: Mapped[str] = mapped_column(Text)
     answer_format: Mapped[dict[str, Any]] = mapped_column(JSONB)

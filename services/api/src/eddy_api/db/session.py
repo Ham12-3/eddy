@@ -1,4 +1,5 @@
-"""Engine and session factory, built from DATABASE_URL (a SecretStr in settings)."""
+"""Engine and session factory, built from RUNTIME_DATABASE_URL: the runtime role, which cannot
+change the schema or the audit log (ADR-0024). Migrations and the seed use DATABASE_URL."""
 
 from collections.abc import Iterator
 from functools import lru_cache
@@ -11,7 +12,7 @@ from eddy_api.config import get_settings
 
 @lru_cache
 def get_engine() -> Engine:
-    return create_engine(get_settings().database_url.get_secret_value(), pool_pre_ping=True)
+    return create_engine(get_settings().runtime_database_url.get_secret_value(), pool_pre_ping=True)
 
 
 def session_factory() -> sessionmaker[Session]:

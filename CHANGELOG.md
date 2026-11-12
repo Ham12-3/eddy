@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+### M8: Student app (11 and 12 November 2026)
+
+Added:
+
+- Sign-up (ADR-0032): an invite code, a neutral month-and-year age check that stores nothing for anyone under 13, then an email link (Auth.js v5 through Mailpit locally). Sign-in pages never reveal whether an address has an account, and invite guessing is rate limited.
+- A custom Auth.js adapter that goes through new `/v1/auth/*` routes, so services/api stays the only writer of the auth tables; session tokens are hashed in the web process; deleting an account signs it out everywhere at once.
+- The runtime role `eddy_app` (migration 0006, ADR-0024): the API and worker can read and change rows but not the schema, and can only read and add to the audit log. Every API test now runs as it.
+- Onboarding: draft child-friendly and full privacy notices with the acknowledged version recorded, and set-up (board, tier, exam series, target grade, resitting, accessibility and display choices applied to every page).
+- The diagnostic: up to 20 typed questions, confidence before each reveal, "I do not know this yet", stop and resume; confident answers skip prerequisites and wrong answers suggest misconceptions (SUSPECTED only).
+- Today's plan, the lesson (tutor messages, questions, confidence, marking, scenes, the hint ladder, messages to Eddy, the safeguarding script, an "Eddy is writing" state and a gentle break note), review, the progress map, settings (display, download my data, delete my account) and Report a concern, with loading, empty and error states.
+- The maths field now sends MathJSON (`latexToMathJson` in `packages/ui`).
+- Privacy jobs: `python -m eddy_api.jobs purge` (expired links, pending sign-ups and sessions; tutor message text and checkpoints after 90 days) and `alerts` (safeguarding lead emails with ids only). `python -m eddy_api.invites` creates invite codes.
+- E2E: the student journey (sign-up, under-13 stop, onboarding, diagnostic, a lesson, review, progress, settings, a concern, account deletion) with axe and screenshots; CI gains Redis and Mailpit.
+
+Fixed:
+
+- The in-memory rate limiter (the Redis fallback) dropped every key containing a colon.
+
+### M7: Tutor (9 and 10 November 2026)
+
+Added:
+
+- Loop 1 as a LangGraph graph (ADR-0031). It runs from the session plan (a due re-check, remediation, reviews, new learning) through the worked example, faded step, independent practice, confidence before marking, the scene for a slip or a Socratic question, the reply, a re-check, then the learner model and review schedule. Interrupts for help (the hint ladder), messages, safeguarding and pause. Two failures queue a prerequisite diagnostic; a secured node raises its prerequisites and skips the worked example.
+- The checkpointer runs inside each request's transaction, so a turn commits or rolls back as one; free text never enters a checkpoint, and checkpoints are deleted with their lesson. Migrations 0004 (checkpoint tables, learner model state as JSON, item seeds) and 0005 (the event's lesson, the delete trigger).
+- `POST /v1/tutor/sessions`, `POST /v1/tutor/sessions/{id}/input` and `GET /v1/tutor/sessions/{id}`: one input at a time per lesson, only the inputs the lesson is waiting for, per-student Redis rate limits and daily cost guards for the tutor's Claude calls.
+- The safety pipeline: tripwires that see through spacing, invisible characters and look-alike letters; the Haiku 4.5 input classifier; Opus 4.8 tutor messages checked for word limits, tone, UK English, one question at a time, confirming a guess, links and contact details, untraced numbers, answer leaks (maths-core and the text), maths truth, and the Haiku 4.5 output classifier; two regenerations and templated fallbacks. It fails closed when anything cannot read a message.
+- Safeguarding: a static script with Childline, Shout and 999, a `safeguarding_event` written on its own connection, the lesson stopped, and the script again for any later message. The script and the tripwire list are drafts awaiting Eddy's safeguarding lead, and until then the tutor starts only in development and test (`EDDY_ENVIRONMENT`).
+- Prompts: `tutor.md` (1.6.0), `safety-input.md` (1.1.0), `safety-output.md` (1.3.0) and `pedagogy-judge.md` (1.2.0), tuned on the live eval. The judge scores each criterion in its own field, and tutor messages carry their maths as real JSON. Every Claude output now has a zod schema in `packages/schemas` (`llm-io.ts`) and a generated pydantic model.
+- The pedagogy suite: 72 scripted conversations (lessons through every message, guessing, answer demands, off topic, distress screened three times, benign near-misses, injections), a Haiku judge with an Opus calibration sample, and thresholds (`pnpm evals:tutor`, with `--only` for chosen conversations). Live: no answer leaks, 14 of 14 distress scenarios handled, no false alarms, every injection held, every rubric mean 3.45 or above, judge agreement 0.84. After speed work, 78% of messages pass first time and a student input takes 6.1 s at p50 and 11.0 s at p95 (from 14.8 s). The tutor turn target is now 12 s at p95 while the student sees "Eddy is writing" (it was 3.5 s).
+- English marking scaffolding: the output schema and agreement metrics (quadratic weighted kappa, exact and adjacent agreement).
+
+Changed:
+
+- maths-core lists each template's structure rules and whether it is a choice question, and each item says whether it is one.
+- The zero data retention gate's local-database exception now needs `EDDY_ENVIRONMENT` to be development or test. Run `pnpm keys:dev` once to add it to services/api/.env.
+
 ### M6: Animation generation loop (7 November 2026)
 
 Changed:

@@ -1,6 +1,56 @@
 {
   "components": {
     "schemas": {
+      "AdapterUser": {
+        "description": "The user as Auth.js sees it, plus the role the web signs into service tokens.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "email_verified": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "email_verified",
+          "name",
+          "role"
+        ],
+        "title": "AdapterUser",
+        "type": "object"
+      },
       "Beat": {
         "additionalProperties": false,
         "properties": {
@@ -43,6 +93,170 @@
         "title": "Beat",
         "type": "object"
       },
+      "ConcernIn": {
+        "properties": {
+          "category": {
+            "enum": [
+              "SAFETY",
+              "CONTENT",
+              "PRIVACY",
+              "OTHER"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "pattern": "^/[A-Za-z0-9/_-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "tutor_session_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tutor Session Id"
+          }
+        },
+        "required": [
+          "category",
+          "message"
+        ],
+        "title": "ConcernIn",
+        "type": "object"
+      },
+      "ConcernOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "ConcernOut",
+        "type": "object"
+      },
+      "CreateUserIn": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "email_verified": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "CreateUserIn",
+        "type": "object"
+      },
+      "DataRequestIn": {
+        "properties": {
+          "confirm": {
+            "default": false,
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "EXPORT",
+              "DELETE"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "DataRequestIn",
+        "type": "object"
+      },
+      "DataRequestOut": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "requested_at",
+          "completed_at"
+        ],
+        "title": "DataRequestOut",
+        "type": "object"
+      },
       "DetectionRule": {
         "properties": {
           "rule": {
@@ -72,11 +286,103 @@
         "title": "DetectionRule",
         "type": "object"
       },
+      "DiagnosticAnswerIn": {
+        "properties": {
+          "confidence": {
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Confidence",
+            "type": "integer"
+          },
+          "dont_know": {
+            "default": false,
+            "title": "Dont Know",
+            "type": "boolean"
+          },
+          "item_id": {
+            "format": "uuid",
+            "title": "Item Id",
+            "type": "string"
+          },
+          "mathjson": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "confidence"
+        ],
+        "title": "DiagnosticAnswerIn",
+        "type": "object"
+      },
+      "DiagnosticOut": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "done",
+          "answered",
+          "limit"
+        ],
+        "title": "DiagnosticOut",
+        "type": "object"
+      },
       "ElementId": {
         "maxLength": 64,
         "pattern": "^[a-z][a-zA-Z0-9_]*(\\.[a-z][a-zA-Z0-9_]*)*$",
         "title": "ElementId",
         "type": "string"
+      },
+      "EmailIn": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "EmailIn",
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -139,57 +445,224 @@
         "title": "HelloResponse",
         "type": "object"
       },
-      "JsonValue": {
-        "anyOf": [
-          {
+      "InputIn": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "continue",
+              "answer",
+              "confidence",
+              "message",
+              "help",
+              "watched",
+              "pause"
+            ],
+            "title": "Kind",
             "type": "string"
           },
-          {
-            "$ref": "#/components/schemas/JsonValue1"
+          "mathjson": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          {
-            "type": "number"
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           },
-          {
-            "type": "boolean"
-          },
-          {
-            "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array"
-          },
-          {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object"
-          },
-          {
-            "type": "null"
+          "value": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
           }
+        },
+        "required": [
+          "kind"
         ],
-        "title": "JsonValue"
+        "title": "InputIn",
+        "type": "object"
       },
+      "InviteIn": {
+        "properties": {
+          "code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "visitor": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Visitor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "visitor"
+        ],
+        "title": "InviteIn",
+        "type": "object"
+      },
+      "InviteOut": {
+        "properties": {
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "title": "InviteOut",
+        "type": "object"
+      },
+      "JsonValue-Input": {},
       "JsonValue1": {
         "maximum": 9007199254740991.0,
         "minimum": -9007199254740991.0,
         "title": "JsonValue1",
         "type": "integer"
+      },
+      "LessonOut": {
+        "properties": {
+          "ended": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended"
+          },
+          "outbox": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/pydantic__types__JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Outbox",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "waiting_for": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Waiting For",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "state",
+          "ended",
+          "waiting_for",
+          "outbox"
+        ],
+        "title": "LessonOut",
+        "type": "object"
+      },
+      "MaySignInIn": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "sending": {
+            "default": false,
+            "title": "Sending",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "MaySignInIn",
+        "type": "object"
+      },
+      "MaySignInOut": {
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "allowed"
+        ],
+        "title": "MaySignInOut",
+        "type": "object"
+      },
+      "MeOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notices": {
+            "items": {
+              "$ref": "#/components/schemas/NoticeOut"
+            },
+            "title": "Notices",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileOut"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "profile",
+          "preferences",
+          "notices"
+        ],
+        "title": "MeOut",
+        "type": "object"
       },
       "MisconceptionOut": {
         "properties": {
@@ -374,6 +847,48 @@
         "title": "NodeDetail",
         "type": "object"
       },
+      "NodeOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisites",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "not-started",
+              "learning",
+              "secure",
+              "needs-review"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "strand": {
+            "title": "Strand",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "strand",
+          "state",
+          "prerequisites"
+        ],
+        "title": "NodeOut",
+        "type": "object"
+      },
       "NodeSummary": {
         "properties": {
           "code": {
@@ -430,6 +945,50 @@
           "misconception_count"
         ],
         "title": "NodeSummary",
+        "type": "object"
+      },
+      "NoticeIn": {
+        "properties": {
+          "notice_key": {
+            "const": "privacy",
+            "title": "Notice Key",
+            "type": "string"
+          },
+          "version": {
+            "const": "0.1.0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notice_key",
+          "version"
+        ],
+        "title": "NoticeIn",
+        "type": "object"
+      },
+      "NoticeOut": {
+        "properties": {
+          "acknowledged_at": {
+            "format": "date-time",
+            "title": "Acknowledged At",
+            "type": "string"
+          },
+          "notice_key": {
+            "title": "Notice Key",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "notice_key",
+          "version",
+          "acknowledged_at"
+        ],
+        "title": "NoticeOut",
         "type": "object"
       },
       "Paper": {
@@ -495,6 +1054,156 @@
         "title": "Paper",
         "type": "object"
       },
+      "PlanOut": {
+        "properties": {
+          "diagnostic_done": {
+            "title": "Diagnostic Done",
+            "type": "boolean"
+          },
+          "diagnostic_in_progress": {
+            "title": "Diagnostic In Progress",
+            "type": "boolean"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node"
+          },
+          "node_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Title"
+          },
+          "open_lesson": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Lesson"
+          },
+          "recheck": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recheck"
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remediation"
+          },
+          "reviews": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reviews",
+            "type": "array"
+          },
+          "session_minutes": {
+            "title": "Session Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "diagnostic_done",
+          "diagnostic_in_progress",
+          "node",
+          "node_title",
+          "reviews",
+          "recheck",
+          "remediation",
+          "minutes",
+          "open_lesson",
+          "session_minutes"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
+      "Preferences": {
+        "additionalProperties": false,
+        "description": "Children's Code defaults for everyone; each is the student's own choice.",
+        "properties": {
+          "captions_only": {
+            "default": false,
+            "title": "Captions Only",
+            "type": "boolean"
+          },
+          "motion": {
+            "default": "system",
+            "enum": [
+              "system",
+              "reduce"
+            ],
+            "title": "Motion",
+            "type": "string"
+          },
+          "narration_speed": {
+            "default": 1.0,
+            "title": "Narration Speed",
+            "type": "number"
+          },
+          "reading": {
+            "default": "standard",
+            "enum": [
+              "standard",
+              "dyslexia"
+            ],
+            "title": "Reading",
+            "type": "string"
+          },
+          "session_minutes": {
+            "default": 25,
+            "maximum": 60.0,
+            "minimum": 10.0,
+            "title": "Session Minutes",
+            "type": "integer"
+          },
+          "theme": {
+            "default": "system",
+            "enum": [
+              "system",
+              "light",
+              "dark"
+            ],
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "title": "Preferences",
+        "type": "object"
+      },
       "Prerequisite": {
         "properties": {
           "code": {
@@ -511,6 +1220,167 @@
           "strength"
         ],
         "title": "Prerequisite",
+        "type": "object"
+      },
+      "ProfileOut": {
+        "properties": {
+          "birth_month": {
+            "title": "Birth Month",
+            "type": "integer"
+          },
+          "birth_year": {
+            "title": "Birth Year",
+            "type": "integer"
+          },
+          "board": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board"
+          },
+          "diagnostic_completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnostic Completed At"
+          },
+          "exam_series": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Series"
+          },
+          "is_resitter": {
+            "title": "Is Resitter",
+            "type": "boolean"
+          },
+          "setup_completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Completed At"
+          },
+          "target_grade": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Grade"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          }
+        },
+        "required": [
+          "birth_year",
+          "birth_month",
+          "board",
+          "tier",
+          "exam_series",
+          "target_grade",
+          "is_resitter",
+          "setup_completed_at",
+          "diagnostic_completed_at"
+        ],
+        "title": "ProfileOut",
+        "type": "object"
+      },
+      "ProgressOut": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodeOut"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "secured": {
+            "title": "Secured",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nodes",
+          "secured"
+        ],
+        "title": "ProgressOut",
+        "type": "object"
+      },
+      "QuestionOut": {
+        "properties": {
+          "calculator": {
+            "title": "Calculator",
+            "type": "boolean"
+          },
+          "command_word": {
+            "title": "Command Word",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "node_title": {
+            "title": "Node Title",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "stem": {
+            "title": "Stem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "item_id",
+          "node",
+          "node_title",
+          "stem",
+          "command_word",
+          "calculator"
+        ],
+        "title": "QuestionOut",
         "type": "object"
       },
       "RequestOut": {
@@ -547,6 +1417,40 @@
           "scene"
         ],
         "title": "RequestOut",
+        "type": "object"
+      },
+      "RevealOut": {
+        "properties": {
+          "answer_latex": {
+            "title": "Answer Latex",
+            "type": "string"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "misconception": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Misconception"
+          },
+          "next": {
+            "$ref": "#/components/schemas/DiagnosticOut"
+          }
+        },
+        "required": [
+          "correct",
+          "answer_latex",
+          "misconception",
+          "next"
+        ],
+        "title": "RevealOut",
         "type": "object"
       },
       "SceneOut": {
@@ -591,7 +1495,7 @@
           "correctAnswer": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/JsonValue"
+                "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
               },
               {
                 "type": "null"
@@ -608,7 +1512,7 @@
             "additionalProperties": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
                 },
                 {
                   "type": "null"
@@ -626,7 +1530,7 @@
           "studentAnswer": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/JsonValue"
+                "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
               },
               {
                 "type": "null"
@@ -650,6 +1554,166 @@
           "beats"
         ],
         "title": "SceneSpec",
+        "type": "object"
+      },
+      "SessionAndUser": {
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/SessionOut"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AdapterUser"
+          }
+        },
+        "required": [
+          "session",
+          "user"
+        ],
+        "title": "SessionAndUser",
+        "type": "object"
+      },
+      "SessionIn": {
+        "properties": {
+          "expires": {
+            "format": "date-time",
+            "title": "Expires",
+            "type": "string"
+          },
+          "session_token_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Session Token Hash",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token_hash",
+          "user_id",
+          "expires"
+        ],
+        "title": "SessionIn",
+        "type": "object"
+      },
+      "SessionOut": {
+        "properties": {
+          "expires": {
+            "format": "date-time",
+            "title": "Expires",
+            "type": "string"
+          },
+          "session_token_hash": {
+            "title": "Session Token Hash",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token_hash",
+          "user_id",
+          "expires"
+        ],
+        "title": "SessionOut",
+        "type": "object"
+      },
+      "SetupIn": {
+        "additionalProperties": false,
+        "properties": {
+          "board": {
+            "default": "AQA",
+            "enum": [
+              "AQA",
+              "EDEXCEL",
+              "OCR"
+            ],
+            "title": "Board",
+            "type": "string"
+          },
+          "exam_series": {
+            "maxLength": 32,
+            "pattern": "^20\\d{2}-(summer|november)$",
+            "title": "Exam Series",
+            "type": "string"
+          },
+          "is_resitter": {
+            "title": "Is Resitter",
+            "type": "boolean"
+          },
+          "target_grade": {
+            "enum": [
+              4,
+              5
+            ],
+            "title": "Target Grade",
+            "type": "integer"
+          },
+          "tier": {
+            "const": "FOUNDATION",
+            "default": "FOUNDATION",
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exam_series",
+          "target_grade",
+          "is_resitter"
+        ],
+        "title": "SetupIn",
+        "type": "object"
+      },
+      "SignupIn": {
+        "properties": {
+          "birth_month": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Birth Month",
+            "type": "integer"
+          },
+          "birth_year": {
+            "maximum": 2100.0,
+            "minimum": 1900.0,
+            "title": "Birth Year",
+            "type": "integer"
+          },
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "invite_code": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Invite Code",
+            "type": "string"
+          },
+          "visitor": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Visitor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "invite_code",
+          "birth_year",
+          "birth_month",
+          "visitor"
+        ],
+        "title": "SignupIn",
         "type": "object"
       },
       "Spec": {
@@ -723,6 +1787,53 @@
         "title": "Spec",
         "type": "object"
       },
+      "StartIn": {
+        "properties": {
+          "node": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "pattern": "^[A-Z]{1,3}\\d{1,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node"
+          },
+          "student_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id"
+          }
+        },
+        "title": "StartIn",
+        "type": "object"
+      },
+      "TokenHashIn": {
+        "properties": {
+          "session_token_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Session Token Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token_hash"
+        ],
+        "title": "TokenHashIn",
+        "type": "object"
+      },
       "TopicOut": {
         "properties": {
           "nodes": {
@@ -757,6 +1868,59 @@
           "nodes"
         ],
         "title": "TopicOut",
+        "type": "object"
+      },
+      "UnreadableOut": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "UnreadableOut",
+        "type": "object"
+      },
+      "UpdateSessionIn": {
+        "properties": {
+          "expires": {
+            "format": "date-time",
+            "title": "Expires",
+            "type": "string"
+          },
+          "session_token_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Session Token Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token_hash",
+          "expires"
+        ],
+        "title": "UpdateSessionIn",
+        "type": "object"
+      },
+      "UpdateUserIn": {
+        "properties": {
+          "email_verified": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          }
+        },
+        "title": "UpdateUserIn",
         "type": "object"
       },
       "ValidationError": {
@@ -870,7 +2034,113 @@
         ],
         "title": "VariantOut",
         "type": "object"
-      }
+      },
+      "VerificationIn": {
+        "properties": {
+          "expires": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires"
+          },
+          "identifier": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Identifier",
+            "type": "string"
+          },
+          "token": {
+            "maxLength": 255,
+            "minLength": 16,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "token"
+        ],
+        "title": "VerificationIn",
+        "type": "object"
+      },
+      "VerificationOut": {
+        "properties": {
+          "expires": {
+            "format": "date-time",
+            "title": "Expires",
+            "type": "string"
+          },
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "token",
+          "expires"
+        ],
+        "title": "VerificationOut",
+        "type": "object"
+      },
+      "eddy_api__scenes__spec__JsonValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/JsonValue1"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "JsonValue"
+      },
+      "pydantic__types__JsonValue": {}
     },
     "securitySchemes": {
       "HTTPBearer": {
@@ -901,6 +2171,645 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/v1/auth/invites/check": {
+      "post": {
+        "operationId": "checkInvite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check Invite",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/may-sign-in": {
+      "post": {
+        "operationId": "maySignIn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaySignInIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaySignInOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "May Sign In",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/sessions": {
+      "patch": {
+        "operationId": "updateSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SessionOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Updatesession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Session",
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "operationId": "createSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/sessions/delete": {
+      "post": {
+        "operationId": "deleteSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenHashIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/sessions/lookup": {
+      "post": {
+        "description": "A live session of an active account, or nothing: a deactivated account is signed out\neverywhere at once.",
+        "operationId": "getSessionAndUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenHashIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SessionAndUser"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getsessionanduser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Session And User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/signups": {
+      "post": {
+        "description": "Record a pending sign-up. Silent (204) when the address already has an account, so the\npage that follows cannot reveal it; the link then simply signs them in.",
+        "operationId": "createSignup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Signup",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/users": {
+      "post": {
+        "description": "Make the account from its pending sign-up: the only way an account is made.",
+        "operationId": "createUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdapterUser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/users/lookup": {
+      "post": {
+        "description": "By POST, so an address never sits in a URL or an access log.",
+        "operationId": "getUserByEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AdapterUser"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getuserbyemail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get User By Email",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/users/{user_id}": {
+      "get": {
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AdapterUser"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getuser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get User",
+        "tags": [
+          "auth"
+        ]
+      },
+      "patch": {
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdapterUser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/verification-tokens": {
+      "post": {
+        "operationId": "createVerificationToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Verification Token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/verification-tokens/use": {
+      "post": {
+        "description": "Delete and return the token: a link works once.",
+        "operationId": "useVerificationToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/VerificationOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Useverificationtoken"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Use Verification Token",
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/v1/curriculum/misconceptions": {
@@ -1103,6 +3012,90 @@
         ]
       }
     },
+    "/v1/diagnostic": {
+      "post": {
+        "operationId": "startDiagnostic",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Diagnostic",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/v1/diagnostic/{diagnostic_id}/answer": {
+      "post": {
+        "operationId": "answerDiagnostic",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "diagnostic_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Diagnostic Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticAnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadableOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answer Diagnostic",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
     "/v1/hello": {
       "get": {
         "operationId": "getHello",
@@ -1124,6 +3117,342 @@
           }
         ],
         "summary": "Hello"
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Me",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/concerns": {
+      "post": {
+        "operationId": "reportConcern",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConcernIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcernOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Report Concern",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/data-requests": {
+      "get": {
+        "operationId": "listDataRequests",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DataRequestOut"
+                  },
+                  "title": "Response Listdatarequests",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Data Requests",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "createDataRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Data Request",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/notices": {
+      "post": {
+        "operationId": "acknowledgeNotice",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Acknowledge Notice",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/plan": {
+      "get": {
+        "operationId": "getPlan",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Plan",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/v1/me/preferences": {
+      "put": {
+        "operationId": "setPreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Preferences",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/profile": {
+      "put": {
+        "operationId": "setUpProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Up Profile",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/v1/me/progress": {
+      "get": {
+        "operationId": "getProgress",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Progress",
+        "tags": [
+          "learning"
+        ]
       }
     },
     "/v1/scenes/requests/{request_id}": {
@@ -1217,6 +3546,158 @@
         "summary": "Scene Variant",
         "tags": [
           "scenes"
+        ]
+      }
+    },
+    "/v1/tutor/sessions": {
+      "post": {
+        "operationId": "startTutorSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start",
+        "tags": [
+          "tutor"
+        ]
+      }
+    },
+    "/v1/tutor/sessions/{session_id}": {
+      "get": {
+        "operationId": "getTutorSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read",
+        "tags": [
+          "tutor"
+        ]
+      }
+    },
+    "/v1/tutor/sessions/{session_id}/input": {
+      "post": {
+        "operationId": "sendTutorInput",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InputIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send",
+        "tags": [
+          "tutor"
         ]
       }
     }

@@ -39,6 +39,10 @@ class TemplateOut(BaseModel):
     marks: int
     calculator: bool
     misconceptions: list[str]
+    #: The misconceptions recognised from how an answer is written, not from its value.
+    structures: list[str]
+    #: A choice between values the question lists: naming the answer gives it away.
+    choice: bool
 
 
 class ItemRequest(BaseModel):
@@ -70,6 +74,7 @@ class ItemOut(BaseModel):
     calculator: bool
     distractors: list[DistractorOut]
     diagram: dict[str, JsonValue] | None
+    choice: bool
 
 
 class AnswerRequest(ItemRequest):
@@ -154,6 +159,8 @@ def list_templates() -> list[TemplateOut]:
             marks=t.marks,
             calculator=t.calculator,
             misconceptions=sorted([*t.misconceptions, *t.structures]),
+            structures=sorted(t.structures),
+            choice=t.choice,
         )
         for t in TEMPLATES.values()
     ]
@@ -179,6 +186,7 @@ def generate_item(request: ItemRequest) -> ItemOut:
             for d in item.distractors
         ],
         diagram=dict(item.diagram) if item.diagram else None,
+        choice=TEMPLATES[item.template_id].choice,
     )
 
 
