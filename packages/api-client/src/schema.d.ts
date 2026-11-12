@@ -807,6 +807,16 @@ export interface components {
             /** Waiting For */
             waiting_for: string[];
         };
+        /** MaySignInIn */
+        MaySignInIn: {
+            /** Email */
+            email: string;
+            /**
+             * Sending
+             * @default false
+             */
+            sending: boolean;
+        };
         /** MaySignInOut */
         MaySignInOut: {
             /** Allowed */
@@ -926,8 +936,11 @@ export interface components {
              * @constant
              */
             notice_key: "privacy";
-            /** Version */
-            version: string;
+            /**
+             * Version
+             * @constant
+             */
+            version: "0.1.0";
         };
         /** NoticeOut */
         NoticeOut: {
@@ -1417,7 +1430,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EmailIn"];
+                "application/json": components["schemas"]["MaySignInIn"];
             };
         };
         responses: {
