@@ -12,7 +12,7 @@ from sqlalchemy import Connection, create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 import eddy_api.db.models  # noqa: F401  (registers every table on Base.metadata)
-from eddy_api.db.base import Base
+from eddy_api.db.base import Base, include_object
 
 
 def test_upgrade_downgrade_upgrade(
@@ -36,7 +36,9 @@ def test_the_models_match_the_migrations(migrated_database: str) -> None:
     engine = create_engine(migrated_database)
     try:
         with engine.connect() as connection:
-            context = MigrationContext.configure(connection, opts={"compare_type": True})
+            context = MigrationContext.configure(
+                connection, opts={"compare_type": True, "include_object": include_object}
+            )
             assert compare_metadata(context, Base.metadata) == []
     finally:
         engine.dispose()
@@ -62,6 +64,56 @@ def test_audit_log_is_append_only(migrated_database: str, statement: str) -> Non
             )
             with pytest.raises(DBAPIError, match="audit_log is append-only"):
                 connection.execute(text(statement))
+            connection.rollback()
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize(
+    ("statement", "message"),
+    [
+        ("UPDATE audit_log SET action = 'changed'", "permission denied"),
+        ("DELETE FROM audit_log", "permission denied"),
+        ("TRUNCATE audit_log", "permission denied"),
+        ("ALTER TABLE audit_log DISABLE TRIGGER USER", "must be owner"),
+        ("DROP TRIGGER audit_log_append_only ON audit_log", "must be owner"),
+        ("CREATE TABLE sneaky (id int)", "permission denied"),
+        ("UPDATE alembic_version SET version_num = 'x'", "permission denied"),
+    ],
+)
+def test_the_runtime_role_only_reads_and_adds_to_the_audit_log(
+    migrated_database: str, statement: str, message: str
+) -> None:
+    """ADR-0024: the API connects as eddy_app, which owns nothing, so neither a bug nor an
+    injected statement can rewrite the audit log or switch its trigger off."""
+    engine = create_engine(migrated_database)
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SET ROLE eddy_app"))
+            connection.execute(
+                text(
+                    "INSERT INTO audit_log (actor_role, action, target_type) "
+                    "VALUES ('system', 'test.write', 'none')"
+                )
+            )
+            assert connection.scalar(text("SELECT count(*) FROM audit_log")) >= 1
+            with pytest.raises(DBAPIError, match=message):
+                connection.execute(text(statement))
+            connection.rollback()
+    finally:
+        engine.dispose()
+
+
+def test_the_runtime_role_can_change_ordinary_rows(migrated_database: str) -> None:
+    engine = create_engine(migrated_database)
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SET ROLE eddy_app"))
+            user = _user(connection, "runtime@example.test")
+            connection.execute(
+                text("UPDATE users SET name = 'Sam' WHERE id = :user"), {"user": user}
+            )
+            connection.execute(text("DELETE FROM users WHERE id = :user"), {"user": user})
             connection.rollback()
     finally:
         engine.dispose()

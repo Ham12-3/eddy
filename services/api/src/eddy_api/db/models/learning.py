@@ -10,11 +10,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     SmallInteger,
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -56,6 +58,33 @@ class Attempt(Base):
     created_at: Mapped[datetime] = created_at()
 
 
+class DiagnosticSession(Base):
+    """The onboarding diagnostic (SPEC.md section 4.1): adaptive choice questions that can stop
+    and resume. `state` holds the questions asked and the item on screen, never free text."""
+
+    __tablename__ = "diagnostic_session"
+    __table_args__ = (
+        # One diagnostic in progress per student.
+        Index(
+            "uq_diagnostic_session_open",
+            "student_id",
+            unique=True,
+            postgresql_where=text("completed_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    state: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    started_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class MasteryState(Base):
     __tablename__ = "mastery_state"
     __table_args__ = (
@@ -75,6 +104,11 @@ class MasteryState(Base):
     p_slip: Mapped[float] = mapped_column(Float)
     evidence_count: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(checked_enum("mastery_status", *MASTERY_STATUSES))
+    # The learner model's full state for the node (eddy_api.learner.NodeMastery), which the
+    # columns above summarise.
+    model: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -96,6 +130,10 @@ class MisconceptionState(Base):
         ARRAY(UUID(as_uuid=True)), default=list
     )
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # The misconception's full track (eddy_api.learner.misconceptions.Track).
+    track: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
 
 
 class ReviewCard(Base):

@@ -15,3 +15,16 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export function readServerEnv(source: NodeJS.ProcessEnv = process.env): ServerEnv {
   return serverEnvSchema.parse(source);
 }
+
+const mailEnvSchema = z.object({
+  // Mailpit locally (compose.yaml); Amazon SES in production (ADR-0008).
+  EMAIL_SERVER: z.string().min(1).default("smtp://127.0.0.1:1025"),
+  EMAIL_FROM: z.string().min(3).default("Eddy <sign-in@eddy.localhost>"),
+});
+
+export type MailEnv = z.infer<typeof mailEnvSchema>;
+
+/** Where sign-in emails are sent from. Server-only. */
+export function readMailEnv(source: NodeJS.ProcessEnv = process.env): MailEnv {
+  return mailEnvSchema.parse(source);
+}

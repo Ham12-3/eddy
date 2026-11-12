@@ -3,9 +3,26 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@eddy/web", "dev"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set AUTH_URL=http://localhost:3300&& pnpm --filter @eddy/web dev"],
       "port": 3300
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:api"],
+      "port": 8300
+    },
+    {
+      "name": "maths",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:maths"],
+      "port": 8310
+    },
+    {
+      "name": "mailpit",
+      "url": "http://127.0.0.1:8025",
+      "port": 8025
     }
   ]
 }
