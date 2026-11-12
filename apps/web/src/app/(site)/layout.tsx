@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { signedInStudent } from "@/lib/session";
+import { signedInRole, signedInStudent } from "@/lib/session";
 
 /** Every student-facing page: a skip link, the header, the page, and the footer. */
 export default async function SiteLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const student = await signedInStudent();
+  const [student, role] = await Promise.all([signedInStudent(), signedInRole()]);
   return (
     <>
       <a
@@ -17,7 +17,10 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       </a>
       {/* Layouts do not re-render on client navigation, so the nav shows whenever a student is
           signed in; each page sends anyone mid-onboarding to their next step. */}
-      <SiteHeader signedIn={student !== null} ready={student !== null} />
+      <SiteHeader
+        role={student ? "student" : role === "parent" ? "parent" : null}
+        parentVisible={student?.me.parent_visible ?? false}
+      />
       {children}
       <SiteFooter />
     </>

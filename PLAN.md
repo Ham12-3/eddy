@@ -302,14 +302,14 @@ Depends on: M8. Estimate: 1 week.
 
 Deliverables:
 
-- [ ] Parent linking both ways with student acceptance, the permanent indicator, the "what my parent sees" preview, and unlinking by either side with notification.
-- [ ] Parent dashboard (SPEC.md section 4.4), with every parent view written to `audit_log`.
-- [ ] Data export and deletion jobs: immediate deactivation, completion within 30 days.
+- [x] Parent linking both ways with student acceptance, the permanent indicator, the "what my parent sees" preview, and unlinking by either side with notification. (One code, shared as a link or read out, ADR-0033; notices by email.)
+- [x] Parent dashboard (SPEC.md section 4.4), with every parent view written to `audit_log`.
+- [x] Data export and deletion jobs: immediate deactivation, completion within 30 days. (The export is built on request; erasure is `python -m eddy_api.jobs erase`, scheduled in M10. Parents' own export and deletion are not built yet.)
 
 Definition of done:
 
-- [ ] E2E tests for linking, unlinking, export and deletion.
-- [ ] Children's Code checklist evidence complete for everything built so far.
+- [x] E2E tests for linking, unlinking, export and deletion. (`e2e/parents.spec.ts`, all 9 projects.)
+- [ ] Children's Code checklist evidence complete for everything built so far. (Needs your go-ahead: `compliance/` edits always ask first.)
 
 ---
 
@@ -884,5 +884,38 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - The strict nonce CSP; response timing that differs when a link is sent (queue the email, M10); scheduling the jobs (M10); access logs holding the address in sign-in link URLs (to strip, M10).
 - The admin safeguarding queue; diagrams in the diagnostic; Elo item selection; a scene and a due review driven by E2E; a keyboard-only journey.
 - If the API is unreachable while a session is read, Auth.js clears the cookie and the student signs in again.
+
+**CI**: not run yet for this branch.
+
+### M9: Parent dashboard and accounts (12 November 2026)
+
+Environment: as M8. Branch `m9-parents`, stacked on `m8-student-app` (PR #9) and `m7-tutor` (PR #8), neither merged yet; no PR yet.
+
+**Status: built and checked; one DoD item waits for your go-ahead.** A student can give a parent a code, accept or decline their request, see what they see, and end the link; a parent can sign up with the code, see a child's progress once accepted, and end the link. Download my data and erasure work. Open: the Children's Code checklist evidence (an edit under `compliance/`).
+
+**What landed** (ADR-0033):
+
+- Migration 0007: parent link codes (hashed, 7 days, single use) and parent sign-ups.
+- Parent routes and pages; the student's Parent access settings, the permanent indicator and the preview; email notices both ways.
+- The dashboard (topics, minutes this week, lesson dates, reviews due, support contacts), every view audited, dates never times.
+- Download my data as a readable page and a JSON file; the erasure job, which waits for unreviewed safety records and keeps only an anonymous anchor where a safety record must stay.
+- Privacy notice 0.2.0.
+
+**Checks run (final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0: 953 pytest, Vitest (ui 134, scenes 207, schemas 12, scene-check 10, web 9, infra 6, api-client 1), lint, Prettier, dash and cliché checks, typecheck, ruff, strict mypy. |
+| `pnpm e2e` (full suite, 9 projects) | 273 passed, 5 timed out under load, all in mobile-light; `pnpm e2e --project=mobile-light` then passed 31 of 31. |
+
+**Screenshots**: looked at the parent dashboard (phone light), the preview (desktop dark) and My data (tablet reduced motion). Fixed: My data left out four sections.
+
+**Fresh-context reviews**: `reviewer` and `security-reviewer`. Fixed:
+
+- **High:** a parent could still see a student who had asked to delete their account (links now end at once, with a notice; parent routes ignore deactivated students); erasure left lesson checkpoints behind; erasure could remove an unreviewed safety record or the lesson it came from (it now waits for review, and SAFETY concerns count as safety records).
+- **Medium:** the data page wrote a record on every view (only a download does now, at most 5 an hour); the export missed data the notice lists; no audit row for a link made at parent sign-up; the full notice did not describe parents; accept, decline and end failed silently.
+- **Low:** exact lesson times sent to parents; a decline worded as an ended link; the job's locks and one failure stopping the run; sign-in links and LLM cost records left linked after erasure; dates in the server's time zone; the indicator link's target size; dead code.
+
+**Recorded, not fixed in M9** (ADR-0033): parents' own download, deletion and privacy acknowledgement; keyed hashing of link codes; scheduling the jobs (M10); the Children's Code checklist evidence (your go-ahead).
 
 **CI**: not run yet for this branch.

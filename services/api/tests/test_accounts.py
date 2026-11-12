@@ -63,7 +63,11 @@ def token(subject: str, role: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {jwt.encode(claims, _KEY, algorithm='ES256')}"}
 
 
-AUTH = token("system:auth", "system")
+def auth() -> dict[str, str]:
+    """A fresh token each call: one minted at import expires before later tests run."""
+    return token("system:auth", "system")
+
+
 VISITOR = "a" * 64
 
 
@@ -113,13 +117,13 @@ def sign_up(client: TestClient, email: str = "Sam@Example.test", code: str = "be
             "birth_month": month,
             "visitor": VISITOR,
         },
-        headers=AUTH,
+        headers=auth(),
     )
     assert response.status_code == 204, response.text
 
 
 def create_user(client: TestClient, email: str = "sam@example.test") -> dict[str, object]:
-    response = client.post("/v1/auth/users", json={"email": email}, headers=AUTH)
+    response = client.post("/v1/auth/users", json={"email": email}, headers=auth())
     assert response.status_code == 200, response.text
     body: dict[str, object] = response.json()
     return body
@@ -144,7 +148,7 @@ def test_an_invite_is_valid_until_used_up_or_expired(api: tuple[TestClient, Sess
 
     def valid(code: str) -> bool:
         response = client.post(
-            "/v1/auth/invites/check", json={"code": code, "visitor": VISITOR}, headers=AUTH
+            "/v1/auth/invites/check", json={"code": code, "visitor": VISITOR}, headers=auth()
         )
         assert response.status_code == 200
         result: bool = response.json()["valid"]
@@ -180,7 +184,7 @@ def test_nothing_is_stored_for_someone_under_13(api: tuple[TestClient, Session])
             "birth_month": today.month,
             "visitor": VISITOR,
         },
-        headers=AUTH,
+        headers=auth(),
     )
     assert response.status_code == 422
     assert session.scalar(select(func.count()).select_from(PendingSignup)) == 0
@@ -199,7 +203,7 @@ def test_a_used_up_invite_is_refused_at_sign_up(api: tuple[TestClient, Session])
             "birth_month": month,
             "visitor": VISITOR,
         },
-        headers=AUTH,
+        headers=auth(),
     )
     assert response.status_code == 409
 
@@ -208,14 +212,14 @@ def test_invite_guesses_are_slowed_per_visitor(api: tuple[TestClient, Session]) 
     client, _ = api
     statuses = [
         client.post(
-            "/v1/auth/invites/check", json={"code": f"GUESS{n}", "visitor": VISITOR}, headers=AUTH
+            "/v1/auth/invites/check", json={"code": f"GUESS{n}", "visitor": VISITOR}, headers=auth()
         ).status_code
         for n in range(SIGNUPS_PER_MINUTE + 1)
     ]
     assert statuses[:-1] == [200] * SIGNUPS_PER_MINUTE
     assert statuses[-1] == 429
     other = client.post(
-        "/v1/auth/invites/check", json={"code": "GUESS", "visitor": "b" * 64}, headers=AUTH
+        "/v1/auth/invites/check", json={"code": "GUESS", "visitor": "b" * 64}, headers=auth()
     )
     assert other.status_code == 200
 
@@ -230,7 +234,9 @@ def test_sign_up_makes_the_account_profile_and_redemption_in_one_go(
     assert pending is not None
     assert pending.email == "sam@example.test"
 
-    allowed = client.post("/v1/auth/may-sign-in", json={"email": "SAM@example.test"}, headers=AUTH)
+    allowed = client.post(
+        "/v1/auth/may-sign-in", json={"email": "SAM@example.test"}, headers=auth()
+    )
     assert allowed.json() == {"allowed": True}
 
     user = create_user(client)
@@ -253,9 +259,11 @@ def test_sign_up_makes_the_account_profile_and_redemption_in_one_go(
 
 def test_no_account_is_made_without_a_pending_sign_up(api: tuple[TestClient, Session]) -> None:
     client, _ = api
-    response = client.post("/v1/auth/users", json={"email": "who@example.test"}, headers=AUTH)
+    response = client.post("/v1/auth/users", json={"email": "who@example.test"}, headers=auth())
     assert response.status_code == 409
-    allowed = client.post("/v1/auth/may-sign-in", json={"email": "who@example.test"}, headers=AUTH)
+    allowed = client.post(
+        "/v1/auth/may-sign-in", json={"email": "who@example.test"}, headers=auth()
+    )
     assert allowed.json() == {"allowed": False}
 
 
@@ -276,7 +284,7 @@ def test_the_invite_runs_out_between_sign_up_and_link(api: tuple[TestClient, Ses
     sign_up(client, "a@example.test")
     sign_up(client, "b@example.test")
     create_user(client, "a@example.test")
-    response = client.post("/v1/auth/users", json={"email": "b@example.test"}, headers=AUTH)
+    response = client.post("/v1/auth/users", json={"email": "b@example.test"}, headers=auth())
     assert response.status_code == 409
     session.refresh(code)
     assert code.used_count == 1
@@ -294,18 +302,18 @@ def test_sessions_are_looked_up_by_hash_and_end_with_the_account(
     made = client.post(
         "/v1/auth/sessions",
         json={"session_token_hash": digest, "user_id": user["id"], "expires": expires},
-        headers=AUTH,
+        headers=auth(),
     )
     assert made.status_code == 200, made.text
 
     found = client.post(
-        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=AUTH
+        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=auth()
     )
     assert found.json()["user"]["id"] == user["id"]
 
     later = (datetime.now(UTC) + timedelta(days=40)).isoformat()
     updated = client.patch(
-        "/v1/auth/sessions", json={"session_token_hash": digest, "expires": later}, headers=AUTH
+        "/v1/auth/sessions", json={"session_token_hash": digest, "expires": later}, headers=auth()
     )
     assert updated.status_code == 200
 
@@ -314,11 +322,11 @@ def test_sessions_are_looked_up_by_hash_and_end_with_the_account(
     row.deactivated_at = datetime.now(UTC)
     session.flush()
     gone = client.post(
-        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=AUTH
+        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=auth()
     )
     assert gone.json() is None
 
-    client.post("/v1/auth/sessions/delete", json={"session_token_hash": digest}, headers=AUTH)
+    client.post("/v1/auth/sessions/delete", json={"session_token_hash": digest}, headers=auth())
     assert session.scalar(select(func.count()).select_from(SessionRow)) == 0
 
 
@@ -337,7 +345,7 @@ def test_an_expired_session_is_not_found(api: tuple[TestClient, Session]) -> Non
     )
     session.flush()
     found = client.post(
-        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=AUTH
+        "/v1/auth/sessions/lookup", json={"session_token_hash": digest}, headers=auth()
     )
     assert found.json() is None
 
@@ -349,19 +357,23 @@ def test_a_sign_in_link_works_once_and_a_new_one_replaces_it(
     expires = (datetime.now(UTC) + timedelta(minutes=30)).isoformat()
     first = {"identifier": "Sam@example.test", "token": "a" * 64, "expires": expires}
     second = {"identifier": "sam@example.test", "token": "b" * 64, "expires": expires}
-    assert client.post("/v1/auth/verification-tokens", json=first, headers=AUTH).status_code == 200
-    assert client.post("/v1/auth/verification-tokens", json=second, headers=AUTH).status_code == 200
+    assert (
+        client.post("/v1/auth/verification-tokens", json=first, headers=auth()).status_code == 200
+    )
+    assert (
+        client.post("/v1/auth/verification-tokens", json=second, headers=auth()).status_code == 200
+    )
 
     use_first = client.post(
         "/v1/auth/verification-tokens/use",
         json={"identifier": "sam@example.test", "token": "a" * 64},
-        headers=AUTH,
+        headers=auth(),
     )
     assert use_first.json() is None
     use = {"identifier": "sam@example.test", "token": "b" * 64}
-    used = client.post("/v1/auth/verification-tokens/use", json=use, headers=AUTH)
+    used = client.post("/v1/auth/verification-tokens/use", json=use, headers=auth())
     assert used.json()["token"] == "b" * 64
-    again = client.post("/v1/auth/verification-tokens/use", json=use, headers=AUTH)
+    again = client.post("/v1/auth/verification-tokens/use", json=use, headers=auth())
     assert again.json() is None
 
 
@@ -404,11 +416,11 @@ def test_a_notice_acknowledgement_is_recorded_once_per_version(
     api: tuple[TestClient, Session], student: uuid.UUID
 ) -> None:
     client, session = api
-    body = {"notice_key": "privacy", "version": "0.1.0"}
+    body = {"notice_key": "privacy", "version": "0.2.0"}
     for _ in range(2):
         response = client.post("/v1/me/notices", json=body, headers=as_student(student))
         assert response.status_code == 200
-    assert [n["version"] for n in response.json()["notices"]] == ["0.1.0"]
+    assert [n["version"] for n in response.json()["notices"]] == ["0.2.0"]
     count = session.scalar(select(func.count()).select_from(NoticeAcknowledgement))
     assert count == 1
 
@@ -519,12 +531,12 @@ def test_sign_in_links_are_limited_per_address(api: tuple[TestClient, Session]) 
     sign_up(client)
     body = {"email": "sam@example.test", "sending": True}
     answers = [
-        client.post("/v1/auth/may-sign-in", json=body, headers=AUTH).json()["allowed"]
+        client.post("/v1/auth/may-sign-in", json=body, headers=auth()).json()["allowed"]
         for _ in range(LINKS_PER_MINUTE + 1)
     ]
     assert answers == [True] * LINKS_PER_MINUTE + [False]
     # A check that sends nothing is not counted.
-    plain = client.post("/v1/auth/may-sign-in", json={"email": "sam@example.test"}, headers=AUTH)
+    plain = client.post("/v1/auth/may-sign-in", json={"email": "sam@example.test"}, headers=auth())
     assert plain.json() == {"allowed": True}
 
 
@@ -544,7 +556,7 @@ def test_a_live_pending_sign_up_cannot_be_replaced(api: tuple[TestClient, Sessio
             "birth_month": 1,
             "visitor": VISITOR,
         },
-        headers=AUTH,
+        headers=auth(),
     )
     assert response.status_code == 204
     session.refresh(first)

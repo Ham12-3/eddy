@@ -4,4 +4,4 @@
  *
  * 0.x marks a draft: the notices wait for legal review (SPEC.md section 16.2).
  */
-export const PRIVACY_NOTICE_VERSION = "0.1.0";
+export const PRIVACY_NOTICE_VERSION = "0.2.0";

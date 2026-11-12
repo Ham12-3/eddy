@@ -4,9 +4,9 @@
 - `POST /v1/me/notices`: record that a notice version was read and acknowledged.
 - `PUT /v1/me/profile`: set-up (board, tier, exam series, target grade, resitting).
 - `PUT /v1/me/preferences`: accessibility and session preferences.
-- `GET` and `POST /v1/me/data-requests`: download my data, delete my account. Deleting
-  deactivates the account at once and signs it out everywhere; the export and the erasure
-  itself are jobs (PLAN.md M9), completed within 30 days.
+- `GET /v1/me/export`: download my data, built on request (ADR-0033).
+- `GET` and `POST /v1/me/data-requests`: delete my account. Deleting deactivates the account
+  at once, signs it out everywhere and ends parent links; the erasure job completes it.
 - `POST /v1/me/concerns`: report a concern.
 
 Only birth month and year are held, never a school, address or phone number. Every change is
@@ -15,15 +15,16 @@ written to the audit log by its action name, never its content.
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from eddy_api import audit
+from eddy_api import audit, mail, parents, privacy
+from eddy_api.config import Settings, get_settings
 from eddy_api.db.models import (
     ConcernReport,
     DataRequest,
@@ -37,6 +38,7 @@ from eddy_api.students import Student, profile_of
 
 router = APIRouter(prefix="/v1/me", tags=["me"])
 DbSession = Annotated[Session, Depends(get_session)]
+AppSettings = Annotated[Settings, Depends(get_settings)]
 NARRATION_SPEEDS = (0.75, 1.0, 1.25)
 CONCERNS_PER_DAY = 10
 
@@ -87,6 +89,8 @@ class MeOut(BaseModel):
     profile: ProfileOut
     preferences: Preferences
     notices: list[NoticeOut]
+    #: A parent can see this student's progress: the page always says so (ADR-0033).
+    parent_visible: bool
 
 
 def _preferences(profile: StudentProfile) -> Preferences:
@@ -123,6 +127,7 @@ def _me(session: Session, student: Student) -> MeOut:
             NoticeOut(notice_key=n.notice_key, version=n.version, acknowledged_at=n.acknowledged_at)
             for n in notices
         ],
+        parent_visible=parents.active_link(session, student.id),
     )
 
 
@@ -133,12 +138,12 @@ def get_me(student: Student, session: DbSession) -> MeOut:
 
 #: The privacy notice version shown now. Keep in step with PRIVACY_NOTICE_VERSION in
 #: apps/web/src/lib/notices.ts: only the current version can be acknowledged.
-PRIVACY_NOTICE_VERSION = "0.1.0"
+PRIVACY_NOTICE_VERSION = "0.2.0"
 
 
 class NoticeIn(BaseModel):
     notice_key: Literal["privacy"]
-    version: Literal["0.1.0"]
+    version: Literal["0.2.0"]
 
 
 @router.post("/notices", operation_id="acknowledgeNotice")
@@ -237,7 +242,7 @@ def list_data_requests(student: Student, session: DbSession) -> list[DataRequest
 
 @router.post("/data-requests", operation_id="createDataRequest")
 def create_data_request(
-    body: DataRequestIn, student: Student, session: DbSession
+    body: DataRequestIn, student: Student, session: DbSession, settings: AppSettings
 ) -> DataRequestOut:
     if body.kind == "DELETE" and not body.confirm:
         raise HTTPException(
@@ -253,10 +258,13 @@ def create_data_request(
     row = open_request or DataRequest(user_id=student.id, kind=body.kind, status="RECEIVED")
     if open_request is None:
         session.add(row)
+    told: list[str] = []
     if body.kind == "DELETE":
-        # Deactivated now, signed out everywhere; the erasure job completes within 30 days.
+        # Deactivated now, signed out everywhere, and no parent can see anything from now on;
+        # the erasure job completes within 30 days.
         student.deactivated_at = datetime.now(UTC)
         session.execute(delete(SessionRow).where(SessionRow.user_id == student.id))
+        told = parents.end_links(session, student.id)
     session.flush()
     audit.record(
         session,
@@ -267,6 +275,13 @@ def create_data_request(
         target_id=row.id,
     )
     session.commit()
+    for email in told:
+        mail.notify(
+            settings,
+            email,
+            "Eddy: a parent link has ended",
+            "The link to your child's progress in Eddy has ended. You can no longer see it.\n",
+        )
     return _request_out(row)
 
 
@@ -325,3 +340,52 @@ def report_concern(body: ConcernIn, student: Student, session: DbSession) -> Con
     )
     session.commit()
     return ConcernOut(id=row.id, created_at=row.created_at)
+
+
+EXPORT_DOWNLOADS_PER_HOUR = 5
+
+
+@router.get("/export", operation_id="exportMyData")
+def export_my_data(student: Student, session: DbSession, download: bool = False) -> dict[str, Any]:
+    """Everything held about the student, built now and not stored. Viewing it changes nothing;
+    downloading it as a file is recorded as a met request (UK GDPR accountability), at most
+    EXPORT_DOWNLOADS_PER_HOUR times an hour."""
+    if download:
+        hour = datetime.now(UTC) - timedelta(hours=1)
+        recent = session.scalar(
+            select(func.count())
+            .select_from(DataRequest)
+            .where(
+                DataRequest.user_id == student.id,
+                DataRequest.kind == "EXPORT",
+                DataRequest.requested_at >= hour,
+            )
+        )
+        if (recent or 0) >= EXPORT_DOWNLOADS_PER_HOUR:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail="Try again in an hour.")
+    data = privacy.export(session, student.id)
+    if not download:
+        return data
+    now = datetime.now(UTC)
+    session.add(
+        DataRequest(user_id=student.id, kind="EXPORT", status="COMPLETED", completed_at=now)
+    )
+    session.execute(
+        update(DataRequest)
+        .where(
+            DataRequest.user_id == student.id,
+            DataRequest.kind == "EXPORT",
+            DataRequest.status == "RECEIVED",
+        )
+        .values(status="COMPLETED", completed_at=now)
+    )
+    audit.record(
+        session,
+        actor_id=student.id,
+        actor_role="student",
+        action="data.export",
+        target_type="user",
+        target_id=student.id,
+    )
+    session.commit()
+    return data

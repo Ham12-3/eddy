@@ -69,9 +69,10 @@ export function ChildPrivacyNotice() {
       </Section>
       <Section title="Parents">
         <p className="m-0">
-          Parents cannot see anything in Eddy yet. When parent links arrive, a parent will only see
-          your progress if you say yes, you will always see a note when they can, and they will
-          never see your messages or your answers.
+          A parent or carer can only see your progress if you give them a code and then say yes.
+          While they can, you always see a note saying so, and you can see exactly what they see.
+          They see topics secured, time spent and reviews due, never your messages or answers. You
+          can stop it at any time, and they are told.
         </p>
       </Section>
       <Section title="How long we keep it">
@@ -83,9 +84,9 @@ export function ChildPrivacyNotice() {
       </Section>
       <Section title="What you can do">
         <p className="m-0 mb-3">
-          In Settings you can ask for a copy of everything we hold about you (we send it within 30
-          days), or delete your account. Signed in, you can also ask us about your data, or tell us
-          if something is wrong, with Report a concern.
+          In Settings you can see and download everything we hold about you, or delete your account.
+          Signed in, you can also ask us about your data, or tell us if something is wrong, with
+          Report a concern.
         </p>
         <p className="m-0">
           If you are not happy with how we answer, you can complain to the Information
@@ -165,6 +166,16 @@ export function FullPrivacyNotice() {
           </li>
         </ul>
       </Section>
+      <Section title="Parents and carers">
+        <p className="m-0">
+          A student can give a parent or carer a code. A parent who uses it gives us their email
+          address and confirms they are the student&apos;s parent or carer and an adult. Nothing is
+          shared until the student accepts. A linked parent sees topics secured, time spent this
+          week, the dates of recent lessons and reviews due, and each view is recorded. They never
+          see messages, answers or safety records. Either side can end the link, and the other is
+          told by email.
+        </p>
+      </Section>
       <Section title="Safety">
         <p className="m-0">
           If something you write suggests you may be at risk, the lesson stops and you are shown who
@@ -191,8 +202,8 @@ export function FullPrivacyNotice() {
       <Section title="Your rights">
         <p className="m-0 mb-3">
           You can ask for a copy of your data, ask us to correct it, delete it, or limit or object
-          to how we use it. Asking for a copy and deleting your account are in Settings, two clicks
-          from any page. For anything else, use Report a concern while signed in.
+          to how we use it. Downloading your data and deleting your account are in Settings, two
+          clicks from any page. For anything else, use Report a concern while signed in.
         </p>
         <p className="m-0">
           You can complain to the Information Commissioner&apos;s Office at ico.org.uk or on 0303

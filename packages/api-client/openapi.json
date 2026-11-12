@@ -1,6 +1,35 @@
 {
   "components": {
     "schemas": {
+      "Activity": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "questions": {
+            "title": "Questions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "kind",
+          "minutes",
+          "questions"
+        ],
+        "title": "Activity",
+        "type": "object"
+      },
       "AdapterUser": {
         "description": "The user as Auth.js sees it, plus the role the web signs into service tokens.",
         "properties": {
@@ -91,6 +120,66 @@
           "narration"
         ],
         "title": "Beat",
+        "type": "object"
+      },
+      "ChildOut": {
+        "properties": {
+          "link_id": {
+            "format": "uuid",
+            "title": "Link Id",
+            "type": "string"
+          },
+          "since": {
+            "format": "date-time",
+            "title": "Since",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "REQUESTED",
+              "ACTIVE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "student_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Email"
+          }
+        },
+        "required": [
+          "link_id",
+          "status",
+          "student_email",
+          "since"
+        ],
+        "title": "ChildOut",
+        "type": "object"
+      },
+      "CodeOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "expires_at"
+        ],
+        "title": "CodeOut",
         "type": "object"
       },
       "ConcernIn": {
@@ -190,6 +279,61 @@
           "email"
         ],
         "title": "CreateUserIn",
+        "type": "object"
+      },
+      "Dashboard": {
+        "properties": {
+          "learning": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Learning",
+            "type": "array"
+          },
+          "minutes_this_week": {
+            "title": "Minutes This Week",
+            "type": "integer"
+          },
+          "next_review": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Review"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/Activity"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "reviews_due_this_week": {
+            "title": "Reviews Due This Week",
+            "type": "integer"
+          },
+          "secured": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Secured",
+            "type": "array"
+          }
+        },
+        "required": [
+          "secured",
+          "learning",
+          "minutes_this_week",
+          "recent",
+          "reviews_due_this_week",
+          "next_review"
+        ],
+        "title": "Dashboard",
         "type": "object"
       },
       "DataRequestIn": {
@@ -595,6 +739,75 @@
         "title": "LessonOut",
         "type": "object"
       },
+      "LinkCodeIn": {
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "LinkCodeIn",
+        "type": "object"
+      },
+      "LinkOut": {
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Email"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "REQUESTED",
+              "ACTIVE"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "parent_email",
+          "requested_at",
+          "accepted_at"
+        ],
+        "title": "LinkOut",
+        "type": "object"
+      },
       "MaySignInIn": {
         "properties": {
           "email": {
@@ -643,6 +856,10 @@
             "title": "Notices",
             "type": "array"
           },
+          "parent_visible": {
+            "title": "Parent Visible",
+            "type": "boolean"
+          },
           "preferences": {
             "$ref": "#/components/schemas/Preferences"
           },
@@ -659,7 +876,8 @@
           "role",
           "profile",
           "preferences",
-          "notices"
+          "notices",
+          "parent_visible"
         ],
         "title": "MeOut",
         "type": "object"
@@ -955,7 +1173,7 @@
             "type": "string"
           },
           "version": {
-            "const": "0.1.0",
+            "const": "0.2.0",
             "title": "Version",
             "type": "string"
           }
@@ -1052,6 +1270,43 @@
           "marks"
         ],
         "title": "Paper",
+        "type": "object"
+      },
+      "ParentSignupIn": {
+        "properties": {
+          "adult_confirmed": {
+            "const": true,
+            "title": "Adult Confirmed",
+            "type": "boolean"
+          },
+          "code": {
+            "maxLength": 32,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "visitor": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Visitor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "adult_confirmed",
+          "visitor"
+        ],
+        "title": "ParentSignupIn",
         "type": "object"
       },
       "PlanOut": {
@@ -1818,6 +2073,35 @@
         "title": "StartIn",
         "type": "object"
       },
+      "StudentLinksOut": {
+        "properties": {
+          "code_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Expires At"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code_expires_at",
+          "links"
+        ],
+        "title": "StudentLinksOut",
+        "type": "object"
+      },
       "TokenHashIn": {
         "properties": {
           "session_token_hash": {
@@ -2260,6 +2544,46 @@
           }
         ],
         "summary": "May Sign In",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/parent-signups": {
+      "post": {
+        "description": "A parent asks for a sign-up link with their child's code. Silent (204) for an address that\nalready has an account or a live sign-up: such a parent signs in and enters the code.",
+        "operationId": "createParentSignup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParentSignupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Parent Signup",
         "tags": [
           "auth"
         ]
@@ -3265,6 +3589,57 @@
         ]
       }
     },
+    "/v1/me/export": {
+      "get": {
+        "description": "Everything held about the student, built now and not stored. Viewing it changes nothing;\ndownloading it as a file is recorded as a met request (UK GDPR accountability), at most\nEXPORT_DOWNLOADS_PER_HOUR times an hour.",
+        "operationId": "exportMyData",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Download",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Exportmydata",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export My Data",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/v1/me/notices": {
       "post": {
         "operationId": "acknowledgeNotice",
@@ -3308,6 +3683,183 @@
         "summary": "Acknowledge Notice",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/v1/me/parent-links": {
+      "get": {
+        "operationId": "listMyParentLinks",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentLinksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Links",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/me/parent-links/code": {
+      "post": {
+        "description": "A new code, shown once. It replaces any code the student made before.",
+        "operationId": "makeParentLinkCode",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Make Code",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/me/parent-links/{link_id}/accept": {
+      "post": {
+        "operationId": "acceptParentLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentLinksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Link",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/me/parent-links/{link_id}/end": {
+      "post": {
+        "description": "Decline a request, or end an active link. The parent is told.",
+        "operationId": "endParentLinkAsStudent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentLinksOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End Link As Student",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/me/parent-view": {
+      "get": {
+        "description": "Exactly what a linked parent sees.",
+        "operationId": "previewParentView",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parent View",
+        "tags": [
+          "parents"
         ]
       }
     },
@@ -3452,6 +4004,186 @@
         "summary": "Get Progress",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/v1/parent/children": {
+      "get": {
+        "operationId": "listChildren",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChildOut"
+                  },
+                  "title": "Response Listchildren",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Children",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/children/{link_id}": {
+      "get": {
+        "operationId": "getChildDashboard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Child Dashboard",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/links": {
+      "post": {
+        "operationId": "requestParentLink",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCodeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChildOut"
+                  },
+                  "title": "Response Requestparentlink",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Link",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/links/{link_id}/end": {
+      "post": {
+        "operationId": "endParentLinkAsParent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChildOut"
+                  },
+                  "title": "Response Endparentlinkasparent",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "End Link As Parent",
+        "tags": [
+          "parents"
         ]
       }
     },

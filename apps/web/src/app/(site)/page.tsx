@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { Page } from "@/components/Page";
 import { apiClientFor, ServiceTokenConfigError } from "@/lib/api";
-import { signedInStudent } from "@/lib/session";
+import { signedInRole, signedInStudent } from "@/lib/session";
 import { isSystemCheckEnabled } from "@/lib/system-check";
 
 // Render on every request: the system check must reflect the API as it is now.
@@ -107,7 +107,7 @@ async function SystemCheck() {
 }
 
 export default async function HomePage() {
-  if (await signedInStudent()) redirect("/welcome");
+  if ((await signedInStudent()) || (await signedInRole()) === "parent") redirect("/welcome");
   return (
     <Page
       title="Eddy"

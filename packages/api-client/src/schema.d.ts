@@ -55,6 +55,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/parent-signups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Parent Signup
+         * @description A parent asks for a sign-up link with their child's code. Silent (204) for an address that
+         *     already has an account or a live sign-up: such a parent signs in and enters the code.
+         */
+        post: operations["createParentSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/sessions": {
         parameters: {
             query?: never;
@@ -415,6 +436,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export My Data
+         * @description Everything held about the student, built now and not stored. Viewing it changes nothing;
+         *     downloading it as a file is recorded as a met request (UK GDPR accountability), at most
+         *     EXPORT_DOWNLOADS_PER_HOUR times an hour.
+         */
+        get: operations["exportMyData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/notices": {
         parameters: {
             query?: never;
@@ -426,6 +469,100 @@ export interface paths {
         put?: never;
         /** Acknowledge Notice */
         post: operations["acknowledgeNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/parent-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Links */
+        get: operations["listMyParentLinks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/parent-links/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make Code
+         * @description A new code, shown once. It replaces any code the student made before.
+         */
+        post: operations["makeParentLinkCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/parent-links/{link_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Link */
+        post: operations["acceptParentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/parent-links/{link_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Link As Student
+         * @description Decline a request, or end an active link. The parent is told.
+         */
+        post: operations["endParentLinkAsStudent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/parent-view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Parent View
+         * @description Exactly what a linked parent sees.
+         */
+        get: operations["previewParentView"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -494,6 +631,74 @@ export interface paths {
         get: operations["getProgress"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Children */
+        get: operations["listChildren"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/children/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Child Dashboard */
+        get: operations["getChildDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Link */
+        post: operations["requestParentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/links/{link_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End Link As Parent */
+        post: operations["endParentLinkAsParent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -589,6 +794,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Activity */
+        Activity: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Kind */
+            kind: string;
+            /** Minutes */
+            minutes: number;
+            /** Questions */
+            questions: number;
+        };
         /**
          * AdapterUser
          * @description The user as Auth.js sees it, plus the role the web signs into service tokens.
@@ -619,6 +838,36 @@ export interface components {
             kind: "show_given" | "ask_prediction" | "show_student_working" | "highlight_slip" | "build" | "transform" | "compare" | "reveal_correct" | "recap";
             /** Narration */
             narration: string;
+        };
+        /** ChildOut */
+        ChildOut: {
+            /**
+             * Link Id
+             * Format: uuid
+             */
+            link_id: string;
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "REQUESTED" | "ACTIVE";
+            /** Student Email */
+            student_email: string | null;
+        };
+        /** CodeOut */
+        CodeOut: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
         };
         /** ConcernIn */
         ConcernIn: {
@@ -653,6 +902,21 @@ export interface components {
             email: string;
             /** Email Verified */
             email_verified?: string | null;
+        };
+        /** Dashboard */
+        Dashboard: {
+            /** Learning */
+            learning: string[];
+            /** Minutes This Week */
+            minutes_this_week: number;
+            /** Next Review */
+            next_review: string | null;
+            /** Recent */
+            recent: components["schemas"]["Activity"][];
+            /** Reviews Due This Week */
+            reviews_due_this_week: number;
+            /** Secured */
+            secured: string[];
         };
         /** DataRequestIn */
         DataRequestIn: {
@@ -807,6 +1071,33 @@ export interface components {
             /** Waiting For */
             waiting_for: string[];
         };
+        /** LinkCodeIn */
+        LinkCodeIn: {
+            /** Code */
+            code: string;
+        };
+        /** LinkOut */
+        LinkOut: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Email */
+            parent_email: string | null;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "REQUESTED" | "ACTIVE";
+        };
         /** MaySignInIn */
         MaySignInIn: {
             /** Email */
@@ -831,6 +1122,8 @@ export interface components {
             id: string;
             /** Notices */
             notices: components["schemas"]["NoticeOut"][];
+            /** Parent Visible */
+            parent_visible: boolean;
             preferences: components["schemas"]["Preferences"];
             profile: components["schemas"]["ProfileOut"];
             /** Role */
@@ -940,7 +1233,7 @@ export interface components {
              * Version
              * @constant
              */
-            version: "0.1.0";
+            version: "0.2.0";
         };
         /** NoticeOut */
         NoticeOut: {
@@ -968,6 +1261,20 @@ export interface components {
             paper: string;
             /** Tiers */
             tiers?: ("FOUNDATION" | "HIGHER")[] | null;
+        };
+        /** ParentSignupIn */
+        ParentSignupIn: {
+            /**
+             * Adult Confirmed
+             * @constant
+             */
+            adult_confirmed: true;
+            /** Code */
+            code: string;
+            /** Email */
+            email: string;
+            /** Visitor */
+            visitor: string;
         };
         /** PlanOut */
         PlanOut: {
@@ -1248,6 +1555,13 @@ export interface components {
             /** Student Id */
             student_id?: string | null;
         };
+        /** StudentLinksOut */
+        StudentLinksOut: {
+            /** Code Expires At */
+            code_expires_at: string | null;
+            /** Links */
+            links: components["schemas"]["LinkOut"][];
+        };
         /** TokenHashIn */
         TokenHashIn: {
             /** Session Token Hash */
@@ -1442,6 +1756,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MaySignInOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createParentSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParentSignupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2124,6 +2469,39 @@ export interface operations {
             };
         };
     };
+    exportMyData: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     acknowledgeNotice: {
         parameters: {
             query?: never;
@@ -2153,6 +2531,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMyParentLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentLinksOut"];
+                };
+            };
+        };
+    };
+    makeParentLinkCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeOut"];
+                };
+            };
+        };
+    };
+    acceptParentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentLinksOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endParentLinkAsStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentLinksOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previewParentView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
                 };
             };
         };
@@ -2259,6 +2759,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgressOut"];
+                };
+            };
+        };
+    };
+    listChildren: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildOut"][];
+                };
+            };
+        };
+    };
+    getChildDashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestParentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endParentLinkAsParent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChildOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
