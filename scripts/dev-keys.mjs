@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Creates local development secrets and writes them to the git-ignored .env files:
-//   apps/web/.env.local          service-token private key (web signs, ADR-0008)
+//   apps/web/.env.local          service-token private key (web signs, ADR-0008), the Auth.js
+//                                secret, AUTH_URL and the Mailpit SMTP server
 //   services/api/.env            service-token public key, service tokens, local database URL,
 //                                EDDY_ENVIRONMENT=development
 //   services/maths-core/.env     maths-core token
@@ -83,17 +84,30 @@ if (freshPair) {
 }
 
 // For each file: the keys it needs, and which must equal the value given (secrets that pair up).
+// Auth.js signs and encrypts its cookies with this; the join steps sign theirs too (ADR-0032).
+const authSecret = keep(current.web.values.get("AUTH_SECRET")) ?? token();
 const files = {
   "apps/web/.env.local": [
     current.web,
-    { API_BASE_URL: "http://127.0.0.1:8300", SERVICE_TOKEN_PRIVATE_KEY_B64: privateB64 },
-    ["SERVICE_TOKEN_PRIVATE_KEY_B64"],
+    {
+      API_BASE_URL: "http://127.0.0.1:8300",
+      SERVICE_TOKEN_PRIVATE_KEY_B64: privateB64,
+      AUTH_SECRET: authSecret,
+      // Where sign-in links point; it must match the address you open the app at.
+      AUTH_URL: "http://localhost:3300",
+      // Mailpit (compose.yaml): read sign-in emails at http://127.0.0.1:8025.
+      EMAIL_SERVER: "smtp://127.0.0.1:1025",
+      EMAIL_FROM: "Eddy <sign-in@eddy.localhost>",
+    },
+    ["SERVICE_TOKEN_PRIVATE_KEY_B64", "AUTH_SECRET"],
   ],
   "services/api/.env": [
     current.api,
     {
       SERVICE_TOKEN_PUBLIC_KEY_B64: publicB64,
       DATABASE_URL: "postgresql+psycopg://eddy:eddy@127.0.0.1:5442/eddy",
+      // The runtime role the API and worker connect as (ADR-0024, migration 0006).
+      RUNTIME_DATABASE_URL: "postgresql+psycopg://eddy_app:eddy_app@127.0.0.1:5442/eddy",
       MATHS_CORE_BASE_URL: "http://127.0.0.1:8310",
       MATHS_CORE_SERVICE_TOKEN: mathsCoreToken,
       SCENE_CHECK_BASE_URL: "http://127.0.0.1:8320",

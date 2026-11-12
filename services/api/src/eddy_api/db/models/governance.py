@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Identity, String, Text
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Identity, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -50,6 +50,40 @@ class AuditLog(Base):
     target_type: Mapped[str] = mapped_column(String(64))
     target_id: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = created_at()
+
+
+CONCERN_CATEGORIES = ("SAFETY", "CONTENT", "PRIVACY", "OTHER")
+
+
+class ConcernReport(Base):
+    """A concern reported by a student, from the footer or the tutor panel (SPEC.md section 4.5).
+
+    Kept when the account is deleted (SET NULL), like a safeguarding event, until the DPIA sets
+    its retention. A SAFETY concern also alerts the safeguarding lead.
+    """
+
+    __tablename__ = "concern_report"
+    __table_args__ = (
+        CheckConstraint("char_length(message) BETWEEN 1 AND 2000", name="message_length"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    category: Mapped[str] = mapped_column(checked_enum("concern_category", *CONCERN_CATEGORIES))
+    message: Mapped[str] = mapped_column(Text)
+    # Where it was reported from: a path in the app, never a query string.
+    page: Mapped[str | None] = mapped_column(String(200))
+    tutor_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tutor_session.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = created_at()
+    notified_party: Mapped[str | None] = mapped_column(String(128))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
 
 
 class DataRequest(Base):

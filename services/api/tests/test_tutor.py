@@ -577,6 +577,12 @@ def test_rate_limits() -> None:
     assert all(key.endswith((":2", ":3333")) for key in limiter.counts), limiter.counts
 
 
+def test_rate_limit_keys_may_hold_colons() -> None:
+    """A key such as "signup:<visitor>" is still counted, not dropped as a stale window."""
+    limiter = MemoryLimiter(per_minute=2, per_day=10)
+    assert [limiter.allow("signup:abc", now=0.0) for _ in range(3)] == [True, True, False]
+
+
 def test_node_state_round_trips_as_json() -> None:
     state = NodeMastery(
         node="N1",

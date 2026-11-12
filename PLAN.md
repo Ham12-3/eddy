@@ -281,18 +281,18 @@ Depends on: M1, M5, M7. Estimate: 2 weeks.
 
 Deliverables:
 
-- [ ] Auth.js email magic links (Mailpit locally), invite codes, the age gate, child-friendly and full privacy notices with versioned acknowledgement.
-- [ ] Before any real sign-up (ADR-0024): a migrator role and a runtime role with SELECT and INSERT only on `audit_log`, tested; the age check before any email is stored, and expired verification tokens purged; the custom Auth.js adapter (ADR-0023) storing session token hashes; retention for `audit_log` and `safeguarding_event` from the DPIA.
-- [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map. The tutor panel shows "Eddy is writing" while a reply is checked (up to 12 s at p95).
-- [ ] Settings: accessibility preferences, download my data, delete my account, report a concern.
-- [ ] Designed empty, error and loading states for every screen.
+- [x] Auth.js email magic links (Mailpit locally), invite codes, the age gate, child-friendly and full privacy notices with versioned acknowledgement. (Sign-up runs invite, age, then email, ADR-0032; the notices are drafts, version 0.1.0, awaiting legal review.)
+- [ ] Before any real sign-up (ADR-0024): a migrator role and a runtime role with SELECT and INSERT only on `audit_log`, tested; the age check before any email is stored, and expired verification tokens purged; the custom Auth.js adapter (ADR-0023) storing session token hashes; retention for `audit_log` and `safeguarding_event` from the DPIA. (All done except the retention rule, which waits for the DPIA; the purge job exists and is scheduled in M10.)
+- [x] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map. (The diagnostic is typed answers, not multiple choice: ADR-0032.) The tutor panel shows "Eddy is writing" while a reply is checked (up to 12 s at p95).
+- [x] Settings: accessibility preferences, download my data, delete my account, report a concern. (Download records the request and delete deactivates at once; the export file and erasure are the M9 jobs.)
+- [x] Designed empty, error and loading states for every screen.
 
 Definition of done:
 
-- [ ] Playwright journeys: sign-up, diagnostic, a learning loop that includes a scene, a review.
-- [ ] Screenshots at 375, 768 and 1280 px in light, dark and reduced motion, reviewed by me.
-- [ ] axe clean on every page; the core journey completed by keyboard only.
-- [ ] A manual screen reader checklist (NVDA and VoiceOver) prepared for you to run.
+- [ ] Playwright journeys: sign-up, diagnostic, a learning loop that includes a scene, a review. (Sign-up, the under-13 stop, onboarding, the diagnostic, a lesson to marking, review (empty), progress, settings, a concern and account deletion pass in all 9 projects; a scene and a due review are not yet driven end to end.)
+- [x] Screenshots at 375, 768 and 1280 px in light, dark and reduced motion, reviewed by me.
+- [ ] axe clean on every page; the core journey completed by keyboard only. (axe is clean on every page in all 9 projects; no keyboard-only journey yet.)
+- [x] A manual screen reader checklist (NVDA and VoiceOver) prepared for you to run. (`docs/screen-reader-checklist.md`.)
 
 ---
 
@@ -840,5 +840,49 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - Redacting personal details before Claude, pip-audit in CI, and a reading-age check on tutor text.
 - A tutor turn holds a database connection while Claude writes (bounded per process).
 - The per-lesson lock is not tested under real concurrency.
+
+**CI**: not run yet for this branch.
+
+### M8: Student app (11 and 12 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; next-auth 5.0.0-beta.32 (ISC) and nodemailer 8.0.11 (MIT-0) added to apps/web. Branch `m8-student-app`, stacked on `m7-tutor` (PR #8, not yet merged); no PR yet.
+
+**Status: built and checked; three DoD items and one deliverable open.** A student can join with an invite, pass the age check, read and acknowledge the privacy notice, set up, take the diagnostic, see today's plan, work through a lesson with the tutor, and use review, progress, settings and Report a concern. Open: retention for `audit_log` and `safeguarding_event` (waits for the DPIA), a journey that drives a scene and a due review end to end, and a keyboard-only journey.
+
+**What landed** (ADR-0032):
+
+- **The runtime role** `eddy_app` (migration 0006): the API and worker connect as it; it can only read and add to the audit log and owns nothing. Every API test now runs as it.
+- **Sign-up**: invite, then the age check (nothing stored for anyone under 13), then the email; Auth.js v5 with a custom adapter over new `/v1/auth/*` routes; hashed session tokens; database sessions of a week; per-visitor and per-address rate limits; pages that never reveal whether an address has an account.
+- **Onboarding**: draft privacy notices (short and full, version 0.1.0) with the acknowledged version recorded, and set-up whose display choices apply to every page.
+- **The diagnostic**: typed answers (not multiple choice, ADR-0032), confidence first, "I do not know this yet", stop and resume, prerequisites skipped after confident answers, never repeated once done.
+- **Learning**: today's plan, the lesson runner over the M7 tutor (questions, confidence, marking, scenes, hints, messages, the safeguarding script, "Eddy is writing", a break note), review, the progress map, settings, Report a concern, and loading, empty and error states.
+- **The maths field sends MathJSON** (`latexToMathJson`, 35 tests).
+- **Jobs**: `python -m eddy_api.jobs purge|alerts`, and `python -m eddy_api.invites`.
+- **A baseline Content Security Policy** (no nonces yet).
+
+**Checks run (final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, Prettier, dash check (455 files), cliché lint (223 files), typecheck, Vitest (scenes 207, ui 134, schemas 12, scene-check 10, web 9, infra 6, api-client 1), ruff, strict mypy (117 files), 945 pytest tests. |
+| `pnpm e2e` (full suite, before the review fixes) | 243 passed, 9 failed: the student journey's stale header (fixed below). |
+| `pnpm e2e e2e/student.spec.ts e2e/hello.spec.ts` (after the fixes) | 54 passed in all 9 projects (375, 768 and 1280 px; light, dark, reduced motion), axe with zero serious or critical findings on every page visited. |
+| By hand in the browser | Sign-up through Mailpit, a typed diagnostic answer checked by maths-core, and a live lesson with Opus 4.8 to marking and Eddy's follow-up question. |
+
+**Screenshots**: looked at the phone light home, tablet dark lesson and desktop reduced-motion set-up pages. Fixed: the quiet "Sign out" button sat indented.
+
+**Fresh-context reviews**: `reviewer` and `security-reviewer`. Fixed:
+
+- **High:** the raw Auth.js endpoint revealed which addresses have accounts (it now redirects to "check your email" either way); negative mixed numbers read as products (-2 1/2 was -1); a finished diagnostic could start again.
+- **Medium:** invite rate limits keyed on a forgeable X-Forwarded-For entry (now the nearest trusted proxy's entry, and invite codes need 8 characters); no limit on sign-in links (now 3 a minute and 10 a day per address); no CSP; the header's nav went stale after onboarding; privacy notice claims that were not yet true; Settings unreachable before acknowledging the notice; "1,000", "5min" and "2 3" mis-read.
+- **Low:** a sign-up could overwrite someone else's pending one; the under-13 stop was checked only on page loads; implicit-TLS email; alert emails named the category; age counted in local time on the web but UTC in the API; any notice version was accepted; the lesson's retry echo and empty confidence press; sessions shortened from 30 days to 7.
+- **Also found and fixed in passing:** the in-memory rate limiter dropped every key with a colon in it; Next.js reports 127.0.0.1 as localhost, so `AUTH_URL` must use localhost.
+
+**Recorded, not fixed in M8** (ADR-0032):
+
+- Retention for `audit_log`, `safeguarding_event` and concern reports (the DPIA).
+- The strict nonce CSP; response timing that differs when a link is sent (queue the email, M10); scheduling the jobs (M10); access logs holding the address in sign-in link URLs (to strip, M10).
+- The admin safeguarding queue; diagrams in the diagnostic; Elo item selection; a scene and a due review driven by E2E; a keyboard-only journey.
+- If the API is unreachable while a session is read, Auth.js clears the cookie and the student signs in again.
 
 **CI**: not run yet for this branch.

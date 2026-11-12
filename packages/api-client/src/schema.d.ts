@@ -21,6 +21,212 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/invites/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Invite */
+        post: operations["checkInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/may-sign-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** May Sign In */
+        post: operations["maySignIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Session */
+        post: operations["createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Session */
+        patch: operations["updateSession"];
+        trace?: never;
+    };
+    "/v1/auth/sessions/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Session */
+        post: operations["deleteSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/sessions/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Session And User
+         * @description A live session of an active account, or nothing: a deactivated account is signed out
+         *     everywhere at once.
+         */
+        post: operations["getSessionAndUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/signups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Signup
+         * @description Record a pending sign-up. Silent (204) when the address already has an account, so the
+         *     page that follows cannot reveal it; the link then simply signs them in.
+         */
+        post: operations["createSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create User
+         * @description Make the account from its pending sign-up: the only way an account is made.
+         */
+        post: operations["createUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/users/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get User By Email
+         * @description By POST, so an address never sits in a URL or an access log.
+         */
+        post: operations["getUserByEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User */
+        get: operations["getUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update User */
+        patch: operations["updateUser"];
+        trace?: never;
+    };
+    "/v1/auth/verification-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Verification Token */
+        post: operations["createVerificationToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/verification-tokens/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Verification Token
+         * @description Delete and return the token: a link works once.
+         */
+        post: operations["useVerificationToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/curriculum/misconceptions": {
         parameters: {
             query?: never;
@@ -106,6 +312,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Diagnostic */
+        post: operations["startDiagnostic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/diagnostic/{diagnostic_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Diagnostic */
+        post: operations["answerDiagnostic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/hello": {
         parameters: {
             query?: never;
@@ -115,6 +355,143 @@ export interface paths {
         };
         /** Hello */
         get: operations["getHello"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Me */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/concerns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Concern */
+        post: operations["reportConcern"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/data-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Data Requests */
+        get: operations["listDataRequests"];
+        put?: never;
+        /** Create Data Request */
+        post: operations["createDataRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge Notice */
+        post: operations["acknowledgeNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Plan */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Preferences */
+        put: operations["setPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Up Profile */
+        put: operations["setUpProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress */
+        get: operations["getProgress"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,6 +589,25 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdapterUser
+         * @description The user as Auth.js sees it, plus the role the web signs into service tokens.
+         */
+        AdapterUser: {
+            /** Email */
+            email: string;
+            /** Email Verified */
+            email_verified: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Role */
+            role: string;
+        };
         /** Beat */
         Beat: {
             /** Focus */
@@ -224,6 +620,72 @@ export interface components {
             /** Narration */
             narration: string;
         };
+        /** ConcernIn */
+        ConcernIn: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "SAFETY" | "CONTENT" | "PRIVACY" | "OTHER";
+            /** Message */
+            message: string;
+            /** Page */
+            page?: string | null;
+            /** Tutor Session Id */
+            tutor_session_id?: string | null;
+        };
+        /** ConcernOut */
+        ConcernOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** CreateUserIn */
+        CreateUserIn: {
+            /** Email */
+            email: string;
+            /** Email Verified */
+            email_verified?: string | null;
+        };
+        /** DataRequestIn */
+        DataRequestIn: {
+            /**
+             * Confirm
+             * @default false
+             */
+            confirm: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "EXPORT" | "DELETE";
+        };
+        /** DataRequestOut */
+        DataRequestOut: {
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Status */
+            status: string;
+        };
         /** DetectionRule */
         DetectionRule: {
             /** Rule */
@@ -234,8 +696,44 @@ export interface components {
              */
             type: "distractor" | "structure" | "classifier";
         };
+        /** DiagnosticAnswerIn */
+        DiagnosticAnswerIn: {
+            /** Confidence */
+            confidence: number;
+            /**
+             * Dont Know
+             * @default false
+             */
+            dont_know: boolean;
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            mathjson?: components["schemas"]["JsonValue-Input"] | null;
+        };
+        /** DiagnosticOut */
+        DiagnosticOut: {
+            /** Answered */
+            answered: number;
+            /** Done */
+            done: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Limit */
+            limit: number;
+            question: components["schemas"]["QuestionOut"] | null;
+        };
         /** ElementId */
         ElementId: string;
+        /** EmailIn */
+        EmailIn: {
+            /** Email */
+            email: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -276,6 +774,18 @@ export interface components {
             /** Value */
             value?: number | null;
         };
+        /** InviteIn */
+        InviteIn: {
+            /** Code */
+            code: string;
+            /** Visitor */
+            visitor: string;
+        };
+        /** InviteOut */
+        InviteOut: {
+            /** Valid */
+            valid: boolean;
+        };
         "JsonValue-Input": unknown;
         /** JsonValue1 */
         JsonValue1: number;
@@ -296,6 +806,25 @@ export interface components {
             state: string;
             /** Waiting For */
             waiting_for: string[];
+        };
+        /** MaySignInOut */
+        MaySignInOut: {
+            /** Allowed */
+            allowed: boolean;
+        };
+        /** MeOut */
+        MeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notices */
+            notices: components["schemas"]["NoticeOut"][];
+            preferences: components["schemas"]["Preferences"];
+            profile: components["schemas"]["ProfileOut"];
+            /** Role */
+            role: string;
         };
         /** MisconceptionOut */
         MisconceptionOut: {
@@ -351,6 +880,22 @@ export interface components {
             /** Visual Suitability */
             visual_suitability: number;
         };
+        /** NodeOut */
+        NodeOut: {
+            /** Code */
+            code: string;
+            /** Prerequisites */
+            prerequisites: string[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "not-started" | "learning" | "secure" | "needs-review";
+            /** Strand */
+            strand: string;
+            /** Title */
+            title: string;
+        };
         /** NodeSummary */
         NodeSummary: {
             /** Code */
@@ -374,6 +919,28 @@ export interface components {
             /** Visual Suitability */
             visual_suitability: number;
         };
+        /** NoticeIn */
+        NoticeIn: {
+            /**
+             * Notice Key
+             * @constant
+             */
+            notice_key: "privacy";
+            /** Version */
+            version: string;
+        };
+        /** NoticeOut */
+        NoticeOut: {
+            /**
+             * Acknowledged At
+             * Format: date-time
+             */
+            acknowledged_at: string;
+            /** Notice Key */
+            notice_key: string;
+            /** Version */
+            version: string;
+        };
         /** Paper */
         Paper: {
             /** Calculator */
@@ -389,12 +956,119 @@ export interface components {
             /** Tiers */
             tiers?: ("FOUNDATION" | "HIGHER")[] | null;
         };
+        /** PlanOut */
+        PlanOut: {
+            /** Diagnostic Done */
+            diagnostic_done: boolean;
+            /** Diagnostic In Progress */
+            diagnostic_in_progress: boolean;
+            /** Minutes */
+            minutes: number;
+            /** Node */
+            node: string | null;
+            /** Node Title */
+            node_title: string | null;
+            /** Open Lesson */
+            open_lesson: string | null;
+            /** Recheck */
+            recheck: string | null;
+            /** Remediation */
+            remediation: string | null;
+            /** Reviews */
+            reviews: string[];
+            /** Session Minutes */
+            session_minutes: number;
+        };
+        /**
+         * Preferences
+         * @description Children's Code defaults for everyone; each is the student's own choice.
+         */
+        Preferences: {
+            /**
+             * Captions Only
+             * @default false
+             */
+            captions_only: boolean;
+            /**
+             * Motion
+             * @default system
+             * @enum {string}
+             */
+            motion: "system" | "reduce";
+            /**
+             * Narration Speed
+             * @default 1
+             */
+            narration_speed: number;
+            /**
+             * Reading
+             * @default standard
+             * @enum {string}
+             */
+            reading: "standard" | "dyslexia";
+            /**
+             * Session Minutes
+             * @default 25
+             */
+            session_minutes: number;
+            /**
+             * Theme
+             * @default system
+             * @enum {string}
+             */
+            theme: "system" | "light" | "dark";
+        };
         /** Prerequisite */
         Prerequisite: {
             /** Code */
             code: string;
             /** Strength */
             strength: number;
+        };
+        /** ProfileOut */
+        ProfileOut: {
+            /** Birth Month */
+            birth_month: number;
+            /** Birth Year */
+            birth_year: number;
+            /** Board */
+            board: string | null;
+            /** Diagnostic Completed At */
+            diagnostic_completed_at: string | null;
+            /** Exam Series */
+            exam_series: string | null;
+            /** Is Resitter */
+            is_resitter: boolean;
+            /** Setup Completed At */
+            setup_completed_at: string | null;
+            /** Target Grade */
+            target_grade: number | null;
+            /** Tier */
+            tier: string | null;
+        };
+        /** ProgressOut */
+        ProgressOut: {
+            /** Nodes */
+            nodes: components["schemas"]["NodeOut"][];
+            /** Secured */
+            secured: number;
+        };
+        /** QuestionOut */
+        QuestionOut: {
+            /** Calculator */
+            calculator: boolean;
+            /** Command Word */
+            command_word: string;
+            /** Item Id */
+            item_id: string;
+            /** Node */
+            node: string;
+            /** Node Title */
+            node_title: string;
+            /** Number */
+            number: number;
+            /** Stem */
+            stem: string;
         };
         /** RequestOut */
         RequestOut: {
@@ -409,6 +1083,16 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "running" | "done" | "failed";
+        };
+        /** RevealOut */
+        RevealOut: {
+            /** Answer Latex */
+            answer_latex: string;
+            /** Correct */
+            correct: boolean;
+            /** Misconception */
+            misconception: string | null;
+            next: components["schemas"]["DiagnosticOut"];
         };
         /** SceneOut */
         SceneOut: {
@@ -443,6 +1127,78 @@ export interface components {
             studentAnswer: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
             /** Template */
             template: string;
+        };
+        /** SessionAndUser */
+        SessionAndUser: {
+            session: components["schemas"]["SessionOut"];
+            user: components["schemas"]["AdapterUser"];
+        };
+        /** SessionIn */
+        SessionIn: {
+            /**
+             * Expires
+             * Format: date-time
+             */
+            expires: string;
+            /** Session Token Hash */
+            session_token_hash: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** SessionOut */
+        SessionOut: {
+            /**
+             * Expires
+             * Format: date-time
+             */
+            expires: string;
+            /** Session Token Hash */
+            session_token_hash: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** SetupIn */
+        SetupIn: {
+            /**
+             * Board
+             * @default AQA
+             * @enum {string}
+             */
+            board: "AQA" | "EDEXCEL" | "OCR";
+            /** Exam Series */
+            exam_series: string;
+            /** Is Resitter */
+            is_resitter: boolean;
+            /**
+             * Target Grade
+             * @enum {integer}
+             */
+            target_grade: 4 | 5;
+            /**
+             * Tier
+             * @default FOUNDATION
+             * @constant
+             */
+            tier: "FOUNDATION";
+        };
+        /** SignupIn */
+        SignupIn: {
+            /** Birth Month */
+            birth_month: number;
+            /** Birth Year */
+            birth_year: number;
+            /** Email */
+            email: string;
+            /** Invite Code */
+            invite_code: string;
+            /** Visitor */
+            visitor: string;
         };
         /** Spec */
         Spec: {
@@ -479,6 +1235,11 @@ export interface components {
             /** Student Id */
             student_id?: string | null;
         };
+        /** TokenHashIn */
+        TokenHashIn: {
+            /** Session Token Hash */
+            session_token_hash: string;
+        };
         /** TopicOut */
         TopicOut: {
             /** Nodes */
@@ -491,6 +1252,26 @@ export interface components {
             sort_order: number;
             /** Title */
             title: string;
+        };
+        /** UnreadableOut */
+        UnreadableOut: {
+            /** Detail */
+            detail: string;
+        };
+        /** UpdateSessionIn */
+        UpdateSessionIn: {
+            /**
+             * Expires
+             * Format: date-time
+             */
+            expires: string;
+            /** Session Token Hash */
+            session_token_hash: string;
+        };
+        /** UpdateUserIn */
+        UpdateUserIn: {
+            /** Email Verified */
+            email_verified?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -539,6 +1320,27 @@ export interface components {
              */
             tier: "DETERMINISTIC" | "LLM";
         };
+        /** VerificationIn */
+        VerificationIn: {
+            /** Expires */
+            expires?: string | null;
+            /** Identifier */
+            identifier: string;
+            /** Token */
+            token: string;
+        };
+        /** VerificationOut */
+        VerificationOut: {
+            /**
+             * Expires
+             * Format: date-time
+             */
+            expires: string;
+            /** Identifier */
+            identifier: string;
+            /** Token */
+            token: string;
+        };
         /** JsonValue */
         eddy_api__scenes__spec__JsonValue: string | components["schemas"]["JsonValue1"] | number | boolean | (components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null)[] | {
             [key: string]: components["schemas"]["eddy_api__scenes__spec__JsonValue"] | null;
@@ -569,6 +1371,431 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    checkInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    maySignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaySignInOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenHashIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSessionAndUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenHashIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionAndUser"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdapterUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getUserByEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdapterUser"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdapterUser"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdapterUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createVerificationToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    useVerificationToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -703,6 +1930,61 @@ export interface operations {
             };
         };
     };
+    startDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticOut"];
+                };
+            };
+        };
+    };
+    answerDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnostic_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnosticAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadableOut"];
+                };
+            };
+        };
+    };
     getHello: {
         parameters: {
             query?: never;
@@ -719,6 +2001,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HelloResponse"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
+    reportConcern: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcernIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcernOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listDataRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataRequestOut"][];
+                };
+            };
+        };
+    };
+    createDataRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledgeNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+        };
+    };
+    setPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Preferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setUpProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressOut"];
                 };
             };
         };

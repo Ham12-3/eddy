@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### M8: Student app (11 and 12 November 2026)
+
+Added:
+
+- Sign-up (ADR-0032): an invite code, a neutral month-and-year age check that stores nothing for anyone under 13, then an email link (Auth.js v5 through Mailpit locally). Sign-in pages never reveal whether an address has an account, and invite guessing is rate limited.
+- A custom Auth.js adapter that goes through new `/v1/auth/*` routes, so services/api stays the only writer of the auth tables; session tokens are hashed in the web process; deleting an account signs it out everywhere at once.
+- The runtime role `eddy_app` (migration 0006, ADR-0024): the API and worker can read and change rows but not the schema, and can only read and add to the audit log. Every API test now runs as it.
+- Onboarding: draft child-friendly and full privacy notices with the acknowledged version recorded, and set-up (board, tier, exam series, target grade, resitting, accessibility and display choices applied to every page).
+- The diagnostic: up to 20 typed questions, confidence before each reveal, "I do not know this yet", stop and resume; confident answers skip prerequisites and wrong answers suggest misconceptions (SUSPECTED only).
+- Today's plan, the lesson (tutor messages, questions, confidence, marking, scenes, the hint ladder, messages to Eddy, the safeguarding script, an "Eddy is writing" state and a gentle break note), review, the progress map, settings (display, download my data, delete my account) and Report a concern, with loading, empty and error states.
+- The maths field now sends MathJSON (`latexToMathJson` in `packages/ui`).
+- Privacy jobs: `python -m eddy_api.jobs purge` (expired links, pending sign-ups and sessions; tutor message text and checkpoints after 90 days) and `alerts` (safeguarding lead emails with ids only). `python -m eddy_api.invites` creates invite codes.
+- E2E: the student journey (sign-up, under-13 stop, onboarding, diagnostic, a lesson, review, progress, settings, a concern, account deletion) with axe and screenshots; CI gains Redis and Mailpit.
+
+Fixed:
+
+- The in-memory rate limiter (the Redis fallback) dropped every key containing a colon.
+
 ### M7: Tutor (9 and 10 November 2026)
 
 Added:

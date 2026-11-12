@@ -1,6 +1,7 @@
 """The seed is an idempotent upsert by natural key, with a dry run that writes nothing."""
 
 import dataclasses
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -132,7 +133,7 @@ def test_the_command_refuses_a_remote_database(
 def test_the_command_dry_run_writes_nothing(
     db_session: Session, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(seed_command, "session_factory", lambda: lambda: db_session)
+    monkeypatch.setattr(seed_command, "owner_session", lambda url: nullcontext(db_session))
     assert seed_command.main(["--dry-run", "--curriculum", str(CURRICULUM)]) == 0
     assert "Dry run: nothing was written." in capsys.readouterr().out
     assert count(db_session, CurriculumSpec) == 0

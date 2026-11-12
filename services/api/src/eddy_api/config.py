@@ -25,7 +25,13 @@ class Settings(BaseSettings):
     service_token_max_lifetime_s: int = 60
 
     # SecretStr keeps credentials out of repr(), logs and tracebacks.
+    # The schema owner: migrations, the seed and the local database helpers (ADR-0024).
     database_url: SecretStr = SecretStr("postgresql+psycopg://eddy:eddy@127.0.0.1:5442/eddy")
+    # The runtime role the API and worker connect as: it can change rows but not the schema, and
+    # can only read and add to the audit log (migration 0006).
+    runtime_database_url: SecretStr = SecretStr(
+        "postgresql+psycopg://eddy_app:eddy_app@127.0.0.1:5442/eddy"
+    )
     maths_core_base_url: str = "http://127.0.0.1:8310"
     maths_core_service_token: SecretStr = SecretStr("")
     # The scene engine's checks over HTTP (workers/scene-check, its `serve` script).
@@ -52,6 +58,17 @@ class Settings(BaseSettings):
     # Tutor turns one API process runs at once; each holds a database connection while Claude
     # writes (ADR-0031). Past it, the student is asked to try again in a moment.
     tutor_concurrent_turns: int = 4
+    # Multiplies the per-visitor invite and sign-up limits (ADR-0032). Only E2E raises it, as its
+    # parallel browsers all share one address.
+    signup_limit_scale: int = 1
+    # Privacy jobs (M8, `python -m eddy_api.jobs`): tutor message text is deleted after this many
+    # days, and checkpoints of lessons that old with it (SPEC.md section 6.7).
+    tutor_message_days: int = 90
+    # Safeguarding alerts: where an alert for a new event or SAFETY concern goes (the named
+    # safeguarding lead). Empty means no alert is sent and events wait, unnotified, for review.
+    safeguarding_alert_email: str = ""
+    smtp_url: str = "smtp://127.0.0.1:1025"
+    mail_from: str = "Eddy <alerts@eddy.localhost>"
 
 
 @lru_cache
@@ -72,8 +89,11 @@ def tier_l_enabled(settings: Settings) -> bool:
         return True
     if not development(settings):
         return False
-    url = make_url(settings.database_url.get_secret_value())
-    # Query options can send the connection elsewhere (host, hostaddr, a service file entry).
-    if any(key in url.query for key in ("host", "hostaddr", "service")):
-        return False
-    return (url.host or "") in {"127.0.0.1", "localhost", "::1"}
+    for secret in (settings.database_url, settings.runtime_database_url):
+        url = make_url(secret.get_secret_value())
+        # Query options can send the connection elsewhere (host, hostaddr, a service file entry).
+        if any(key in url.query for key in ("host", "hostaddr", "service")):
+            return False
+        if (url.host or "") not in {"127.0.0.1", "localhost", "::1"}:
+            return False
+    return True
