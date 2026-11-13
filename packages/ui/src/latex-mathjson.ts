@@ -261,6 +261,24 @@ class Parser {
     return inner;
   }
 
+  /**
+   * An argument of \frac or \sqrt. MathLive leaves out the braces around a single digit or
+   * letter, so \frac17 is a seventh: one character each, as in LaTeX itself.
+   */
+  private argument(): MathJson {
+    const token = this.peek();
+    if (token === "{") return this.group();
+    if (token !== undefined && /^#[0-9]/.test(token)) {
+      const rest = token.slice(2);
+      if (rest === "") this.position += 1;
+      else if (/^[0-9]/.test(rest)) this.tokens[this.position] = `#${rest}`;
+      else throw new LatexError("That answer could not be read.");
+      return Number(token[1]);
+    }
+    if (token !== undefined && /^[A-Za-z]$/.test(token)) return this.next();
+    throw new LatexError("That answer could not be read.");
+  }
+
   private word(): string {
     this.expect("{");
     let text = "";
@@ -311,8 +329,8 @@ class Parser {
       case "\\frac":
       case "\\dfrac":
       case "\\tfrac": {
-        const top = this.group();
-        const bottom = this.group();
+        const top = this.argument();
+        const bottom = this.argument();
         return ["Divide", top, bottom];
       }
       case "\\sqrt": {
@@ -320,9 +338,9 @@ class Parser {
           this.next();
           const index = this.sum();
           this.expect("]");
-          return ["Root", this.group(), index];
+          return ["Root", this.argument(), index];
         }
-        return ["Sqrt", this.group()];
+        return ["Sqrt", this.argument()];
       }
       case "\\pi":
         return "Pi";
