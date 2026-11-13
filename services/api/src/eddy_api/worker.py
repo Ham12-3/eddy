@@ -3,7 +3,8 @@
 
 It generates the Tier L scenes students asked for, then reviews Tier L scenes after they are
 served (scenes/review.py). It needs Claude, the scene-check service and maths-core. Without Tier L
-(no Anthropic key, or no ZDR confirmation against a non-local database) it says so and exits.
+(no Anthropic key, or no ZDR confirmation against a non-local database) it says so and runs only
+the privacy and safeguarding jobs, every 15 minutes (ADR-0034).
 Over the daily budget it does nothing until there is room.
 """
 

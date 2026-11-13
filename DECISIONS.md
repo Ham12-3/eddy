@@ -515,3 +515,48 @@ Status: Accepted (12 November 2026, during M10)
   - Launch waits for the people and agreements listed in docs/launch-checklist.md, which no code can supply.
   - The prompt-injection red-team pass needs live Claude spend: it waits for approval.
   - The plan route's slow tail under concurrency is recorded, not fixed.
+## ADR-0035: Hosting on Vercel, Supabase and Fly.io in London
+
+Status: Proposed (13 November 2026). It becomes Accepted when the product owner approves it and opens the accounts; until then nothing is created and the AWS plan (ADR-0014) stands.
+
+- **Context:**
+  - The brief chose AWS in eu-west-2 through CDK (ADR-0014). Nothing has been deployed. The product owner asked whether Vercel and Supabase could host Eddy instead.
+  - What the code needs at runtime, read from the code at commit `1f5a9c4`:
+    - **apps/web:** Next.js, the only part the browser talks to.
+    - **services/api:** FastAPI, plus the same package run as the worker. The worker is a process that never stops: it polls Postgres for scene jobs every 5 seconds and runs the privacy and safeguarding jobs every 15 minutes (ADR-0034).
+    - **services/maths-core:** FastAPI with SymPy.
+    - **workers/scene-check:** Node with Playwright, which runs headless Chromium.
+    - **Postgres 16** with two roles: the owner for migrations and the seed, and `eddy_app` at runtime (migration 0006).
+    - **Redis** for the rate limits. If Redis cannot be reached, the limiter counts in each process instead.
+    - **Email** by plain SMTP (`EMAIL_SERVER` in web, `mail.py` in the API).
+  - The code uses no S3 and no SQS today. They run only in `compose.yaml`; `scene_asset.s3_key` is for a later MP4 export (SPEC.md section 8.6).
+  - Vercel's functions start on demand and have time limits. That suits Next.js, but not a worker that runs all the time, SymPy's slow start or Chromium. Supabase hosts databases and edge functions, not containers.
+- **Decision (proposed):**
+  - **Web on Vercel, on the Pro plan.** The Hobby plan is for non-commercial use. Functions are pinned to London (`lhr1`); new projects default to Washington, D.C. (`iad1`).
+  - **Postgres on Supabase, in London (`eu-west-2`), used as plain Postgres:**
+    - The Data API (PostgREST) is switched off, so tables are never exposed through Supabase's public keys.
+    - Supabase Auth and Storage are not used: Eddy has its own sign-in.
+    - Migrations and the seed run as the owner. `eddy_app` gets a password stored in the secret stores.
+    - The services connect directly, or through the session-mode pooler. psycopg prepares statements, which the transaction-mode pooler does not support.
+  - **API, worker, maths-core and scene-check on Fly.io in London (`lhr`),** as containers:
+    - maths-core and scene-check have no public address. Only the API and the worker reach them, over Fly's private network.
+    - The API is public over HTTPS, for the web app. It accepts only signed service tokens (60 seconds, `aud = eddy-api`), as it does today.
+    - The worker is one machine that always runs.
+  - **Redis** is a small Redis on Fly in London, on the private network. Upstash is the alternative, if London can be its primary region.
+  - **Email** goes through an SMTP provider that processes mail in the UK or EU, with DKIM and SPF on the sending domain. The provider is chosen with the product owner. Amazon SES in eu-west-2 still qualifies, but needs an AWS account.
+  - **Secrets** live in Vercel's and Fly's secret stores, never in the repository.
+  - **Configuration** goes in the repository: `vercel.json` and one `fly.toml` per service. `infra/` (CDK) stays until this ADR is accepted, then is removed in its own change.
+- **Consequences:**
+  - **The API faces the internet.** SPEC.md section 5.3 keeps everything but the web app private, and a separate host makes that impossible. The API then rests on the signed service tokens and its rate limits. Vercel's outbound addresses are not fixed, so an IP allow-list is not an option. This change is the product owner's to accept.
+  - **Four processors instead of one:** Vercel, Supabase, Fly.io and the email provider, plus Anthropic.
+    - Each needs a data processing agreement and an entry in the DPIA and the full privacy notice.
+    - All three platforms are US companies, so each transfer needs reviewing (for example the UK addendum or the UK-US data bridge).
+  - **Data residency (SPEC.md section 13)** holds for data at rest: the database, Redis and every service run in London. Where each provider keeps logs and build caches is not yet known and must be checked, and log retention set to match the DPIA.
+  - **Costs:** no NAT gateway or load balancer to pay for. Nothing is priced yet: Vercel Pro, a Supabase plan with backups (point-in-time recovery is extra), five Fly machines, Redis and email.
+  - **Still needed:** Dockerfiles, one per service, which the AWS plan needed too.
+  - **Latency:** every hop is in London, but goes over the internet between providers. Measure it by running the load test against staging.
+  - **To check in each console before anything is created:**
+    - the London regions;
+    - Supabase capacity in `eu-west-2` (project creation there was paused for a time in October 2025);
+    - Upstash's primary regions, if Upstash is chosen;
+    - where Vercel stores logs.

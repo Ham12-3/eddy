@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Hosting proposal (13 November 2026)
+
+- ADR-0035 (proposed): host the web app on Vercel, Postgres on Supabase, and the API, worker, maths-core and scene-check on Fly.io, all in London. `docs/staging-plan.md` now holds this plan and the AWS one; the launch checklist asks which.
+- The worker's docstring now says it keeps running the privacy jobs without Tier L.
+
 ### M10: Hardening and launch prep (12 and 13 November 2026)
 
 Added:

@@ -32,9 +32,10 @@ For the product owner to sign off (PLAN.md M10). Each line says who can tick it.
 
 ## Staging (each step needs your go-ahead: docs/staging-plan.md)
 
-- [ ] AWS account and budget approved.
-- [ ] Container images, ECS services, load balancer, Redis, secrets and SES added to the CDK app.
+- [ ] Hosting chosen: Vercel, Supabase and Fly.io in London (ADR-0035, proposed), or AWS eu-west-2 (ADR-0014). Under ADR-0035, the public API accepted.
+- [ ] Accounts and a monthly budget approved; data processing agreements signed, and the providers named in the DPIA and full privacy notice.
+- [ ] Dockerfiles, the platform configuration, secrets and the email provider set up.
 - [ ] Staging deployed and smoke tested; `pnpm e2e` and the load test run against it.
-- [ ] SES production access.
+- [ ] The email sending domain verified (and SES production access under AWS).
 
 Signed off by: ____________________  Date: ____________
