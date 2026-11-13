@@ -1,6 +1,6 @@
 # Runbook: security incident response
 
-Status: **DRAFT, 12 November 2026, for review by the product owner.** Written by the build team from the repository on branch `m10-hardening`. Eddy is not deployed (ADR-0014): every command here is checked against the code for the **local** stack. The production equivalents (AWS Secrets Manager, logs, alarms) do not exist yet and must be added when the staging deployment is approved. This runbook has not been exercised.
+Status: **DRAFT, 12 November 2026, for review by the product owner.** Written by the build team from the repository on branch `m10-hardening`; it describes the code at commit 1f5a9c4. Eddy is not deployed (ADR-0014): every command here is checked against the code for the **local** stack. The production equivalents (AWS Secrets Manager, logs, alarms) do not exist yet and must be added when the staging deployment is approved. This runbook has not been exercised.
 
 If the incident involves personal data, start [data-breach.md](data-breach.md) at the same time: the 72-hour clock for telling the ICO may already be running. If it involves a child at risk, follow [safeguarding.md](safeguarding.md) first.
 
@@ -20,13 +20,13 @@ Contact details and an out-of-hours route: to be named.
 What exists today:
 
 - **Audit log** (`audit_log`): append-only, written for sign-ups, sessions created, notice acknowledgements, set-up, parent link codes, requests, accepts and ends, parent dashboard views, data exports, deletion requests and concern reports. The runtime role `eddy_app` can only read and add rows; a trigger blocks changes (migration 0006; `services/api/tests/test_migrations.py`).
-- **Claude usage** (`llm_call`): one row per call with route, model, tokens, latency, cost estimate, safety flags and the student id. A sudden rise in calls or cost for one student or overall is a sign of abuse. Daily cost guards stop the tutor's Claude calls past `TUTOR_GBP_PER_STUDENT_PER_DAY` (0.5) or `TUTOR_DAILY_BUDGET_GBP` (20), and Tier L past its own limits (`services/api/src/eddy_api/config.py`).
+- **Claude usage** (`llm_call`): one row per call with route, model, tokens, latency, cost estimate, safety flags and the student id. A sudden rise in calls or cost for one student or overall is a sign of abuse. Daily cost guards stop the tutor's Claude calls past `TUTOR_GBP_PER_STUDENT_PER_DAY` (0.5) or `TUTOR_DAILY_BUDGET_GBP` (20), and Tier L past its own limits (`services/api/src/eddy_api/config.py`). `/admin/costs` adds up `llm_call` by route and day, with spend per lesson (`services/api/src/eddy_api/routes/admin.py`, admin role only; admin pages run only in development or with `EDDY_ADMIN_PREVIEW=1`).
 - **Rate limits**: tutor messages (12 a minute, 400 a day per student, in Redis), sign-in links (3 a minute, 10 a day per address), invite checks and sign-ups per visitor. Repeated 429 responses in the API logs show someone hitting them.
 - **Concern reports** (`concern_report`, category PRIVACY or OTHER) from students.
 - **Process logs** of web, API and worker (stdout locally).
-- **Dependency advisories**: not checked in committed CI yet (an audit step is uncommitted M10 work).
+- **Dependency advisories**: `pnpm audit --audit-level high` and `pip-audit` fail CI on known vulnerabilities (`.github/workflows/ci.yml`, ADR-0034). Two moderate npm advisories in development tooling are known and accepted (`docs/security-review.md`).
 
-What does not exist yet: central logging, alerting on errors or unusual traffic, an automated security scan, uptime monitoring. Until they do, detection depends on someone looking.
+What does not exist yet: central logging, alerting on errors or unusual traffic or spend, an automated scan of the running app, uptime monitoring, a penetration test. The security review (`docs/security-review.md`) is the team's own. Until they do, detection depends on someone looking.
 
 ## 2. Triage
 
@@ -55,9 +55,9 @@ Each step below is checked against the code. Steps that delete data or sign ever
 | Every session suspect | `DELETE FROM sessions;` | Everyone is signed out. |
 | An account must be stopped now | `UPDATE users SET deactivated_at = now() WHERE id = '<id>';` then delete its sessions | A deactivated account cannot sign in, and its live sessions stop at once (`/v1/auth/sessions/lookup` ignores deactivated accounts, `services/api/src/eddy_api/routes/accounts.py`). Parent routes ignore a deactivated student. Note: the student's own "delete my account" uses the same flag, so record why it was set. |
 | Invite code abused | `UPDATE invite_code SET expires_at = now() WHERE code = '<code>';` (lowering `max_uses` below `used_count` breaks a check constraint) | New sign-ups with that code stop. |
-| Sign-in link leaked | `DELETE FROM verification_token WHERE identifier = '<email>';` | Unused links stop working. `python -m eddy_api.jobs purge` removes expired ones. |
+| Sign-in link leaked | `DELETE FROM verification_token WHERE identifier = '<email>';` | Unused links stop working. The purge job, run by the worker every 15 minutes, removes expired ones. |
 | Database password leaked | Change the role's password in Postgres, update `RUNTIME_DATABASE_URL` or `DATABASE_URL`, restart | Locally the passwords are the fixed development values (eddy/eddy, eddy_app/eddy_app). Production credentials are to be designed. |
-| Vulnerable dependency | Upgrade or pin, run `pnpm check` and `pnpm e2e` | TypeScript and ESLint upgrades need the checks in ADR-0017. |
+| Vulnerable dependency | Upgrade or pin (a `pnpm.overrides` entry in the root `package.json` forces a transitive version, as for nodemailer 10.5.0), run `pnpm check`, `pnpm e2e` and the audits | TypeScript and ESLint upgrades need the checks in ADR-0017. |
 
 Preserve evidence before changing anything you can: copy the relevant `audit_log`, `llm_call`, `sessions` and log extracts with timestamps. Never edit or delete `audit_log` rows; the runtime role cannot, and the owner role must not.
 

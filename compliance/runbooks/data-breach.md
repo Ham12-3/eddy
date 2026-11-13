@@ -1,6 +1,6 @@
 # Runbook: personal data breach
 
-Status: **DRAFT, 12 November 2026, for review by the product owner.** Written by the build team, not by a lawyer or data protection professional; it needs the data protection lead's review and legal review before launch (SPEC.md section 16, question 2). Eddy is not deployed and holds no real student data yet. This runbook has not been exercised.
+Status: **DRAFT, 12 November 2026, for review by the product owner.** Written by the build team, not by a lawyer or data protection professional; it needs the data protection lead's review and legal review before launch (SPEC.md section 16, question 2). It describes the code at commit 1f5a9c4. Eddy is not deployed and holds no real student data yet. This runbook has not been exercised.
 
 A personal data breach is a breach of security leading to the accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to, personal data (UK GDPR Article 4(12)). It includes data made unavailable, not only data stolen. Run this alongside [incident-response.md](incident-response.md), which covers containment.
 
@@ -46,14 +46,14 @@ From SPEC.md section 6 and the privacy notice (`apps/web/src/content/privacy.tsx
 | Birth month and year | `student_profile`, `pending_signup` | Low alone; with email, shows the person is a child |
 | Set-up and accessibility preferences | `student_profile.preferences` | Dyslexia mode could suggest a special educational need |
 | Answers, confidence, mastery and misconceptions | `attempt`, `mastery_state`, `misconception_state`, `review_card` | Educational record |
-| Tutor messages | `tutor_message` (text deleted after 90 days by `python -m eddy_api.jobs purge`) | Free text a child typed: may contain anything, including disclosures |
+| Tutor messages | `tutor_message` (text deleted after 90 days by the purge job, which the worker runs every 15 minutes) | Free text a child typed: may contain anything, including disclosures |
 | Safeguarding events and concern reports | `safeguarding_event`, `concern_report` | **Highest**: may describe abuse, self-harm or danger |
 | Parent links | `parent_link`, parent `users` rows | Shows a family relationship |
 | Sessions and sign-in links | `sessions` (hashed tokens), `verification_token` | Takeover risk if usable |
 | Audit log | `audit_log` (ids, actions, times) | Activity record |
-| Claude call metadata | `llm_call` (no content) | Usage per pseudonymous student |
+| Claude call metadata | `llm_call` (no content) | Usage per student (held in Eddy, not sent to Anthropic) |
 
-Data sent to Anthropic (answers and messages with a pseudonymous id) is behind the zero data retention gate (`services/api/src/eddy_api/config.py`); ZDR is not yet confirmed, so no real data may reach Claude.
+Data sent to Anthropic (the parts of answers and messages needed for a reply, with no name, email or account id; full privacy notice and PLAN.md M10) is behind the zero data retention gate (`services/api/src/eddy_api/config.py`); ZDR is not yet confirmed, so no real data may reach Claude.
 
 ## Using the audit log as evidence
 
@@ -62,8 +62,8 @@ Data sent to Anthropic (answers and messages with a pseudonymous id) is behind t
 Useful questions it can answer:
 
 - Which parents viewed which child's dashboard, and when (`parent.view_dashboard`).
-- Who downloaded which data, and when (`data.export`).
-- Sign-ins (`session.create`), sign-ups (`account.create`), deletion requests (`account.delete_request`), notice acknowledgements, parent link requests, accepts and ends, concern reports.
+- Who downloaded which data, and when (`data.export`, with `actor_role` student or parent).
+- Sign-ins (`session.create`), sign-ups (`account.create`), deletion requests by students and parents (`account.delete_request`), notice acknowledgements, parent link requests, accepts and ends, concern reports.
 
 What it cannot answer: it does not record IP addresses or user agents, ordinary page views by students, or reads made directly in the database. Database access logs and web access logs (not yet designed for production) are needed for those. Extract the rows for the breach window as the owner role into a file kept with the breach record; do not change the table.
 

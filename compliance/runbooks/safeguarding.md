@@ -1,6 +1,6 @@
 # Runbook: safeguarding escalation
 
-Status: **DRAFT, 12 November 2026, for review by the product owner.** First drafted in M7 (9 November 2026) and updated for what M8 and M9 added. Written by the build team, not by a safeguarding professional. It must be reviewed and approved by Eddy's named safeguarding lead, with professional advice, before any real student uses the tutor. Until then the tutor starts only in development and test (`SCRIPT_APPROVED = False` in `services/api/src/eddy_api/tutor/safeguarding.py`, checked in `services/api/src/eddy_api/routes/tutor.py`).
+Status: **DRAFT, 12 November 2026, for review by the product owner.** First drafted in M7 (9 November 2026) and updated for what M8, M9 and M10 added; it describes the code at commit 1f5a9c4. Written by the build team, not by a safeguarding professional. It must be reviewed and approved by Eddy's named safeguarding lead, with professional advice, before any real student uses the tutor. Until then the tutor starts only in development and test (`SCRIPT_APPROVED = False` in `services/api/src/eddy_api/tutor/safeguarding.py`, checked in `services/api/src/eddy_api/routes/tutor.py`).
 
 ## Roles
 
@@ -42,16 +42,16 @@ When a student's message suggests they, or someone they mention, may be at risk:
 
 ### Alerts (M8)
 
-`uv run --package eddy-api python -m eddy_api.jobs alerts` (or `jobs all`) emails `SAFEGUARDING_ALERT_EMAIL` once for each safeguarding event and each SAFETY concern whose `notified_party` is empty, then sets `notified_party` to `email:<address>`. The email carries **ids, severity and time only**, never the student's words or the category (`services/api/src/eddy_api/jobs.py`; `services/api/tests/test_jobs.py`, `test_alerts_email_ids_never_words`). If the address is not set, no alert is sent, a warning is logged, and events wait unnotified.
+The alerts job (`eddy_api.jobs.alerts`; by hand, `uv run --package eddy-api python -m eddy_api.jobs alerts`) emails `SAFEGUARDING_ALERT_EMAIL` once for each safeguarding event and each SAFETY concern whose `notified_party` is empty, then sets `notified_party` to `email:<address>`. The email carries **ids, severity and time only**, never the student's words or the category (`services/api/src/eddy_api/jobs.py`; `services/api/tests/test_jobs.py`, `test_alerts_email_ids_never_words`). If the address is not set, no alert is sent, a warning is logged, and events wait unnotified.
 
-Today the job runs only when someone runs it. Scheduling it (every 15 minutes in the worker) is M10 work, not yet committed. **Until it is scheduled, alerts are not timely, and real students must not use the tutor.**
+**Schedule (M10).** The worker runs the jobs every 15 minutes, and once when it starts, even with Claude off: alerts first, then purges and erasures. One job failing is logged and retried next time, and never stops the others (`services/api/src/eddy_api/worker.py`, `privacy_tick`; ADR-0034; `services/api/tests/test_jobs.py`, `test_a_failing_job_does_not_stop_the_others`). So an alert leaves within about 15 minutes of an event, **wherever the worker is running**. Nothing is deployed yet (ADR-0014), so in practice no alert reaches anyone until the worker runs in production with a verified `SAFEGUARDING_ALERT_EMAIL`. 15 minutes may be too slow for an IMMEDIATE event out of hours: for the lead to decide. Real students must not use the tutor until the lead is named and alerts are tested end to end.
 
 ### Data rights and safety records (M9)
 
-- **Erasure waits for review.** `python -m eddy_api.jobs erase` will not erase a student while any of their safeguarding events or SAFETY concerns has no `reviewed_at`; the deletion request stays IN_PROGRESS (`services/api/src/eddy_api/privacy.py`, `awaiting_review`). The account was deactivated and signed out when deletion was asked for, so the student cannot sign in meanwhile.
+- **Erasure waits for review.** The erasure job (run by the worker every 15 minutes, or `python -m eddy_api.jobs erase`) will not erase a student while any of their safeguarding events or SAFETY concerns has no `reviewed_at`; the deletion request stays IN_PROGRESS (`services/api/src/eddy_api/privacy.py`, `awaiting_review`). The account was deactivated and signed out when deletion was asked for, so the student cannot sign in meanwhile.
 - **Deletion must still finish within 30 days** (SPEC.md 4.5). The lead must review in time for that.
 - After review, a student with a safety record keeps only an anonymous anchor row (email replaced, name removed) so the record can stay until the DPIA sets its retention. Concern reports lose their link to the person.
-- `jobs all` runs alerts before erasure, so the lead hears of a concern before anything is erased.
+- Both the worker and `jobs all` run alerts before erasure, so the lead hears of a concern before anything is erased.
 - **Download my data leaves safety records out**, with a note on how to ask for them. A request for them comes to the lead to decide (see [data-rights.md](data-rights.md)).
 
 ## Reviewing an event (proposed; for the lead to set)
@@ -110,7 +110,7 @@ There is no admin safeguarding queue yet (deferred in ADR-0032), so today review
 
 - `pnpm evals:tutor` includes 14 distress conversations (each screened three times) and 8 benign near-misses that must not stop a lesson. The last live run (PLAN.md M7): distress 14 of 14, 14 events written, no false alarms. A live run costs money: ask first.
 - `services/api/tests/test_tutor.py` covers the phrase list, the script, event recording, refusals, messages after the script and the classifier being down.
-- `services/api/tests/test_jobs.py` covers the alert email (ids, never words).
+- `services/api/tests/test_jobs.py` covers the alert email (ids, never words) and the worker's schedule carrying on when one job fails.
 - `services/api/tests/test_parents.py` covers erasure waiting for review, then keeping an anonymous anchor (`test_erasure_waits_for_review_then_keeps_an_anonymous_anchor`).
 - Any change to the script or phrase list needs the lead's approval and a new version number.
 - Before activation: send a test alert to the real address, and run this runbook as a tabletop exercise with the lead and deputy. Neither has been done.

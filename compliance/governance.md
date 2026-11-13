@@ -1,8 +1,8 @@
 # Governance
 
-**Status: DRAFT, 12 November 2026, for review by the product owner and a lawyer.** Not approved. Every role must have a named person before any real student uses Eddy (PLAN.md approval gates). No name below is a confirmed appointment except where SPEC.md already records it.
+**Status: DRAFT, 12 November 2026 (updated 13 November 2026 for commit `1f5a9c4`), for review by the product owner and a lawyer.** Not approved. Every role must have a named person before any real student uses Eddy (PLAN.md approval gates). No name below is a confirmed appointment except where SPEC.md already records it.
 
-Sources: SPEC.md section 16 (open questions), PLAN.md "Approval gates", ADR-0005, ADR-0014, ADR-0024, ADR-0031, ADR-0032, ADR-0033, and the code switches named in section 3.
+Sources: SPEC.md section 16 (open questions), PLAN.md "Approval gates", ADR-0005, ADR-0014, ADR-0024, ADR-0031, ADR-0032, ADR-0033, ADR-0034, and the code switches named in section 3.
 
 ---
 
@@ -33,14 +33,15 @@ Nothing in this table has been approved. The "Evidence" column is filled in only
 | 1 | Name the controller, the data protection lead, the safeguarding lead, the security lead, the engineering lead and the content reviewer | Product owner | PLAN.md approval gates; this file | |
 | 2 | Safeguarding route for the B2C service: who reviews, the response time, when emergency services are contacted | Safeguarding lead, with professional advice | SPEC.md section 16.1, ADR-0031 | |
 | 3 | The safeguarding script and the tripwire list (`services/api/src/eddy_api/tutor/safeguarding.py`, `config/safeguarding/tripwires.yaml`), which are drafts (`SCRIPT_VERSION = "draft-1"`) | Safeguarding lead | ADR-0031, CLAUDE.md | |
-| 4 | The safeguarding runbook in `compliance/runbooks/` | Safeguarding lead, then the product owner | ADR-0031, PLAN.md M7 | |
+| 4 | The draft safeguarding runbook (`compliance/runbooks/safeguarding.md`) | Safeguarding lead, then the product owner | ADR-0031, PLAN.md M7 | |
 | 5 | Retention of safeguarding excerpts, SAFETY concerns and the audit log | Safeguarding lead and data protection lead, with a lawyer | SPEC.md sections 6.7 and 16.6, ADR-0024 | |
 | 6 | The other open retention periods listed in `compliance/DPIA.md` section 2.2 | Data protection lead | DPIA | |
 | 7 | Lawful basis, the DPIA and both privacy notices | Legal reviewer, then the product owner | SPEC.md section 16.2, ADR-0002 | |
 | 8 | ZDR and no training with Anthropic, a data processing agreement and a UK transfer mechanism | Product owner and data protection lead, with a lawyer | SPEC.md sections 10, 12 and 16.4, ADR-0005 | |
 | 9 | Hosting and email processors (AWS eu-west-2, Amazon SES), their agreements, and the first deployment | Product owner | ADR-0014, PLAN.md approval gates | |
 | 10 | DPIA sign-off (measures and residual risks) | Product owner, data protection lead | `compliance/DPIA.md` section 7 | |
-| 11 | The incident response, personal data breach and data rights runbooks | Security lead and data protection lead | `compliance/runbooks/README.md` | |
+| 11 | The draft incident response, personal data breach and data rights runbooks | Security lead and data protection lead | `compliance/runbooks/README.md` | |
+| 14 | The launch checklist | Product owner | `docs/launch-checklist.md`, PLAN.md M10 definition of done | |
 | 12 | School pilot partner and timing, which decides when the DfE matrix's school-facing reports matter | Product owner | SPEC.md section 16.5 | |
 | 13 | A paid narration voice, if one is chosen (reopens its DPIA row) | Product owner, data protection lead | SPEC.md section 16.4, ADR-0029 | |
 
@@ -66,5 +67,5 @@ These settings and constants turn on processing that the approvals above must co
 
 - **Open:** every role except the product owner is unnamed (owner: the product owner).
 - **Open:** no admin sign-in or safeguarding queue exists, so the safeguarding lead has no in-app way to read events or record a review; the queue was deferred (ADR-0032), and no code sets `reviewed_at` (owner: engineering).
-- **Open:** the privacy jobs run by command only in committed code (ADR-0033); who runs them, and how often, until they are scheduled (owner: the engineering lead).
+- **Open:** the worker runs the privacy and safeguarding jobs every 15 minutes (`services/api/src/eddy_api/worker.py` `privacy_tick`, ADR-0034), but nothing is deployed (ADR-0014). Who makes sure the worker is running, and is told when a job fails, where real data is held (owner: the engineering lead).
 - **Open:** a register of decisions and approvals, with dates, kept alongside this file (owner: the product owner).

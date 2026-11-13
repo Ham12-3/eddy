@@ -2,7 +2,7 @@
 
 **Status: DRAFT, 12 November 2026, for review by the product owner and a lawyer.** Not approved, and not yet used on a real request. Owner when approved: the data protection lead (to be named, `compliance/governance.md`).
 
-This runbook describes how the code works at commit `3642fa8` (M9) on branch `m10-hardening`, and what a person still has to do by hand. Sources: SPEC.md section 4.5, ADR-0032, ADR-0033, `services/api/src/eddy_api/privacy.py`, `services/api/src/eddy_api/jobs.py`, `services/api/src/eddy_api/routes/me.py`, `services/api/src/eddy_api/routes/parents.py`, `apps/web/src/app/(site)/settings/`. Where uncommitted work on the same branch changes a gap, it is labelled as uncommitted; update this runbook when it is committed and reviewed.
+This runbook describes how the code works at commit `1f5a9c4` (M10) on branch `m10-hardening` (updated 13 November 2026), and what a person still has to do by hand. Sources: SPEC.md section 4.5, ADR-0032, ADR-0033, ADR-0034, `services/api/src/eddy_api/privacy.py`, `services/api/src/eddy_api/jobs.py`, `services/api/src/eddy_api/worker.py`, `services/api/src/eddy_api/routes/me.py`, `services/api/src/eddy_api/routes/parents.py`, `apps/web/src/app/(site)/settings/`, `apps/web/src/app/(site)/parent/account/`.
 
 ---
 
@@ -20,7 +20,7 @@ This runbook describes how the code works at commit `3642fa8` (M9) on branch `m1
 | Settings, "Delete my account" (type DELETE to confirm) | Signed-in student | Self-service (section 5) |
 | Report a concern, category PRIVACY (`POST /v1/me/concerns`) | Signed-in student | Stored in `concern_report` only. **Gap:** `jobs alerts` emails the safeguarding lead about SAFETY concerns only, so a PRIVACY concern alerts nobody and there is no queue to read it. Someone must query the table (section 8) |
 | Email, letter, a school, or anyone else | Anyone | Manual (section 3). **Open:** no privacy contact address is published; the full notice says it "will be named here before Eddy opens to everyone" (`apps/web/src/content/privacy.tsx`) |
-| A parent account | Parent | **Gap at commit `3642fa8`:** parents have no download or delete route ("Parents' own data rights (download and delete) and a parent privacy acknowledgement (M10)", ADR-0033). Uncommitted work adds `/v1/parent/export`, `/v1/parent/delete` and a parent account page, citing an ADR-0034 that is not yet in DECISIONS.md. Until that is committed and reviewed, handle parent requests manually (section 6) |
+| "Your account" page (`/parent/account`) | Signed-in parent | Self-service notice acknowledgement, download and deletion (section 6, ADR-0034) |
 
 Owner of every gap in this table: the data protection lead, with engineering.
 
@@ -67,7 +67,7 @@ Tested: `test_deleting_the_account_deactivates_it_and_signs_it_out_at_once` (`te
 
 ### 5.2 Completing it: the erasure job
 
-Run from the repository root (as the runtime role, which the job uses by default):
+The worker runs the jobs on its own: once when it starts, then every 15 minutes, alerts first, then purge, then erasures, even with Claude off. A job that fails is rolled back and logged, and the others still run; it is tried again on the next tick (`services/api/src/eddy_api/worker.py` `privacy_tick`, ADR-0034, `test_a_failing_job_does_not_stop_the_others`). To run them by hand, for example when the worker is not running, run from the repository root (as the runtime role, which the job uses by default):
 
 ```
 uv run --package eddy-api python -m eddy_api.jobs alerts
@@ -100,17 +100,19 @@ Tested: `test_erasure_deletes_an_account_without_safety_records`, `test_erasure_
 
 ### 5.4 What is still manual, and the gaps
 
-- **Scheduling.** In committed code the jobs run only when someone runs the command (ADR-0033: "Scheduling the jobs is M10 infrastructure. Until then they run by command"). Until scheduling is committed, the engineering lead must run `alerts` then `erase` at least weekly. **Open:** the agreed frequency (owner: the data protection lead). Uncommitted work in `services/api/src/eddy_api/worker.py` runs alerts, purge and erasures every 15 minutes in the worker; not yet reviewed or committed.
+- **The worker must be running.** Scheduling lives in the worker process, and nothing is deployed (ADR-0014). Where real data is held, someone must make sure the worker runs and see its logs when a job fails; a failure is only logged. **Open:** monitoring and an alert on job failure (owner: the engineering lead).
 - **The 30-day limit is not tracked by code.** Nothing warns when a request nears 30 days. Check by hand (section 8). **Open:** an automated check (owner: engineering).
 - **Held requests cannot finish without a review record.** No code sets `safeguarding_event.reviewed_at` or `concern_report.reviewed_at`, and the admin safeguarding queue is deferred (ADR-0032). A request held for review therefore stays IN_PROGRESS until someone records the review directly in the database. **Open:** a review tool, and who may record a review (owner: the safeguarding lead and engineering). If a hold will pass 30 days, the data protection lead decides what to tell the student. **Open:** that wording, with a lawyer.
 
 ## 6. Parents
 
-At commit `3642fa8` a parent account cannot download or delete its own data (ADR-0033). Until the parent routes are committed and reviewed:
+A parent has a "Your account" page (`apps/web/src/app/(site)/parent/account/page.tsx`, ADR-0034) over these routes in `services/api/src/eddy_api/routes/parents.py`. Tested end to end in `test_a_parent_has_their_own_notice_download_and_deletion` (`services/api/tests/test_parents.py`); the notice acknowledgement also in `e2e/parents.spec.ts`.
 
-- **Ending the link** is self-service: a parent can end any link from their pages, and the student is told (`routes/parents.py`, ADR-0033).
-- **Deletion by hand:** an engineer would set `deactivated_at`, delete the parent's sessions, end their links, and add a `data_request` row (kind DELETE, status RECEIVED) for the parent, so that `jobs erase` completes it. `privacy.erase` handles any user id. **Open:** this procedure is not written as a tested command and needs review before use (owner: engineering).
-- **Access by hand:** what Eddy holds about a parent is their `users` row, any `pending_signup`, `parent_link` rows, sessions and audit rows. **Gap:** no export exists for parents in committed code.
+- **Privacy notice:** `GET /v1/parent/me` shows the version read; `POST /v1/parent/notices` records the acknowledgement (version 0.2.0) and writes an audit row `notice.acknowledge`.
+- **Download:** "Download my data" fetches `GET /v1/parent/export` and returns `eddy-my-data.json` with `Cache-Control: no-store` (`apps/web/src/app/(site)/parent/account/download/route.ts`). It is built by the same `privacy.export` as a student's, so it holds the parent's account, notices, parent links and sessions, with the student sections empty. Each download writes an audit row `data.export`. **Gaps:** unlike a student's, a parent's download has no hourly limit and is not recorded as a `data_request` (owner: engineering).
+- **Deletion:** `POST /v1/parent/delete` with `confirm: true` deactivates the account at once, deletes its sessions, ends every live link (each child whose link was active is emailed "a parent link has ended"), adds a `data_request` (kind DELETE, status RECEIVED) and writes an audit row `account.delete_request`. The erasure job then deletes the parent's `users` row and everything that hangs from it (section 5.2).
+- **Ending a link** without deleting is also self-service from the parent's pages, and the student is told (ADR-0033).
+- **Gap:** a parent cannot cancel a deletion request either.
 
 ## 7. Other rights
 
@@ -144,5 +146,5 @@ WHERE category = 'PRIVACY' ORDER BY created_at;
 
 1. Name the data protection lead and the safeguarding lead.
 2. Publish a privacy contact.
-3. Close or accept the gaps above: parent rights, PRIVACY concern routing, the 30-day check, a way to record review, scheduling.
+3. Close or accept the gaps above: PRIVACY concern routing, the 30-day check, a way to record review, cancelling a deletion, the parent download's limit and record, and the worker deployed and monitored.
 4. Legal review of sections 1, 3, 6 and 7.
