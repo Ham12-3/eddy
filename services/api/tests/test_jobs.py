@@ -102,3 +102,23 @@ def test_alerts_email_ids_never_words(db_session: Session, monkeypatch: pytest.M
     assert jobs.alerts(db_session, settings) == 2
     assert all("private" not in body for _, body in sent)
     assert jobs.alerts(db_session, settings) == 0  # each is notified once
+
+
+def test_a_failing_job_does_not_stop_the_others(monkeypatch: pytest.MonkeyPatch) -> None:
+    from contextlib import nullcontext
+    from unittest.mock import MagicMock
+
+    from eddy_api import worker
+
+    ran: list[str] = []
+
+    def boom(*_: object) -> None:
+        raise RuntimeError("down")
+
+    monkeypatch.setattr(jobs, "alerts", boom)
+    monkeypatch.setattr(jobs, "purge", lambda *_: ran.append("purge"))
+    monkeypatch.setattr(jobs, "erasures", lambda *_: ran.append("erasures"))
+    session = MagicMock()
+    worker.privacy_tick(lambda: nullcontext(session), Settings())  # type: ignore[arg-type]
+    assert ran == ["purge", "erasures"]
+    session.rollback.assert_called_once()

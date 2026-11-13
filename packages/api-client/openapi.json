@@ -253,6 +253,57 @@
         "title": "ConcernOut",
         "type": "object"
       },
+      "CostsOut": {
+        "properties": {
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/DayCost"
+            },
+            "title": "By Day",
+            "type": "array"
+          },
+          "by_route": {
+            "items": {
+              "$ref": "#/components/schemas/RouteCost"
+            },
+            "title": "By Route",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "lessons": {
+            "title": "Lessons",
+            "type": "integer"
+          },
+          "per_lesson_gbp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Lesson Gbp"
+          },
+          "total_gbp": {
+            "title": "Total Gbp",
+            "type": "number"
+          }
+        },
+        "required": [
+          "days",
+          "total_gbp",
+          "lessons",
+          "per_lesson_gbp",
+          "by_route",
+          "by_day"
+        ],
+        "title": "CostsOut",
+        "type": "object"
+      },
       "CreateUserIn": {
         "properties": {
           "email": {
@@ -399,6 +450,30 @@
           "completed_at"
         ],
         "title": "DataRequestOut",
+        "type": "object"
+      },
+      "DayCost": {
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cost_gbp": {
+            "title": "Cost Gbp",
+            "type": "number"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "calls",
+          "cost_gbp"
+        ],
+        "title": "DayCost",
         "type": "object"
       },
       "DetectionRule": {
@@ -1272,6 +1347,59 @@
         "title": "Paper",
         "type": "object"
       },
+      "ParentDeleteIn": {
+        "properties": {
+          "confirm": {
+            "const": true,
+            "title": "Confirm",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "ParentDeleteIn",
+        "type": "object"
+      },
+      "ParentMeOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "notice_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Version"
+          }
+        },
+        "required": [
+          "email",
+          "notice_version"
+        ],
+        "title": "ParentMeOut",
+        "type": "object"
+      },
+      "ParentNoticeIn": {
+        "properties": {
+          "version": {
+            "const": "0.2.0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "ParentNoticeIn",
+        "type": "object"
+      },
       "ParentSignupIn": {
         "properties": {
           "adult_confirmed": {
@@ -1706,6 +1834,49 @@
           "next"
         ],
         "title": "RevealOut",
+        "type": "object"
+      },
+      "RouteCost": {
+        "properties": {
+          "cached_tokens": {
+            "title": "Cached Tokens",
+            "type": "integer"
+          },
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cost_gbp": {
+            "title": "Cost Gbp",
+            "type": "number"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "p95_latency_ms": {
+            "title": "P95 Latency Ms",
+            "type": "integer"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "route",
+          "calls",
+          "cost_gbp",
+          "input_tokens",
+          "output_tokens",
+          "cached_tokens",
+          "p95_latency_ms"
+        ],
+        "title": "RouteCost",
         "type": "object"
       },
       "SceneOut": {
@@ -2455,6 +2626,56 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/v1/admin/costs": {
+      "get": {
+        "operationId": "getCosts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Costs",
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/v1/auth/invites/check": {
@@ -4085,6 +4306,86 @@
         ]
       }
     },
+    "/v1/parent/delete": {
+      "post": {
+        "description": "Deactivates at once and ends every link (each child is told); the erasure job completes\nit within 30 days.",
+        "operationId": "deleteParentAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParentDeleteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Deleteparentaccount",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parent Delete",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/export": {
+      "get": {
+        "description": "Everything held about a parent, built now and not stored.",
+        "operationId": "exportParentData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Exportparentdata",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parent Export",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
     "/v1/parent/links": {
       "post": {
         "operationId": "requestParentLink",
@@ -4182,6 +4483,78 @@
           }
         ],
         "summary": "End Link As Parent",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/me": {
+      "get": {
+        "operationId": "getParentMe",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentMeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parent Me",
+        "tags": [
+          "parents"
+        ]
+      }
+    },
+    "/v1/parent/notices": {
+      "post": {
+        "operationId": "acknowledgeParentNotice",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParentNoticeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentMeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Parent Notice",
         "tags": [
           "parents"
         ]

@@ -488,3 +488,30 @@ Status: Accepted (12 November 2026, during M9)
   - **Not done in M9:**
     - Parents' own data rights (download and delete) and a parent privacy acknowledgement (M10).
     - Keyed hashing of link codes; a parent with an account who signs up again must re-enter the code after signing in.
+
+## ADR-0034: Hardening and launch prep
+
+Status: Accepted (12 November 2026, during M10)
+
+- **Context:** PLAN.md M10 asks for:
+  - a security review (ASVS Level 2, rate limits, an automated scan, a prompt-injection red-team pass);
+  - a k6 load test;
+  - a cost dashboard;
+  - the compliance documents and runbooks;
+  - a staging deployment plan;
+  - a launch checklist for the product owner to sign off.
+
+  M8 and M9 also left the privacy jobs running only by hand, and parents without their own data rights.
+- **Decision:**
+  - **Scheduled jobs.** The worker runs the privacy and safeguarding jobs every 15 minutes, and once at start, even with Claude off: alerts first, then purges and erasures. One job failing never stops the others.
+  - **Parents' own rights.** A parent account page with the privacy notice to acknowledge, a data download and deletion. Deleting ends the parent's links and tells each child.
+  - **Dependency audits in CI.** `pnpm audit --audit-level high` and `pip-audit`. nodemailer is forced to 10.5.0 to close three high advisories, as Auth.js still declares nodemailer 7 or 8.
+  - **The cost dashboard** is `/admin/costs` (admin preview only, as the other admin pages) over `GET /v1/admin/costs`, adding up `llm_call` by route and day, with spend per lesson as an estimate. Narration costs nothing (ADR-0029); hosting is not deployed, so not yet priced.
+  - **The load test** is a Python script (`scripts/load/load_test.py`) rather than k6, which is not installed on the dev machine. It starts its own API and maths-core on the E2E database and drives the student routes concurrently, with no Claude calls.
+  - **maths-core's template list** is cached for 5 minutes in the API: it changes only on deploy, and the plan and progress pages asked for it on every load.
+  - **Compliance documents** are drafts written from the code and ADRs with the product owner's approval: every open decision is a stated gap, and nothing is claimed that the code does not do.
+  - **Staging** is a plan, not infrastructure: images, services and secrets need the product owner's go-ahead before they are built or deployed.
+- **Consequences:**
+  - Launch waits for the people and agreements listed in docs/launch-checklist.md, which no code can supply.
+  - The prompt-injection red-team pass needs live Claude spend: it waits for approval.
+  - The plan route's slow tail under concurrency is recorded, not fixed.

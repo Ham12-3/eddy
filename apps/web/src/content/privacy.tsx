@@ -156,8 +156,8 @@ export function FullPrivacyNotice() {
         <ul className="m-0 flex flex-col gap-2 pl-6">
           <li>
             Anthropic, which provides the Claude AI model. It receives the parts of your answers and
-            messages needed to write a reply, with a random id instead of anything that identifies
-            you. Eddy only sends data once Anthropic has confirmed zero data retention and no
+            messages needed to write a reply, and nothing that identifies you: no name, email or
+            account id. Eddy only sends data once Anthropic has confirmed zero data retention and no
             training on it.
           </li>
           <li>

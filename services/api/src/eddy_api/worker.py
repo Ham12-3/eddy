@@ -15,6 +15,7 @@ import uuid
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from eddy_api import jobs
 from eddy_api.config import Settings, get_settings, tier_l_enabled
 from eddy_api.db.session import session_factory
 from eddy_api.llm.client import LlmClient
@@ -83,16 +84,42 @@ def run_once(
     return False
 
 
+#: How often the privacy and safeguarding jobs run (ADR-0034): alerts first, then purges and
+#: erasures, so the safeguarding lead hears of a concern before anything is erased.
+PRIVACY_EVERY_S = 15 * 60
+
+
+def privacy_tick(sessions: sessionmaker[Session], settings: Settings) -> None:
+    """One run of the privacy jobs. A failure is logged and retried on the next tick."""
+    with sessions() as session:
+        for name, job in (
+            ("alerts", lambda: jobs.alerts(session, settings)),
+            ("purge", lambda: jobs.purge(session, settings)),
+            ("erasures", lambda: jobs.erasures(session)),
+        ):
+            try:
+                log.info("%s: %s", name, job())
+            except Exception:
+                session.rollback()
+                log.exception("the %s job failed; it runs again next time", name)
+
+
 def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="worker: %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--once", action="store_true", help="do what is queued, then stop")
     args = parser.parse_args(argv)
     settings = get_settings()
-    if not tier_l_enabled(settings):
-        log.info("Tier L scenes are off (no key, or no ZDR for this database): nothing to do.")
-        return 0
     sessions = session_factory()
+    privacy_tick(sessions, settings)
+    next_privacy = time.monotonic() + PRIVACY_EVERY_S
+    if not tier_l_enabled(settings):
+        log.info("Tier L scenes are off (no key, or no ZDR for this database).")
+        if args.once:
+            return 0
+        while True:
+            time.sleep(PRIVACY_EVERY_S)
+            privacy_tick(sessions, settings)
     llm = LlmClient.from_key(
         settings.anthropic_api_key.get_secret_value(), recorder=llm_recorder(sessions)
     )
@@ -111,6 +138,9 @@ def main(argv: list[str]) -> int:
         time.sleep(POLL_S)
 
     while True:
+        if time.monotonic() >= next_privacy:
+            privacy_tick(sessions, settings)
+            next_privacy = time.monotonic() + PRIVACY_EVERY_S
         try:
             worked = run_once(
                 sessions, settings, scene_check=scene_check, llm=llm, generator=generator

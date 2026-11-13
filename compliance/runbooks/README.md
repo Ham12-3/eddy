@@ -1,10 +1,10 @@
 # Runbooks
 
-Status: **skeleton** (created in M0). None of these runbooks exist yet.
+Status: **skeleton** (created in M0). All four runbooks exist as drafts (12 November 2026), awaiting review by the product owner; none has been rehearsed. The data rights runbook also needs a lawyer's review, and the safeguarding runbook needs Eddy's named safeguarding lead, with professional advice.
 
 | Runbook | Covers | Due |
 |---|---|---|
-| Safeguarding escalation | Disclosure handling, response times, when to contact emergency services, record keeping | Draft in M7, after professional advice |
-| Incident response | Detection, triage, communication, post-incident review | M10 |
-| Personal data breach | Assessment, ICO notification within 72 hours where required, informing affected users | M10 |
-| Data rights requests | Export and deletion handling, 30-day completion, verification | M9 |
+| [Safeguarding escalation](safeguarding.md) | Detection and the static script, `safeguarding_event`, SAFETY concern reports, the alerts job (ids only), review in the database, erasure waiting for review, when to involve others, open questions | Draft written 12 November 2026 (first drafted in M7); needs the named safeguarding lead's approval with professional advice |
+| [Incident response](incident-response.md) | Detection, triage, containment on the local stack (rotating keys, switching Claude off, revoking sessions, deactivating accounts), recovery, communication, post-incident review | Draft written 12 November 2026; production steps wait for deployment; needs named owners |
+| [Personal data breach](data-breach.md) | The 72-hour ICO clock, risk assessment, what Eddy holds, the audit log as evidence, informing affected users, the breach register | Draft written 12 November 2026; needs the data protection lead's and legal review |
+| [Data rights requests](data-rights.md) | Download and deletion as built, the erasure job, identity checks, parents, other rights, what is still manual | Draft written 12 November 2026; needs review and named owners |

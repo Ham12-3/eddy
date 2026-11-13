@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { maySignIn, signIn } from "@/auth";
+import { maySignIn, signIn, signOut } from "@/auth";
 import type { FormState } from "@/components/forms";
 import { apiClientFor } from "@/lib/api";
 import { AUTH_CALLER } from "@/lib/auth-adapter";
+import { PRIVACY_NOTICE_VERSION } from "@/lib/notices";
 import { requireParent } from "@/lib/session";
 import { visitorKey } from "@/lib/visitor";
 
@@ -59,4 +60,21 @@ export async function endAsParent(linkId: string): Promise<void> {
   await api.POST("/v1/parent/links/{link_id}/end", { params: { path: { link_id: linkId } } });
   revalidatePath("/parent");
   redirect("/parent");
+}
+
+export async function acknowledgeParentNotice(): Promise<void> {
+  const { api } = await requireParent();
+  await api.POST("/v1/parent/notices", { body: { version: PRIVACY_NOTICE_VERSION } });
+  revalidatePath("/parent/account");
+}
+
+export async function deleteParentAccount(_: FormState, form: FormData): Promise<FormState> {
+  if (form.get("confirm") !== "DELETE") {
+    return { fields: { confirm: "Type DELETE in capitals to confirm." } };
+  }
+  const { api } = await requireParent();
+  const { response } = await api.POST("/v1/parent/delete", { body: { confirm: true } });
+  if (!response.ok) return { error: "Eddy could not take that request just now. Try again soon." };
+  await signOut({ redirect: false });
+  redirect("/deleted");
 }

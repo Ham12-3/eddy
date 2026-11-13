@@ -5,7 +5,7 @@ import { useActionState } from "react";
 
 import { FormError, initialFormState, SubmitButton } from "@/components/forms";
 
-import { addChild, joinAsParent } from "./actions";
+import { addChild, deleteParentAccount, joinAsParent } from "./actions";
 
 export function ParentJoinForm({ code }: { code?: string }) {
   const [state, action] = useActionState(joinAsParent, initialFormState);
@@ -65,6 +65,29 @@ export function AddChildForm() {
         <p role="status" className="m-0 text-ink-muted">
           {state.fields?.sent ?? ""}
         </p>
+      </div>
+    </form>
+  );
+}
+
+export function ParentDeleteForm() {
+  const [state, action] = useActionState(deleteParentAccount, initialFormState);
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <FormError state={state} />
+      <p className="m-0">
+        Your account stops working straight away, your links end and each child is told. Everything
+        about you is erased within 30 days. This cannot be undone.
+      </p>
+      <TextField
+        label="Type DELETE to confirm"
+        name="confirm"
+        autoComplete="off"
+        error={state.fields?.confirm}
+        className="max-w-xs"
+      />
+      <div>
+        <SubmitButton variant="secondary">Delete my account</SubmitButton>
       </div>
     </form>
   );

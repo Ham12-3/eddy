@@ -49,6 +49,14 @@ jobs:
       - name: Curriculum YAML matches its schemas
         run: pnpm curriculum:check
       - run: pnpm check
+      # M10: known vulnerabilities in dependencies fail the build (high and above for npm; any
+      # known one for Python, where pip-audit has no severity filter).
+      - name: Dependency audit (npm)
+        run: pnpm audit --audit-level high
+      - name: Dependency audit (Python)
+        run: |
+          uv export --format requirements-txt --no-hashes --all-packages --no-emit-workspace -q > /tmp/requirements.txt
+          uvx pip-audit -r /tmp/requirements.txt --progress-spinner off
       - name: Maths golden set and scene specs (100% required)
         run: pnpm evals
       - name: Scene golden specs match the templates

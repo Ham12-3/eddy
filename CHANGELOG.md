@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### M10: Hardening and launch prep (12 and 13 November 2026)
+
+Added:
+
+- The worker runs the privacy and safeguarding jobs every 15 minutes, alerts first (ADR-0034).
+- Parents' own account page: the privacy notice to acknowledge, a data download, and deletion that ends their links and tells each child.
+- Dependency audits in CI (`pnpm audit --audit-level high`, `pip-audit`); nodemailer forced to 10.5.0 to close three high advisories.
+- The cost dashboard, `/admin/costs`, over `GET /v1/admin/costs`.
+- A load test (`scripts/load/load_test.py`), a keyboard-only E2E journey, and maths-core's template list cached in the API.
+- Drafts for review: the DPIA, Children's Code checklist, DfE standards matrix, governance roles, and runbooks for safeguarding, incident response, data breaches and data rights (`compliance/`); `docs/security-review.md`, `docs/staging-plan.md` and `docs/launch-checklist.md`.
+
+Fixed:
+
+- The full privacy notice said Anthropic receives a random id; it receives no identifier at all.
+
 ### M9: Parent dashboard and accounts (12 November 2026)
 
 Added:

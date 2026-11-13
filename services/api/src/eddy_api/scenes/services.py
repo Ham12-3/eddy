@@ -8,6 +8,7 @@ Both are private and take a shared service token. Any failure raises SceneServic
 caller falls back to the Tier D scene.
 """
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -90,6 +91,10 @@ class SceneCheckClient:
             return False
 
 
+TEMPLATES_TTL_S = 300
+_TEMPLATES: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+
+
 @dataclass
 class MathsCoreClient:
     client: httpx.Client
@@ -120,6 +125,11 @@ class MathsCoreClient:
         return _post(self.client, "/v1/scenes/verify", body, FAST_TIMEOUT_S)
 
     def templates(self) -> list[dict[str, Any]]:
+        """Every item template. They change only when maths-core is deployed, so the list is kept
+        for TEMPLATES_TTL_S (the plan and progress pages ask for it on every load)."""
+        cached = _TEMPLATES.get(str(self.client.base_url))
+        if cached and time.monotonic() - cached[0] < TEMPLATES_TTL_S:
+            return cached[1]
         try:
             response = self.client.get("/v1/templates", timeout=FAST_TIMEOUT_S)
         except httpx.HTTPError as error:
@@ -127,6 +137,7 @@ class MathsCoreClient:
         data = _json(response)
         if response.status_code != 200 or not isinstance(data, list):
             raise SceneServiceError("/v1/templates: bad response", response.status_code)
+        _TEMPLATES[str(self.client.base_url)] = (time.monotonic(), data)
         return data
 
     def item(self, template_id: str, seed: int) -> dict[str, Any]:
