@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### More Tier D scenes and the Higher tier plan (13 and 14 November 2026)
+
+Added:
+
+- Eight Tier D scenes, each reviewed for pedagogy: comparing unit fractions, adding, subtracting and dividing fractions, adding two negatives, order of operations, a fraction of an amount and a percentage of an amount. 21 of the 85 misconceptions now have a scene.
+- Adding and subtracting fractions decline items whose common denominator is over 24 (bars that fine cannot be read on a phone); those items keep the written explanation, and the scene golden inputs skip them.
+- `docs/higher-tier-plan.md`: a draft plan for Higher tier (grades 4 to 9), with open questions for the product owner.
+
 ### Hosting proposal (13 November 2026)
 
 - ADR-0035 (proposed): host the web app on Vercel, Postgres on Supabase, and the API, worker, maths-core and scene-check on Fly.io, all in London. `docs/staging-plan.md` now holds this plan and the AWS one; the launch checklist asks which.
