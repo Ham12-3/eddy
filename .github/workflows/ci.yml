@@ -49,6 +49,14 @@ jobs:
       - name: Curriculum YAML matches its schemas
         run: pnpm curriculum:check
       - run: pnpm check
+      # M10: known vulnerabilities in dependencies fail the build (high and above for npm; any
+      # known one for Python, where pip-audit has no severity filter).
+      - name: Dependency audit (npm)
+        run: pnpm audit --audit-level high
+      - name: Dependency audit (Python)
+        run: |
+          uv export --format requirements-txt --no-hashes --all-packages --no-emit-workspace -q > /tmp/requirements.txt
+          uvx pip-audit -r /tmp/requirements.txt --progress-spinner off
       - name: Maths golden set and scene specs (100% required)
         run: pnpm evals
       - name: Scene golden specs match the templates
@@ -66,8 +74,8 @@ jobs:
         run: pnpm maths:bench
       - name: Learner model coverage (85% or more)
         run: pnpm learner:coverage
-      - name: Scene schema and pydantic models match packages/schemas
-        run: pnpm schemas:generate && test -z "$(git status --porcelain -- packages/schemas/generated services/api/src/eddy_api/scenes)" || (git diff && exit 1)
+      - name: Scene and LLM schemas and pydantic models match packages/schemas
+        run: pnpm schemas:generate && test -z "$(git status --porcelain -- packages/schemas/generated services/api/src/eddy_api/scenes services/api/src/eddy_api/llm/io.py)" || (git diff && exit 1)
       - name: API client matches services/api
         run: pnpm api-client:generate && git diff --exit-code -- packages/api-client
       - name: CDK synth (no deploy)
@@ -91,6 +99,16 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      # The tutor's rate limits (M7) and the sign-in emails the student journey reads (M8).
+      redis:
+        image: redis:7.4.12-alpine
+        ports:
+          - 6390:6379
+      mailpit:
+        image: axllent/mailpit:v1.33
+        ports:
+          - 1025:1025
+          - 8025:8025
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

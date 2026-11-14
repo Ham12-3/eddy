@@ -1,0 +1,177 @@
+# Deterministic safeguarding tripwires (SPEC.md section 9.2, step 2): phrases that end tutoring at
+# once and show the safeguarding script, before any model sees the message. High recall on
+# purpose: a false alarm costs a student a minute; a miss can cost far more. Phrases that are also
+# everyday sayings ("beats me", "in danger of failing", "I can't cope with algebra") are left to
+# the input classifier, which reads the whole message.
+#
+# STATUS: DRAFT. Written by the build team from common UK safeguarding guidance. It must be
+# reviewed by Eddy's named safeguarding lead before any real student uses the tutor (PLAN.md
+# approval gate).
+#
+# Matching (services/api/src/eddy_api/tutor/safeguarding.py): the text is put in NFKC form,
+# invisible characters are removed, look-alike letters from other alphabets are folded to Latin,
+# then it is lower-cased with punctuation and apostrophes removed and spaces collapsed. A phrase
+# matches whole words; a final "*" also matches any ending ("self harm*" matches "self harming").
+# Letters typed with spaces between them are joined ("s u i c i d e"), and "my self" is read as
+# "myself". Words after a "!" must not follow the phrase ("im in danger !of" leaves "I'm in
+# danger of failing" to the classifier).
+#
+# severity: IMMEDIATE (risk to life now), HIGH (harm, abuse or neglect), MEDIUM (distress or
+# bullying).
+
+version: draft-2
+categories:
+  suicidal_thoughts:
+    severity: IMMEDIATE
+    phrases:
+      - kill myself
+      - killing myself
+      - kil myself
+      - end my life
+      - ending my life
+      - take my own life
+      - end it all
+      - want to die
+      - wanna die
+      - want to be dead
+      - wish i was dead
+      - wish i were dead
+      - better off dead
+      - better off without me
+      - suicid*
+      - sucid*
+      - unalive*
+      - nobody would miss me
+      - no one would miss me
+      - not want to be alive
+      - dont want to be alive
+      - dont want to live
+      - no reason to live
+      - want to disappear forever
+      - hang myself
+      - overdose
+      - took pills
+      - taken pills
+      - gonna kms
+      - going to kms
+      - wanna kms
+      - want to kms
+      - i will kms
+      - ill kms
+      - might kms
+  self_harm:
+    severity: IMMEDIATE
+    phrases:
+      - self harm*
+      - selfharm*
+      - harm myself
+      - harming myself
+      - harmed myself
+      - hurt myself
+      - hurting myself
+      - cut myself
+      - cutting myself
+      - burn myself
+      - burning myself
+      - starving myself
+      - make myself sick
+      - making myself sick
+  abuse:
+    severity: HIGH
+    phrases:
+      - hits me
+      - hit me again
+      - he hit me
+      - she hit me
+      - dad hit me
+      - mum hit me
+      - he hurts me
+      - she hurts me
+      - beat me up
+      - beats me up
+      - beating me up
+      - he beats me
+      - she beats me
+      - slapped me
+      - kicks me
+      - kicked me
+      - touched me
+      - touches me
+      - abusing me
+      - abused me
+      - rape
+      - raped
+      - raping
+      - rapist
+      - molest*
+      - sexually
+      - not safe at home
+      - scared to go home
+      - afraid to go home
+      - locked me in
+      - told me to kys
+      - telling me to kys
+      - told me to kill myself
+  neglect:
+    severity: HIGH
+    phrases:
+      - no food at home
+      - no food in the house
+      - nothing to eat at home
+      - havent eaten in days
+      - havent eaten for days
+      - nobody is home for days
+      - left on my own for days
+      - left me alone for days
+      - nobody looks after me
+      - no one looks after me
+  exploitation:
+    severity: HIGH
+    phrases:
+      - nudes
+      - send nudes
+      - send pictures of myself
+      - asked me for pictures
+      - asking me for pictures
+      - asking me to send pictures
+      - pictures of my body
+      - told me not to tell
+      - says not to tell anyone
+      - said not to tell anyone
+      - our secret
+      - groomed
+      - grooming me
+      - older man wants
+      - older guy online
+      - meet a stranger
+      - carry drugs
+  danger:
+    severity: IMMEDIATE
+    phrases:
+      - i am in danger !of
+      - im in danger !of
+      - i feel in danger
+      - my life is in danger
+      - someone is hurting me
+      - going to hurt me
+      - has a knife
+      - run away from home
+      - running away from home
+  distress:
+    severity: MEDIUM
+    phrases:
+      - i hate myself
+      - cant cope anymore
+      - cant cope with life
+      - cannot cope anymore
+      - cant go on
+      - panic attack*
+      - nobody cares about me
+      - no one cares about me
+  bullying:
+    severity: MEDIUM
+    phrases:
+      - bullied
+      - being bullied
+      - they bully me
+      - bullying me

@@ -1,11 +1,19 @@
+import { addNegatives } from "./add-negatives";
 import { cointeriorAngles } from "./cointerior-angles";
+import { compareFractions } from "./compare-fractions";
 import { compareDecimals } from "./compare-decimals";
 import { compareNegatives } from "./compare-negatives";
 import { findHypotenuse } from "./find-hypotenuse";
+import { fractionOfAmount } from "./fraction-of-amount";
+import { fractionAdd } from "./fraction-add";
+import { fractionDivide } from "./fraction-divide";
+import { fractionSubtract } from "./fraction-subtract";
 import { gradientTriangle } from "./gradient-triangle";
 import { multiplyAlong } from "./multiply-along";
 import { negativePower } from "./negative-power";
+import { orderOfOperations } from "./order-of-operations";
 import { orderThenMiddle } from "./order-then-middle";
+import { percentageOfAmount } from "./percentage-of-amount";
 import { reversePercentage } from "./reverse-percentage";
 import { shareInRatio } from "./share-in-ratio";
 import type { SceneTemplate } from "./template";
@@ -14,8 +22,9 @@ import { triangleArea } from "./triangle-area";
 import { twoStepEquation } from "./two-step-equation";
 
 /**
- * The Tier D scenes: one per MVP topic, in the topic order of SPEC.md section 2.2, each for that
- * topic's most common misconception (PLAN.md M5). Keyed by "primitive.scene".
+ * The Tier D scenes: first one per MVP topic, in the topic order of SPEC.md section 2.2, each for
+ * that topic's most common misconception (PLAN.md M5), then further scenes for other common slips.
+ * Keyed by "primitive.scene".
  */
 export const TEMPLATES: readonly SceneTemplate[] = [
   compareNegatives as SceneTemplate, // 1 Negative numbers
@@ -31,6 +40,15 @@ export const TEMPLATES: readonly SceneTemplate[] = [
   findHypotenuse as SceneTemplate, // 11 Pythagoras
   multiplyAlong as SceneTemplate, // 12 Probability trees
   orderThenMiddle as SceneTemplate, // 13 Averages
+  // Further scenes, after the first one per topic.
+  compareFractions as SceneTemplate, // 2 Fractions: comparing unit fractions
+  fractionAdd as SceneTemplate, // 2 Fractions: adding
+  fractionSubtract as SceneTemplate, // 2 Fractions: subtracting
+  fractionDivide as SceneTemplate, // 2 Fractions: dividing
+  addNegatives as SceneTemplate, // 1 Negative numbers: adding two negatives
+  orderOfOperations as SceneTemplate, // Order of operations
+  fractionOfAmount as SceneTemplate, // 4 Fractions of an amount
+  percentageOfAmount as SceneTemplate, // 4 Percentages of an amount
 ];
 
 export const TEMPLATES_BY_KEY: ReadonlyMap<string, SceneTemplate> = new Map(

@@ -53,6 +53,23 @@ INPUTS = REPO_ROOT / "evals" / "golden" / "scenes" / "inputs.json"
 THRESHOLDS = REPO_ROOT / "evals" / "thresholds.yaml"
 REPORTS = REPO_ROOT / "e2e-artifacts" / "evals"
 CASE_COUNT = 100
+# The suite stays on the 13 scenes it was set up for in M6, so its results stay comparable as
+# more Tier D scenes (and their golden inputs) are added.
+SUITE_SCENES = (
+    "n1-order-negatives",
+    "n1-order-decimals",
+    "n9-standard-to-ordinary",
+    "r9-reverse-percentage",
+    "r5-share-in-ratio",
+    "a17-two-step",
+    "a10-gradient-two-points",
+    "g3-cointerior",
+    "g7-translation",
+    "g16-triangle-area",
+    "g20-hypotenuse",
+    "p8-tree-and",
+    "s4-median",
+)
 ATTEMPTS = 2
 CONFIDENCES = [None, "low", "medium", "high"]
 # A rough cost per case for the dry run: Opus 4.8 with adaptive thinking at high effort, about
@@ -61,7 +78,8 @@ ESTIMATE_GBP_PER_CASE = 0.10
 
 
 def build() -> list[dict[str, Any]]:
-    inputs: dict[str, list[dict[str, Any]]] = json.loads(INPUTS.read_bytes())
+    every: dict[str, list[dict[str, Any]]] = json.loads(INPUTS.read_bytes())
+    inputs = {key: rows for key, rows in every.items() if key.split(":")[0] in SUITE_SCENES}
     notes = misconception_notes()
     cases: list[dict[str, Any]] = []
     extra = sum(len(rows) for rows in inputs.values()) - CASE_COUNT

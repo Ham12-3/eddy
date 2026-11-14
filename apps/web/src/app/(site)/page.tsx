@@ -1,6 +1,11 @@
-import { Card } from "@eddy/ui";
+import { buttonClassName, Card } from "@eddy/ui";
+import NextLink from "next/link";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+
+import { Page } from "@/components/Page";
 import { apiClientFor, ServiceTokenConfigError } from "@/lib/api";
+import { signedInRole, signedInStudent } from "@/lib/session";
 import { isSystemCheckEnabled } from "@/lib/system-check";
 
 // Render on every request: the system check must reflect the API as it is now.
@@ -101,17 +106,27 @@ async function SystemCheck() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  if ((await signedInStudent()) || (await signedInRole()) === "parent") redirect("/welcome");
   return (
-    <main className="min-h-screen max-w-[68ch] px-4 py-8 md:ml-[10vw] md:border-l md:border-rule md:px-8 md:py-16">
-      <h1 className="m-0 mb-4">Eddy</h1>
-      <p className="m-0 mb-4 text-lead">
-        A GCSE Maths tutor that explains your mistakes with short animations.
+    <Page
+      title="Eddy"
+      lead="A GCSE Maths tutor that explains your own mistakes with short animations."
+    >
+      <p className="m-0 mb-4">
+        When an answer goes wrong, Eddy works out which idea tripped you up and shows you that idea,
+        drawn step by step. Then it checks the idea has stuck, a few days later.
       </p>
-      <p className="m-0">
-        This is the foundations build. The learning experience arrives in later milestones.
-      </p>
+      <p className="m-0 mb-8">Eddy is in a closed trial, so you need an invite code to join.</p>
+      <div className="flex flex-wrap items-center gap-4">
+        <NextLink href="/join" className={buttonClassName("accent")}>
+          Join with an invite code
+        </NextLink>
+        <NextLink href="/sign-in" className={buttonClassName("secondary")}>
+          Sign in
+        </NextLink>
+      </div>
       {isSystemCheckEnabled() ? <SystemCheck /> : null}
-    </main>
+    </Page>
   );
 }

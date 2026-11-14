@@ -78,12 +78,22 @@ class VerificationToken(Base):
 
 
 class StudentProfile(Base):
-    """Only what the tutor needs: birth month and year (not the day), board, tier and goals."""
+    """Only what the tutor needs: birth month and year (not the day), board, tier and goals.
+
+    The row is made with the account, from the age check (ADR-0032); board, tier and target grade
+    arrive at set-up, which `setup_completed_at` marks.
+    """
 
     __tablename__ = "student_profile"
     __table_args__ = (
         CheckConstraint("birth_month BETWEEN 1 AND 12", name="birth_month"),
         CheckConstraint("target_grade BETWEEN 1 AND 9", name="target_grade"),
+        CheckConstraint("board IS NULL OR board <> 'DFE'", name="board_not_dfe"),
+        CheckConstraint(
+            "setup_completed_at IS NULL"
+            " OR (board IS NOT NULL AND tier IS NOT NULL AND target_grade IS NOT NULL)",
+            name="setup_complete",
+        ),
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -91,16 +101,83 @@ class StudentProfile(Base):
     )
     birth_year: Mapped[int] = mapped_column(SmallInteger)
     birth_month: Mapped[int] = mapped_column(SmallInteger)
-    board: Mapped[str] = mapped_column(checked_enum("profile_board", *BOARDS))
-    tier: Mapped[str] = mapped_column(checked_enum("profile_tier", *TIERS))
+    board: Mapped[str | None] = mapped_column(checked_enum("profile_board", *BOARDS))
+    tier: Mapped[str | None] = mapped_column(checked_enum("profile_tier", *TIERS))
     exam_series: Mapped[str | None] = mapped_column(String(32))
-    target_grade: Mapped[int] = mapped_column(SmallInteger)
+    target_grade: Mapped[int | None] = mapped_column(SmallInteger)
     is_resitter: Mapped[bool] = mapped_column(Boolean, default=False)
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    setup_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    diagnostic_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class PendingSignup(Base):
+    """Someone who passed the age check and asked for a sign-up link (ADR-0032).
+
+    Nothing is stored for anyone under 13. The row is hard-deleted when the account is made, and
+    the purge job deletes it once it expires, so an email that never signs up is not kept.
+    """
+
+    __tablename__ = "pending_signup"
+    __table_args__ = (
+        Index("uq_pending_signup_email_lower", func.lower(text("email")), unique=True),
+        CheckConstraint("birth_month BETWEEN 1 AND 12", name="birth_month"),
+        # A student comes with an invite and an age check; a parent with a child's link code
+        # (ADR-0033).
+        CheckConstraint(
+            "(role = 'student' AND invite_code IS NOT NULL AND birth_year IS NOT NULL"
+            " AND birth_month IS NOT NULL)"
+            " OR (role = 'parent' AND link_code_id IS NOT NULL)",
+            name="role_needs",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    email: Mapped[str] = mapped_column(String(320))
+    role: Mapped[str] = mapped_column(
+        checked_enum("pending_role", "student", "parent"), server_default="student"
+    )
+    invite_code: Mapped[str | None] = mapped_column(
+        ForeignKey("invite_code.code", ondelete="CASCADE"), index=True
+    )
+    link_code_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("parent_link_code.id", ondelete="CASCADE"), index=True
+    )
+    birth_year: Mapped[int | None] = mapped_column(SmallInteger)
+    birth_month: Mapped[int | None] = mapped_column(SmallInteger)
+    created_at: Mapped[datetime] = created_at()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class ParentLinkCode(Base):
+    """A code a student gives a parent, as a link or typed in (ADR-0033). Only its hash is kept;
+    it lasts 7 days and works once. A new code replaces the student's old one."""
+
+    __tablename__ = "parent_link_code"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = created_at()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class InviteRedemption(Base):
+    """Which invite an account came in by (a closed beta or a school pilot cohort)."""
+
+    __tablename__ = "invite_redemption"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    invite_code: Mapped[str] = mapped_column(ForeignKey("invite_code.code"), index=True)
+    redeemed_at: Mapped[datetime] = created_at()
 
 
 class InviteCode(Base):

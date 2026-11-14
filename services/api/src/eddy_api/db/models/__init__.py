@@ -3,8 +3,11 @@
 from eddy_api.db.models.accounts import (
     Account,
     InviteCode,
+    InviteRedemption,
     NoticeAcknowledgement,
     ParentLink,
+    ParentLinkCode,
+    PendingSignup,
     Session,
     StudentProfile,
     User,
@@ -21,8 +24,19 @@ from eddy_api.db.models.curriculum import (
     TopicNode,
 )
 from eddy_api.db.models.english import LevelDescriptor, QuestionType, SetText
-from eddy_api.db.models.governance import AuditLog, DataRequest, SafeguardingEvent
-from eddy_api.db.models.learning import Attempt, MasteryState, MisconceptionState, ReviewCard
+from eddy_api.db.models.governance import (
+    AuditLog,
+    ConcernReport,
+    DataRequest,
+    SafeguardingEvent,
+)
+from eddy_api.db.models.learning import (
+    Attempt,
+    DiagnosticSession,
+    MasteryState,
+    MisconceptionState,
+    ReviewCard,
+)
 from eddy_api.db.models.scenes import AudioAsset, SceneInstance, SceneRequest, SceneSpec
 from eddy_api.db.models.tutor import LlmCall, TutorMessage, TutorSession
 
@@ -31,10 +45,13 @@ __all__ = [
     "Attempt",
     "AudioAsset",
     "AuditLog",
+    "ConcernReport",
     "CurriculumNode",
     "CurriculumSpec",
     "DataRequest",
+    "DiagnosticSession",
     "InviteCode",
+    "InviteRedemption",
     "Item",
     "ItemFamily",
     "LevelDescriptor",
@@ -45,6 +62,8 @@ __all__ = [
     "NodePrerequisite",
     "NoticeAcknowledgement",
     "ParentLink",
+    "ParentLinkCode",
+    "PendingSignup",
     "QuestionType",
     "ReviewCard",
     "SafeguardingEvent",
