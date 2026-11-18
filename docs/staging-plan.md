@@ -59,9 +59,23 @@ No S3 and no SQS are used by the code today; they exist only in `compose.yaml`.
 6. Smoke test: sign-up through a real email, a lesson with Claude off (templated), the parent journey, download and deletion.
 7. Run `pnpm e2e` against staging (a change to the base URL), then the load test, and compare latency with the local run.
 
-### Costs to price before approval
+### Estimated costs for a closed trial
 
-Not yet priced. To price: Vercel Pro, a Supabase plan with backups, five Fly machines (one with Chromium needs more memory), Redis, the email provider, and Claude (about £0.33 a lesson session measured in M7, shown on `/admin/costs`).
+Estimates from public list prices, 14 November 2026, for a trial of up to about 50 students. They exclude VAT and have not been checked against London pricing or the providers' own calculators: confirm each one at sign-up, before approval.
+
+| Service | Use | Plan | Per month |
+|---|---|---|---|
+| Vercel | The web app | Pro, one seat (Hobby is not for commercial use) | $20 |
+| Supabase | Postgres, daily backups | Pro, which includes credit for the smallest compute | $25 |
+| Fly.io | API, worker, maths-core, scene-check (1 GB each), Redis (256 MB) | Pay as you go | about $30 to $40 |
+| Resend, or another SMTP provider | Sign-in and notice emails | Free tier: 3,000 a month, 100 a day | $0 |
+| **Total** | | | **about $75 to $85 (roughly £60 to £70)** |
+
+- A domain name: about £10 to £15 a year.
+- Possible extras: Supabase point-in-time recovery (about $100 a month; the daily backups in Pro are enough for a trial), a paid email plan (about $20 a month above 100 emails a day), 2 GB for scene-check once Tier L keyframes run, or a second API machine for resilience (about $7 a month each).
+- Claude: nothing while `ANTHROPIC_ZDR_CONFIRMED` is false (the tutor uses templated messages). Once it is on, about £0.33 a lesson session (measured in M7, shown on `/admin/costs`): for example, 30 students doing 3 lessons a week is about 390 sessions, roughly £130 a month. The daily budget per student caps the worst case.
+
+Sources: Vercel's Pro plan documentation, Supabase's pricing page, Fly.io's resource pricing and its 2026 pricing update, and Resend's pricing page.
 
 ## Plan B: AWS in eu-west-2 (ADR-0014)
 
@@ -84,7 +98,7 @@ Still needed:
 
 Order: approve the account and budget; `cdk deploy` Network and Data; push images and deploy services; migrate; domain and SES; then the same smoke test, `pnpm e2e` and load test as Plan A.
 
-Costs to price: the NAT gateway (the largest fixed cost of a small VPC), RDS, five Fargate tasks, the load balancer, ElastiCache, SES, CloudWatch and Claude.
+Costs to price: the NAT gateway (the largest fixed cost of a small VPC), RDS, five Fargate tasks, the load balancer, ElastiCache, SES, CloudWatch and Claude. Not estimated here; these fixed costs are paid before any student signs in, so at trial size they are likely to come to more than Plan A's.
 
 ## Settings for any real environment
 
