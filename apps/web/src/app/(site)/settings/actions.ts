@@ -33,16 +33,6 @@ export async function savePreferences(_: FormState, form: FormData): Promise<For
   return { error: undefined, fields: { saved: "Saved." } };
 }
 
-export async function requestExport(): Promise<FormState> {
-  const { api } = await requireStudent({ onboarding: true });
-  const { response } = await api.POST("/v1/me/data-requests", {
-    body: { kind: "EXPORT", confirm: false },
-  });
-  if (!response.ok) return { error: "Eddy could not take that request just now. Try again soon." };
-  revalidatePath("/settings");
-  return { fields: { saved: "Request received." } };
-}
-
 export async function deleteAccount(_: FormState, form: FormData): Promise<FormState> {
   if (form.get("confirm") !== "DELETE") {
     return { fields: { confirm: "Type DELETE in capitals to confirm." } };
@@ -54,4 +44,31 @@ export async function deleteAccount(_: FormState, form: FormData): Promise<FormS
   if (!response.ok) return { error: "Eddy could not take that request just now. Try again soon." };
   await signOut({ redirect: false });
   redirect("/deleted");
+}
+
+export interface CodeState {
+  code?: string;
+  expires?: string;
+  error?: string;
+}
+
+/** A new parent link code, shown once (ADR-0033). */
+export async function makeParentCode(): Promise<CodeState> {
+  const { api } = await requireStudent({ onboarding: true });
+  const { data } = await api.POST("/v1/me/parent-links/code");
+  if (!data) return { error: "Eddy could not make a code just now. Try again soon." };
+  revalidatePath("/settings");
+  return { code: data.code, expires: data.expires_at };
+}
+
+export async function answerParentLink(linkId: string, accept: boolean): Promise<string | null> {
+  const { api } = await requireStudent({ onboarding: true });
+  const params = { params: { path: { link_id: linkId } } };
+  const { response } = accept
+    ? await api.POST("/v1/me/parent-links/{link_id}/accept", params)
+    : await api.POST("/v1/me/parent-links/{link_id}/end", params);
+  if (!response.ok) return "That did not work. Try again in a moment.";
+  // The header's "your parent can see your progress" note lives in the layout.
+  revalidatePath("/", "layout");
+  return null;
 }

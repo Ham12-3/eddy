@@ -458,3 +458,33 @@ Status: Accepted (12 November 2026, during M8)
   - The in-memory rate limiter, which the Redis limiter falls back to, dropped every key holding a colon as a stale window; fixed and tested.
   - If the API cannot be reached while a session is read, Auth.js clears the session cookie and the student signs in again.
   - Deferred: the strict nonce CSP (M10 hardening), the admin safeguarding queue, diagrams in the diagnostic, and Elo item selection (real data first). `AUTH_URL` must use `localhost`, and the app be opened there: Next.js reports 127.0.0.1 as localhost, so Auth.js would redirect to localhost and a session cookie set on 127.0.0.1 would be lost.
+
+## ADR-0033: Parent links by a student's code, and data rights built on request
+
+Status: Accepted (12 November 2026, during M9)
+
+- **Context:** SPEC.md section 4.4 asks for parent links both ways (the student sends an invite link, or a parent requests with a code the student gives), always with the student's acceptance, a permanent indicator, a "what my parent sees" preview, and unlinking by either side with the other told. Section 4.5 asks for download my data (JSON and a readable page) and deletion completed within 30 days.
+- **Decision:**
+  - **One mechanism for both directions.** In Settings the student makes a code of 10 characters that cannot be confused when read aloud. They share it as a link (`/parent/join?code=...`) or read it out. Only its SHA-256 hash is stored. It lasts 7 days, works once, and a new code replaces the old one. A parent who uses it (signing up, or signed in) creates a REQUESTED link. Nothing is shared until the student accepts, seeing the parent's email address first.
+  - **Parent accounts.** A parent signs up with the code instead of an invite and an age check, confirming they are the student's parent or carer and 18 or over. Their pending sign-up holds no birth date. They have their own pages and see a child's email only after the child accepts.
+  - **What a parent sees.** Topics secured and being learned, minutes on questions this week, the last five lessons (date, questions, minutes), reviews due in the next 7 days, and support and safeguarding contacts. Never messages, answers or safety records. Every parent view is written to the audit log. The student's preview renders the same component from the same data.
+  - **The indicator.** While a link is active, every student page shows "Your parent can see your progress", with a link to the preview.
+  - **Notices** go by email (`eddy_api.mail`): to the student when a parent asks, to the parent on acceptance, and to the other side when either ends a link. They carry no progress details.
+  - **Download my data** is built when asked for (`/v1/me/export`), shown as a readable page and offered as a JSON file. It is never stored, so no second copy waits anywhere. Each download is recorded as a completed request. Safety records are left out, with a note on how to ask for them, for the safeguarding lead to decide.
+  - **Erasure.** `python -m eddy_api.jobs erase` completes deletion requests. An account with no safety record is deleted outright, and everything goes with it. One with a safety record keeps only an anonymous anchor row (email replaced, name removed) until the DPIA sets that record's retention (ADR-0024). Concern reports, data request records and LLM cost records lose their link to the person.
+  - The privacy notice is version 0.2.0: it now describes parent links and instant downloads, so everyone acknowledges it again.
+- **Consequences:**
+  - A code shared in a group chat could be used by someone who is not a parent. The student sees who asked, and nothing is shared until they accept.
+  - Scheduling the jobs is M10 infrastructure. Until then they run by command.
+  - Showing safety records in a download, and their retention, wait for the safeguarding lead and the DPIA.
+  - **From the M9 reviews:**
+    - Asking to delete an account ends every parent link at once, and tells the parent.
+    - Parent routes ignore a deactivated student.
+    - Erasure waits, with the request IN_PROGRESS, while a safeguarding event or a SAFETY concern about the student is unreviewed. A SAFETY concern counts as a safety record. Other concern text is deleted.
+    - Erasure deletes the lesson checkpoints (which have no foreign key) and the student's sign-in links. LLM cost records and data requests lose their link to the person.
+    - The alerts job runs before erasure.
+    - Viewing the data page records nothing. Only a file download is recorded, at most 5 an hour.
+    - The parent dashboard sends dates, never times.
+  - **Not done in M9:**
+    - Parents' own data rights (download and delete) and a parent privacy acknowledgement (M10).
+    - Keyed hashing of link codes; a parent with an account who signs up again must re-enter the code after signing in.

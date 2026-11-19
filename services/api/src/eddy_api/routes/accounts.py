@@ -22,7 +22,7 @@ import hashlib
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -30,12 +30,14 @@ from sqlalchemy import ColumnElement, delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from eddy_api import audit
+from eddy_api import audit, mail, parents
 from eddy_api.auth import Caller, require_roles
 from eddy_api.config import get_settings
 from eddy_api.db.models import (
     InviteCode,
     InviteRedemption,
+    ParentLink,
+    ParentLinkCode,
     PendingSignup,
     StudentProfile,
     User,
@@ -265,6 +267,10 @@ def create_user(body: CreateUserIn, _: WebAuth, session: DbSession) -> AdapterUs
     )
     if pending is None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="No sign-up is waiting.")
+    if pending.role == "parent":
+        return _create_parent(session, pending, email, body.email_verified or now, now)
+    if pending.invite_code is None or pending.birth_year is None or pending.birth_month is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="No sign-up is waiting.")
     redeemed = session.scalar(
         update(InviteCode)
         .where(_usable(pending.invite_code, now))
@@ -301,6 +307,111 @@ def create_user(body: CreateUserIn, _: WebAuth, session: DbSession) -> AdapterUs
     )
     session.commit()
     return _adapter_user(user)
+
+
+def _create_parent(
+    session: Session, pending: PendingSignup, email: str, verified: datetime, now: datetime
+) -> AdapterUser:
+    """A parent's account, with a REQUESTED link to the child whose code they used. The code
+    works once; nothing is shared until the child accepts (ADR-0033)."""
+    code = session.scalar(
+        select(ParentLinkCode)
+        .where(ParentLinkCode.id == pending.link_code_id, ParentLinkCode.expires_at > now)
+        .with_for_update()
+    )
+    if code is None:
+        session.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="That link code has expired.")
+    user = User(email=email, email_verified=verified, role="parent")
+    session.add(user)
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="That account exists.") from None
+    link = ParentLink(
+        student_id=code.student_id,
+        parent_user_id=user.id,
+        status="REQUESTED",
+        requested_by="PARENT",
+    )
+    session.add(link)
+    session.flush()
+    audit.record(
+        session,
+        actor_id=user.id,
+        actor_role="parent",
+        action="parent_link.request",
+        target_type="parent_link",
+        target_id=link.id,
+    )
+    session.delete(pending)
+    session.flush()  # before the code, whose deletion would cascade to the pending row
+    session.delete(code)
+    audit.record(
+        session,
+        actor_id=user.id,
+        actor_role="parent",
+        action="account.create",
+        target_type="user",
+        target_id=user.id,
+    )
+    student = code.student_id
+    session.commit()
+    student_email = parents.email_of(session, student)
+    if student_email:
+        mail.notify(
+            get_settings(),
+            student_email,
+            "Eddy: a parent asked to see your progress",
+            "Someone used your link code to ask to see your progress in Eddy. Nothing is shared"
+            " until you accept. Accept or decline in Settings, under Parent access.\n",
+        )
+    return _adapter_user(user)
+
+
+class ParentSignupIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    email: Email
+    code: str = Field(min_length=4, max_length=32)
+    #: The parent confirms they are the student's parent or carer and an adult.
+    adult_confirmed: Literal[True]
+    visitor: Visitor
+
+
+@router.post(
+    "/parent-signups", status_code=status.HTTP_204_NO_CONTENT, operation_id="createParentSignup"
+)
+def create_parent_signup(
+    body: ParentSignupIn, _: WebAuth, session: DbSession, limiter: SignupLimiter
+) -> Response:
+    """A parent asks for a sign-up link with their child's code. Silent (204) for an address that
+    already has an account or a live sign-up: such a parent signs in and enters the code."""
+    _limit(limiter, body.visitor)
+    now = datetime.now(UTC)
+    code = session.scalar(
+        select(ParentLinkCode).where(
+            ParentLinkCode.code_hash == parents.hash_code(body.code),
+            ParentLinkCode.expires_at > now,
+        )
+    )
+    if code is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="That code does not work.")
+    email = normalise_email(body.email)
+    if session.scalar(select(User.id).where(func.lower(User.email) == email)) is not None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    existing = session.scalar(select(PendingSignup).where(func.lower(PendingSignup.email) == email))
+    if existing is not None and existing.expires_at > now:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    session.execute(delete(PendingSignup).where(func.lower(PendingSignup.email) == email))
+    session.add(
+        PendingSignup(
+            email=email, role="parent", link_code_id=code.id, expires_at=now + PENDING_FOR
+        )
+    )
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 def _active(session: Session, user_id: uuid.UUID) -> User | None:

@@ -126,17 +126,46 @@ class PendingSignup(Base):
     __table_args__ = (
         Index("uq_pending_signup_email_lower", func.lower(text("email")), unique=True),
         CheckConstraint("birth_month BETWEEN 1 AND 12", name="birth_month"),
+        # A student comes with an invite and an age check; a parent with a child's link code
+        # (ADR-0033).
+        CheckConstraint(
+            "(role = 'student' AND invite_code IS NOT NULL AND birth_year IS NOT NULL"
+            " AND birth_month IS NOT NULL)"
+            " OR (role = 'parent' AND link_code_id IS NOT NULL)",
+            name="role_needs",
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(String(320))
-    invite_code: Mapped[str] = mapped_column(
+    role: Mapped[str] = mapped_column(
+        checked_enum("pending_role", "student", "parent"), server_default="student"
+    )
+    invite_code: Mapped[str | None] = mapped_column(
         ForeignKey("invite_code.code", ondelete="CASCADE"), index=True
     )
-    birth_year: Mapped[int] = mapped_column(SmallInteger)
-    birth_month: Mapped[int] = mapped_column(SmallInteger)
+    link_code_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("parent_link_code.id", ondelete="CASCADE"), index=True
+    )
+    birth_year: Mapped[int | None] = mapped_column(SmallInteger)
+    birth_month: Mapped[int | None] = mapped_column(SmallInteger)
     created_at: Mapped[datetime] = created_at()
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class ParentLinkCode(Base):
+    """A code a student gives a parent, as a link or typed in (ADR-0033). Only its hash is kept;
+    it lasts 7 days and works once. A new code replaces the student's old one."""
+
+    __tablename__ = "parent_link_code"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = created_at()
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class InviteRedemption(Base):

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### M9: Parent dashboard and accounts (12 November 2026)
+
+Added:
+
+- Parent links (ADR-0033): a student makes a code to share as a link or read out; a parent who uses it (signing up with it, or signed in) asks to see progress; nothing is shared until the student accepts. Either side can end a link, and the other is told by email.
+- The parent dashboard: topics secured, time this week, recent lessons, reviews due and support contacts; never messages or answers. Every parent view is written to the audit log.
+- For students: "Your parent can see your progress" on every page while a link is active, a "what my parent sees" preview, and parent access in Settings.
+- Download my data, built on request as a readable page and a JSON file; the erasure job (`python -m eddy_api.jobs erase`), which deletes an account or, where a safety record must stay, keeps only an anonymous anchor.
+- Migration 0007 (parent link codes; parent sign-ups); privacy notice 0.2.0.
+- E2E: linking, accepting, the preview, unlinking with notices, download and erasure.
 ### M8: Student app (11 and 12 November 2026)
 
 Added:

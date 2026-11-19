@@ -9,26 +9,27 @@
 SAFETY concern not yet notified. The email carries ids, severity and time only, never
 the student's words: the reviewer reads those in Eddy.
 
-`python -m eddy_api.jobs all` runs both. They run as the runtime role and are safe to repeat.
+`python -m eddy_api.jobs erase` completes deletion requests (`eddy_api.privacy.erase`).
+
+`python -m eddy_api.jobs all` runs all three. They run as the runtime role and are safe to repeat.
 The retention of safeguarding events and the audit log waits for the DPIA (ADR-0024), so
 neither is purged here.
 """
 
 import argparse
 import logging
-import smtplib
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from email.message import EmailMessage
-from urllib.parse import urlparse
 
 from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session
 
+from eddy_api import mail, privacy
 from eddy_api.config import Settings, get_settings
 from eddy_api.db.models import (
     ConcernReport,
+    DataRequest,
     PendingSignup,
     SafeguardingEvent,
     TutorMessage,
@@ -92,26 +93,7 @@ def purge(session: Session, settings: Settings, now: datetime | None = None) -> 
 
 
 def _send(settings: Settings, subject: str, body: str) -> None:
-    url = urlparse(settings.smtp_url)
-    message = EmailMessage()
-    message["From"] = settings.mail_from
-    message["To"] = settings.safeguarding_alert_email
-    message["Subject"] = subject
-    message.set_content(body)
-    host = url.hostname or "127.0.0.1"
-    if url.scheme == "smtps":
-        # Implicit TLS (port 465).
-        with smtplib.SMTP_SSL(host, url.port or 465, timeout=10) as smtp:
-            if url.username:
-                smtp.login(url.username, url.password or "")
-            smtp.send_message(message)
-        return
-    with smtplib.SMTP(host, url.port or 25, timeout=10) as smtp:
-        if url.username:
-            # Credentials only ever travel over TLS.
-            smtp.starttls()
-            smtp.login(url.username, url.password or "")
-        smtp.send_message(message)
+    mail.send(settings, settings.safeguarding_alert_email, subject, body)
 
 
 def alerts(session: Session, settings: Settings) -> int:
@@ -153,17 +135,67 @@ def alerts(session: Session, settings: Settings) -> int:
     return sent
 
 
+def erasures(session: Session, now: datetime | None = None) -> int:
+    """Completes deletion requests (SPEC.md 4.5: within 30 days). One with a safety record
+    waiting for review stays IN_PROGRESS until it is reviewed; one that fails is logged and the
+    rest carry on. A completed request is kept, without its link to the person."""
+    now = now or datetime.now(UTC)
+    done = 0
+    ids = list(
+        session.scalars(
+            select(DataRequest.id).where(
+                DataRequest.kind == "DELETE",
+                DataRequest.status.in_(("RECEIVED", "IN_PROGRESS")),
+            )
+        )
+    )
+    for request_id in ids:
+        request = session.scalar(
+            select(DataRequest)
+            .where(
+                DataRequest.id == request_id,
+                DataRequest.status.in_(("RECEIVED", "IN_PROGRESS")),
+            )
+            .with_for_update(skip_locked=True)
+        )
+        if request is None:
+            continue  # another run has it
+        user_id = request.user_id
+        try:
+            if user_id is not None:
+                privacy.erase(session, user_id)
+        except privacy.AwaitingReviewError:
+            session.rollback()
+            held = session.get(DataRequest, request_id)
+            if held is not None:
+                held.status = "IN_PROGRESS"
+                session.commit()
+            continue
+        except Exception:
+            session.rollback()
+            logger.exception("Erasure failed for data request %s", request_id)
+            continue
+        request.status = "COMPLETED"
+        request.completed_at = now
+        session.commit()
+        done += 1
+    return done
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m eddy_api.jobs", description=__doc__)
-    parser.add_argument("job", choices=["purge", "alerts", "all"])
+    parser.add_argument("job", choices=["purge", "alerts", "erase", "all"])
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     settings = get_settings()
     with session_factory()() as session:
         if args.job in ("purge", "all"):
             print(purge(session, settings))
+        # Alerts first: the safeguarding lead hears of a concern before anything is erased.
         if args.job in ("alerts", "all"):
             print(f"alerts sent: {alerts(session, settings)}")
+        if args.job in ("erase", "all"):
+            print(f"erasures completed: {erasures(session)}")
     return 0
 
 

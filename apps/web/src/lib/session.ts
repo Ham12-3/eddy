@@ -76,10 +76,30 @@ export async function requireStudent(options: { onboarding?: boolean } = {}): Pr
   api: ApiClient;
 }> {
   const current = await currentStudent();
-  if (!current) redirect("/sign-in");
+  if (!current) {
+    const user = await currentUser();
+    redirect(user?.role === "parent" ? "/parent" : "/sign-in");
+  }
   if (!options.onboarding) {
     const step = onboardingStep(current.me);
     if (step) redirect(step);
   }
   return { ...current, api: await studentApi(current.user) };
+}
+
+/** For a parent's pages (ADR-0033): anyone else is sent to sign in, or to their own pages. */
+export async function requireParent(): Promise<{ user: SignedIn; api: ApiClient }> {
+  const user = await currentUser();
+  if (!user) redirect("/sign-in");
+  if (user.role !== "parent") redirect("/welcome");
+  return { user, api: await apiClientFor({ subject: user.id, role: "parent" }) };
+}
+
+/** Who is signed in, for the header: never an error on a public page. */
+export async function signedInRole(): Promise<string | null> {
+  try {
+    return (await currentUser())?.role ?? null;
+  } catch {
+    return null;
+  }
 }

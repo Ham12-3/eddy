@@ -7,7 +7,7 @@ import { FormError, initialFormState, SubmitButton } from "@/components/forms";
 import { RadioGroup } from "@/components/RadioGroup";
 import type { Preferences } from "@/lib/session";
 
-import { deleteAccount, requestExport, savePreferences } from "./actions";
+import { deleteAccount, savePreferences } from "./actions";
 
 export function PreferencesForm({ preferences }: { preferences: Preferences }) {
   const [state, action] = useActionState(savePreferences, initialFormState);
@@ -65,28 +65,6 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
           {state.fields?.saved ?? ""}
         </p>
       </div>
-    </form>
-  );
-}
-
-export function ExportForm({ pending }: { pending: boolean }) {
-  const [state, action] = useActionState(requestExport, initialFormState);
-  return (
-    <form action={action} className="flex flex-col gap-3">
-      <FormError state={state} />
-      <p className="m-0">
-        {pending
-          ? "Your download is being prepared. It will be ready within 30 days, usually much sooner."
-          : "Get a copy of everything Eddy holds about you, as a file and a readable page."}
-      </p>
-      {!pending ? (
-        <div>
-          <SubmitButton variant="secondary">Download my data</SubmitButton>
-        </div>
-      ) : null}
-      <p role="status" className="m-0 text-ink-muted">
-        {state.fields?.saved ?? ""}
-      </p>
     </form>
   );
 }

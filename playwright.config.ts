@@ -49,6 +49,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
+  // Sign-up steps send email and the lesson starts the tutor: with nine browsers at once they
+  // can take longer than the 5-second default.
+  expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
   use: {
     // localhost, not 127.0.0.1: Next.js reports 127.0.0.1 as localhost, so Auth.js would
