@@ -1,0 +1,22 @@
+# scene-check on Fly's private network only: no public address (ADR-0035, docs/deploy.md).
+# Deploy from the repository root:
+#   fly deploy . --config deploy/fly/scene-check.toml --dockerfile deploy/scene-check.Dockerfile
+app = "eddy-staging-scenes"
+primary_region = "lhr"
+
+# No [http_service]: the API reaches it at http://eddy-staging-scenes.internal:8320.
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8320
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+# Chromium draws keyframes only for Tier L scenes, which stay off until Claude is enabled; raise to
+# 2gb then if the keyframe checks run short of memory.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

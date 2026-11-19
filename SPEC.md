@@ -160,8 +160,8 @@ All accounts get Children's Code defaults regardless of age. Nothing in the prod
 
  Data: PostgreSQL 16, Redis 7, S3, SQS
  Local: docker compose (postgres, redis, S3Mock for S3, ElasticMQ for SQS (ADR-0016), mailpit)
- Target hosting (only with approval): AWS eu-west-2 via CDK (ADR-0014), or as proposed in
- ADR-0035, Vercel (web), Supabase (Postgres) and Fly.io (the rest), all in London
+ Hosting (ADR-0035, deploys only with approval): Vercel (web), Supabase (Postgres) and
+ Fly.io (the rest), all in London; runbook docs/deploy.md
 ```
 
 ### 5.1 Components

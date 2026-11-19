@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Deployment setup (19 November 2026)
+
+Added:
+
+- Container images for the API and worker, maths-core and scene-check (`deploy/*.Dockerfile`), Fly.io configuration in London for each service and Redis (`deploy/fly/`), and the web app's functions pinned to London (`apps/web/vercel.json`).
+- `deploy/supabase/lockdown.sql`, which keeps Supabase's public roles away from Eddy's tables, and the runbook `docs/deploy.md`.
+- ADR-0035 (Vercel, Supabase and Fly.io) accepted.
+
 ### More Tier D scenes and the Higher tier plan (13 and 14 November 2026)
 
 Added:

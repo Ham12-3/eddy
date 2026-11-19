@@ -1,0 +1,38 @@
+# The API and the worker: one Fly app, one image, two process groups (ADR-0035, docs/deploy.md).
+# Deploy from the repository root:
+#   fly deploy . --config deploy/fly/api.toml --dockerfile deploy/api.Dockerfile
+# Fly app names are global: if this one is taken, change it here and in docs/deploy.md.
+app = "eddy-staging-api"
+primary_region = "lhr"
+
+[env]
+  EDDY_ENVIRONMENT = "production"
+  # Fly's private network: neither service has a public address.
+  MATHS_CORE_BASE_URL = "http://eddy-staging-maths.internal:8310"
+  SCENE_CHECK_BASE_URL = "http://eddy-staging-scenes.internal:8320"
+
+[processes]
+  app = "uvicorn eddy_api.main:app --host 0.0.0.0 --port 8080"
+  # Scene jobs, and the privacy and safeguarding jobs every 15 minutes (ADR-0034).
+  worker = "python -m eddy_api.worker"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Always on: the web app calls it on every page, and a cold start would show.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  processes = ["app", "worker"]
