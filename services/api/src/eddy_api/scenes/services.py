@@ -1,4 +1,4 @@
-"""Clients for the two services a Tier L scene needs (ADR-0030).
+"""Clients for the scene engine and maths-core (ADR-0030; the tutor uses maths-core too, M7).
 
 - workers/scene-check: the scene engine (TypeScript). Context, assembly with every engine check,
   and keyframes for the background critique.
@@ -118,6 +118,31 @@ class MathsCoreClient:
             "labels": labels,
         }
         return _post(self.client, "/v1/scenes/verify", body, FAST_TIMEOUT_S)
+
+    def templates(self) -> list[dict[str, Any]]:
+        try:
+            response = self.client.get("/v1/templates", timeout=FAST_TIMEOUT_S)
+        except httpx.HTTPError as error:
+            raise SceneServiceError(f"/v1/templates: {type(error).__name__}") from error
+        data = _json(response)
+        if response.status_code != 200 or not isinstance(data, list):
+            raise SceneServiceError("/v1/templates: bad response", response.status_code)
+        return data
+
+    def item(self, template_id: str, seed: int) -> dict[str, Any]:
+        """A generated item, answer included: services/api keeps it server-side."""
+        body = {"template_id": template_id, "seed": seed}
+        return _post(self.client, "/v1/items", body, FAST_TIMEOUT_S)
+
+    def check_answer(self, template_id: str, seed: int, response: JsonValue) -> dict[str, Any]:
+        body = {"template_id": template_id, "seed": seed, "response": response}
+        return _post(self.client, "/v1/answers/check", body, FAST_TIMEOUT_S)
+
+    def verify_claims(
+        self, claims: list[dict[str, Any]], template_id: str, seed: int
+    ) -> dict[str, Any]:
+        body = {"claims": claims, "item": {"template_id": template_id, "seed": seed}}
+        return _post(self.client, "/v1/claims/verify", body, FAST_TIMEOUT_S)
 
     def equivalent(self, left: JsonValue, right: JsonValue) -> bool:
         body = {"left": left, "right": right}

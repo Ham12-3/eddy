@@ -138,9 +138,14 @@ class LlmClient:
         messages: list[dict[str, Any]],
         schema: dict[str, Any],
         max_tokens: int = DEFAULT_MAX_TOKENS,
+        route_name: str | None = None,
     ) -> dict[str, Any]:
-        """The exact keyword arguments sent to the Messages API (tests read them)."""
-        route = self._config.route(prompt.route)
+        """The exact keyword arguments sent to the Messages API (tests read them).
+
+        `route_name` overrides the prompt's own route (the eval judge's calibration sample runs
+        the same prompt on a stronger model).
+        """
+        route = self._config.route(route_name or prompt.route)
         system: list[dict[str, Any]] = [{"type": "text", "text": prompt.text}]
         system += [{"type": "text", "text": block} for block in context]
         system[-1]["cache_control"] = {"type": "ephemeral"}
@@ -169,9 +174,15 @@ class LlmClient:
         schema: dict[str, Any],
         student_id: uuid.UUID | None = None,
         max_tokens: int = DEFAULT_MAX_TOKENS,
+        route_name: str | None = None,
     ) -> StructuredResult:
         kwargs = self.request(
-            prompt=prompt, context=context, messages=messages, schema=schema, max_tokens=max_tokens
+            prompt=prompt,
+            context=context,
+            messages=messages,
+            schema=schema,
+            max_tokens=max_tokens,
+            route_name=route_name,
         )
         start = time.perf_counter()
         try:
@@ -190,7 +201,7 @@ class LlmClient:
 
         usage = _usage(response)
         record = CallRecord(
-            route=prompt.route,
+            route=route_name or prompt.route,
             model=kwargs["model"],
             prompt_id=prompt.id,
             prompt_version=prompt.version,

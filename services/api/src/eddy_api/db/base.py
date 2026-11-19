@@ -37,3 +37,19 @@ def uuid_pk() -> Mapped[uuid.UUID]:
 
 def created_at() -> Mapped[datetime]:
     return mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+#: LangGraph's checkpoint tables (migration 0004): created by Alembic, used through LangGraph's
+#: own checkpointer, so they have no models here and the model comparison leaves them out.
+CHECKPOINT_TABLES = frozenset(
+    {"checkpoints", "checkpoint_blobs", "checkpoint_writes", "checkpoint_migrations"}
+)
+
+
+def include_object(
+    obj: object, name: str | None, type_: str, reflected: bool, compare_to: object
+) -> bool:
+    """Alembic's filter: skip the checkpoint tables and their indexes."""
+    table = getattr(obj, "table", None)
+    table_name = name if type_ == "table" else getattr(table, "name", None)
+    return table_name not in CHECKPOINT_TABLES

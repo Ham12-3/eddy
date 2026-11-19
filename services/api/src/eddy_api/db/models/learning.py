@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -75,6 +76,11 @@ class MasteryState(Base):
     p_slip: Mapped[float] = mapped_column(Float)
     evidence_count: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(checked_enum("mastery_status", *MASTERY_STATUSES))
+    # The learner model's full state for the node (eddy_api.learner.NodeMastery), which the
+    # columns above summarise.
+    model: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -96,6 +102,10 @@ class MisconceptionState(Base):
         ARRAY(UUID(as_uuid=True)), default=list
     )
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # The misconception's full track (eddy_api.learner.misconceptions.Track).
+    track: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
 
 
 class ReviewCard(Base):

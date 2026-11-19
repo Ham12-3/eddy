@@ -235,6 +235,7 @@ The brief's tables (docs/brief.md, Deliverable B section 3) are adopted as writt
 ### 6.7 Retention
 
 - Raw `tutor_message` content: deleted after 90 days (configurable). Anonymised aggregates kept.
+- LangGraph checkpoints (the lesson's position, ids, items and validated answers, never free text, ADR-0031): deleted with the tutor session by a trigger, and after 90 days (an M8 job).
 - `llm_call`: metadata kept 12 months, then aggregated.
 - Scene specs (Tier D and Tier L) hold no personal data: no student text, and the wrong answer is the one the misconception predicts for the item. They are kept like curriculum content. Which student watched which scene (`scene_instance`) is deleted with the account.
 - Keyframes are held in memory for the critique and never stored. Narration audio is spoken on the device and never stored (ADR-0029).
@@ -256,7 +257,7 @@ MARK (wrong)   -> DIAGNOSE -> EXPLAIN (scene) -> FOLLOW_UP (Socratic) -> RECHECK
 Interrupts from any state: HELP (hint ladder), OFF_TOPIC (redirect), SAFEGUARDING (ends tutoring), PAUSE
 ```
 
-Implemented as a LangGraph graph with a Postgres checkpointer, so a session survives refreshes and device switches.
+Implemented as a LangGraph graph with a Postgres checkpointer, so a session survives refreshes and device switches. The checkpoint holds the lesson's position, ids and validated answers, never free text; it runs inside each request's transaction, and its tables come from Alembic (ADR-0031).
 
 Rules (from the brief, made precise):
 
@@ -428,7 +429,7 @@ TutorMessage {
 6. **Output checks:** maths verification (Loop 3), answer-leak check, word limit, UK spelling and no-dash lint, Haiku 4.5 output classifier for tone and safety.
 7. **On failure:** regenerate (at most 2 times), then a templated hint at the same ladder level.
 
-Tutor messages are not streamed: they are short, and they must pass the checks before the student sees them. Target p95 for a tutor turn: under 3.5 s, with a visible "Eddy is writing" state.
+Tutor messages are not streamed: they are short, and they must pass the checks before the student sees them. Target p95 for a tutor turn: under 12 s, with a visible "Eddy is writing" state (it was 3.5 s; changed on 10 November 2026 because the input check, the message and the output check are three model calls in sequence, about 5.6 s even when the first draft passes; measured at 6.1 s at p50 and 11.0 s at p95).
 
 ---
 
@@ -504,7 +505,7 @@ The brief's section 7 (Deliverable B) is adopted in full. Specifics that follow 
 |---|---|
 | Web performance | LCP under 2.5 s on a mid-range Android phone over 4G; learning route JavaScript budget set in M8 |
 | Scene start | Under 300 ms on cache hit or Tier D |
-| Tutor turn | p95 under 3.5 s end to end |
+| Tutor turn | p95 under 12 s end to end, with an "Eddy is writing" state (section 9.2) |
 | Maths verification | p95 under 150 ms |
 | Accessibility | WCAG 2.2 AA; axe zero serious or critical on every page; full keyboard operation; 44 x 44 px targets |
 | Security | OWASP ASVS Level 2; strict CSP; rate limits; prompt-injection test suite; secrets in AWS Secrets Manager; dependency scanning in CI |

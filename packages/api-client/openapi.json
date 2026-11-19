@@ -139,57 +139,119 @@
         "title": "HelloResponse",
         "type": "object"
       },
-      "JsonValue": {
-        "anyOf": [
-          {
+      "InputIn": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "continue",
+              "answer",
+              "confidence",
+              "message",
+              "help",
+              "watched",
+              "pause"
+            ],
+            "title": "Kind",
             "type": "string"
           },
-          {
-            "$ref": "#/components/schemas/JsonValue1"
+          "mathjson": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JsonValue-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          {
-            "type": "number"
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           },
-          {
-            "type": "boolean"
-          },
-          {
-            "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array"
-          },
-          {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "object"
-          },
-          {
-            "type": "null"
+          "value": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
           }
+        },
+        "required": [
+          "kind"
         ],
-        "title": "JsonValue"
+        "title": "InputIn",
+        "type": "object"
       },
+      "JsonValue-Input": {},
       "JsonValue1": {
         "maximum": 9007199254740991.0,
         "minimum": -9007199254740991.0,
         "title": "JsonValue1",
         "type": "integer"
+      },
+      "LessonOut": {
+        "properties": {
+          "ended": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended"
+          },
+          "outbox": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/pydantic__types__JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Outbox",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "waiting_for": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Waiting For",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "state",
+          "ended",
+          "waiting_for",
+          "outbox"
+        ],
+        "title": "LessonOut",
+        "type": "object"
       },
       "MisconceptionOut": {
         "properties": {
@@ -591,7 +653,7 @@
           "correctAnswer": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/JsonValue"
+                "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
               },
               {
                 "type": "null"
@@ -608,7 +670,7 @@
             "additionalProperties": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/JsonValue"
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
                 },
                 {
                   "type": "null"
@@ -626,7 +688,7 @@
           "studentAnswer": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/JsonValue"
+                "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
               },
               {
                 "type": "null"
@@ -721,6 +783,37 @@
           "valid_to"
         ],
         "title": "Spec",
+        "type": "object"
+      },
+      "StartIn": {
+        "properties": {
+          "node": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "pattern": "^[A-Z]{1,3}\\d{1,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node"
+          },
+          "student_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id"
+          }
+        },
+        "title": "StartIn",
         "type": "object"
       },
       "TopicOut": {
@@ -870,7 +963,54 @@
         ],
         "title": "VariantOut",
         "type": "object"
-      }
+      },
+      "eddy_api__scenes__spec__JsonValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/JsonValue1"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/eddy_api__scenes__spec__JsonValue"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "JsonValue"
+      },
+      "pydantic__types__JsonValue": {}
     },
     "securitySchemes": {
       "HTTPBearer": {
@@ -1217,6 +1357,158 @@
         "summary": "Scene Variant",
         "tags": [
           "scenes"
+        ]
+      }
+    },
+    "/v1/tutor/sessions": {
+      "post": {
+        "operationId": "startTutorSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start",
+        "tags": [
+          "tutor"
+        ]
+      }
+    },
+    "/v1/tutor/sessions/{session_id}": {
+      "get": {
+        "operationId": "getTutorSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read",
+        "tags": [
+          "tutor"
+        ]
+      }
+    },
+    "/v1/tutor/sessions/{session_id}/input": {
+      "post": {
+        "operationId": "sendTutorInput",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InputIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send",
+        "tags": [
+          "tutor"
         ]
       }
     }

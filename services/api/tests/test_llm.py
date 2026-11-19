@@ -226,6 +226,12 @@ def test_tier_l_needs_a_key_and_zdr_or_a_local_database(
     from eddy_api.config import Settings, tier_l_enabled
 
     settings = Settings(
-        database_url=SecretStr(url), anthropic_zdr_confirmed=zdr, anthropic_api_key=SecretStr(key)
+        database_url=SecretStr(url),
+        anthropic_zdr_confirmed=zdr,
+        anthropic_api_key=SecretStr(key),
+        eddy_environment="development",
     )
     assert tier_l_enabled(settings) is enabled
+    # Outside development and test, only confirmed ZDR opens it.
+    production = settings.model_copy(update={"eddy_environment": "production"})
+    assert tier_l_enabled(production) is (enabled and zdr)

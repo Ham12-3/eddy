@@ -12,7 +12,7 @@ from sqlalchemy import Connection, create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
 import eddy_api.db.models  # noqa: F401  (registers every table on Base.metadata)
-from eddy_api.db.base import Base
+from eddy_api.db.base import Base, include_object
 
 
 def test_upgrade_downgrade_upgrade(
@@ -36,7 +36,9 @@ def test_the_models_match_the_migrations(migrated_database: str) -> None:
     engine = create_engine(migrated_database)
     try:
         with engine.connect() as connection:
-            context = MigrationContext.configure(connection, opts={"compare_type": True})
+            context = MigrationContext.configure(
+                connection, opts={"compare_type": True, "include_object": include_object}
+            )
             assert compare_metadata(context, Base.metadata) == []
     finally:
         engine.dispose()

@@ -257,21 +257,21 @@ Depends on: M4, M6. Estimate: 2 weeks.
 
 Deliverables:
 
-- [ ] LangGraph graph for Loop 1 with the Postgres checkpointer and every state and interrupt in SPEC.md section 7.1.
-- [ ] `prompts/tutor.md` written from the brief's tutor behaviour spec; the hint ladder; structured `TutorMessage`.
-- [ ] Safety pipeline: deterministic tripwires, Haiku 4.5 input and output classifiers, answer-leak check, maths verification, regeneration and templated fallback.
-- [ ] Safeguarding flow with the static approved script, `safeguarding_event`, and a draft runbook (lands in `/compliance` with your go-ahead).
-- [ ] Redis rate limits.
-- [ ] Pedagogy eval: 50 scripted conversations, Haiku 4.5 judge, Opus 4.8 calibration sample.
-- [ ] Loop 4 scaffolding: English marking output schemas and QWK, exact and adjacent agreement metrics with tests.
+- [x] LangGraph graph for Loop 1 with the Postgres checkpointer and every state and interrupt in SPEC.md section 7.1. (The checkpointer runs inside each request's transaction; tested on the real database.)
+- [x] `prompts/tutor.md` written from the brief's tutor behaviour spec; the hint ladder; structured `TutorMessage`. (Version 1.6.0, tuned on the live eval.)
+- [x] Safety pipeline: deterministic tripwires, Haiku 4.5 input and output classifiers, answer-leak check, maths verification, regeneration and templated fallback. (Tested with a stand-in for Claude, and run live in the pedagogy eval.)
+- [ ] Safeguarding flow with the static approved script, `safeguarding_event`, and a draft runbook (lands in `/compliance` with your go-ahead). (The flow and events are built and evaluated; the runbook draft waits for your go-ahead, and the script and tripwires for Eddy's safeguarding lead.)
+- [x] Redis rate limits. (With daily cost guards for the tutor's Claude calls.)
+- [x] Pedagogy eval: 50 scripted conversations, Haiku 4.5 judge, Opus 4.8 calibration sample. (72 conversations, run live.)
+- [x] Loop 4 scaffolding: English marking output schemas and QWK, exact and adjacent agreement metrics with tests.
 
 Definition of done:
 
-- [ ] Pedagogy suite meets `evals/thresholds.yaml`.
-- [ ] Zero answer leaks across every "demand the answer" scenario.
-- [ ] Every distress scenario produces the approved response and a `safeguarding_event`.
-- [ ] Prompt-injection scenarios do not change the tutor's behaviour.
-- [ ] Measured tutor turn p95 and cost per session reported.
+- [x] Pedagogy suite meets `evals/thresholds.yaml`. (The final run meets every threshold: turn p95 is 11.0 s against the 12 s target you accepted on 10 November 2026, which was 3.5 s. The judge's calibration, kappa 0.843, is from the run before, with the same judge prompt and models.)
+- [x] Zero answer leaks across every "demand the answer" scenario. (And in all 72 conversations, by the independent check and the judge.)
+- [x] Every distress scenario produces the approved response and a `safeguarding_event`. (14 of 14, each screened 3 times. The script is still a draft until Eddy's safeguarding lead approves it.)
+- [x] Prompt-injection scenarios do not change the tutor's behaviour. (7 of 7.)
+- [x] Measured tutor turn p95 and cost per session reported. (11.0 s at p95 and 6.1 s at p50 per student input; about £0.33 a session.)
 
 ---
 
@@ -283,7 +283,7 @@ Deliverables:
 
 - [ ] Auth.js email magic links (Mailpit locally), invite codes, the age gate, child-friendly and full privacy notices with versioned acknowledgement.
 - [ ] Before any real sign-up (ADR-0024): a migrator role and a runtime role with SELECT and INSERT only on `audit_log`, tested; the age check before any email is stored, and expired verification tokens purged; the custom Auth.js adapter (ADR-0023) storing session token hashes; retention for `audit_log` and `safeguarding_event` from the DPIA.
-- [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map.
+- [ ] Onboarding, diagnostic, learning session (question card, MathField, confidence, feedback, scene player, tutor panel), review queue, progress map. The tutor panel shows "Eddy is writing" while a reply is checked (up to 12 s at p95).
 - [ ] Settings: accessibility preferences, download my data, delete my account, report a concern.
 - [ ] Designed empty, error and loading states for every screen.
 
@@ -321,6 +321,7 @@ Deliverables:
 
 - [ ] Rate limit review; OWASP ASVS Level 2 checklist; an automated baseline security scan; a prompt-injection red-team pass.
 - [ ] k6 load test against a production-like local stack.
+- [ ] Tutor latency revisited with the pedagogy eval: a faster model for `tutor.turn` (ADR-0005) or two drafts written at once.
 - [ ] Cost dashboard from `llm_call`, narration and infrastructure estimates.
 - [ ] DPIA and DfE standards matrix complete; Children's Code checklist complete; governance roles; runbooks for incidents, safeguarding and data breaches.
 - [ ] Staging deployment plan with CDK. Deploy only with your explicit go-ahead.
@@ -728,5 +729,116 @@ Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Pl
 - The prompt prefix may be too short for Opus 4.8's prompt cache; the eval reports cached tokens.
 - Precompute has not run against Claude, and the critique has run on only 2 variants.
 - The cold latency target was moved from 8 s to 20 s with your agreement. A faster route for `scene.generate` (low effort, or a smaller model, ADR-0005) can be tried later with the same eval.
+
+**CI**: not run yet for this branch.
+
+### M7: Tutor (9 and 10 November 2026)
+
+Environment: Windows 11, Node 22.15, pnpm 10.6.5, uv 0.11.14, Python 3.12.10, Playwright 1.64.1; langgraph 1.2.20, langgraph-checkpoint-postgres 3.2.0 and redis 8.1.0 added to services/api. Branch `m7-tutor`; no PR yet.
+
+**Status: done, except the safeguarding runbook.** The tutor meets every pedagogy threshold. Turn latency is 11.0 s at p95 after speed work that brought it down from 14.8 s; you accepted it on 10 November 2026, because the student sees "Eddy is writing", and the target is now 12 s (it was 3.5 s). The safeguarding runbook waits for your go-ahead to enter `/compliance`, and the script and tripwires wait for Eddy's named safeguarding lead; until then the tutor starts only in development and test.
+
+**What landed** (ADR-0031):
+
+- **Loop 1 as a LangGraph graph.** The session plan, then the worked example, faded step, independent practice, confidence before marking, every wrong answer diagnosed (a scene, or a Socratic question), the reply, a re-check from a template that can show the same slip, then the learner model. The checkpointer runs inside each request's transaction; free text never enters a checkpoint, and checkpoints are deleted with their lesson (migrations 0004 and 0005).
+- **The safety pipeline:**
+  - tripwires that see through spacing, invisible characters and look-alike letters;
+  - the Haiku 4.5 input classifier with the last two messages;
+  - Opus 4.8 messages checked for kind and level, length, tone, UK English, one question, confirming a guess, links and contact details, untraced numbers, answer leaks and maths truth (maths-core);
+  - the Haiku 4.5 output classifier;
+  - two regenerations, then templates.
+
+  It fails closed throughout.
+- **Safeguarding.** The static script and an event committed on its own connection; the script again for later messages. Draft script and tripwire list. A runbook draft is ready, not yet in `/compliance`.
+- **The routes:** one input at a time per lesson, only the inputs the lesson is waiting for, Redis rate limits (never for a caught disclosure), daily cost guards, and `EDDY_ENVIRONMENT`.
+- **The pedagogy suite** (72 conversations) and the English marking scaffolding (schema, QWK, exact and adjacent agreement).
+
+**Checks run (final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Exit 0. Lint, Prettier, dash check (383 files), cliché lint (165 files), typecheck, Vitest (scenes 207, ui 99, schemas 12, scene-check 10, web 9, infra 6, api-client 1), 186 hook and lint-rule tests, ruff, strict mypy (106 files), 904 pytest tests (94 for the tutor, on the real database). |
+| `pnpm e2e` | 234 passed (8.2 minutes), axe with zero serious or critical findings at 375, 768 and 1280 px in light, dark and reduced motion. After the admin card fix below, the scenes spec again: 135 passed. |
+| `packages/ui` alone | The Stop hook's run twice hit vitest worker-start timeouts while the eval and Docker loaded the machine; on its own with one worker, 99 of 99 passed. |
+| `pnpm evals:tutor` (dry run) | 72 conversations, about £4.70 estimated. |
+| The final live report summarised again against the 12 s target (no new calls) | Every threshold passes. |
+
+**Live eval (`pnpm evals:tutor -- --live`, 9 November 2026)**
+
+| Run | Prompts | Result | Cost |
+|---|---|---|---|
+| Smoke, 3 conversations | tutor 1.1.0 | The judge repeated a criterion (schema now one field each); many regenerations | £0.18 |
+| Smoke, 3 conversations | tutor 1.2.0 | First pass 11%: maths not written as JSON, steps that cannot be checked | £0.16 |
+| Full, 72 conversations | tutor 1.3.0 | 3 judge errors (reasons over 300 characters); the judge found 3 lessons giving too much away; p95 14.6 s | £2.39 |
+| **Full, 72 conversations (kept)** | **tutor 1.4.0, judge 1.2.0** | **No answer leaks (independent check and judge); distress 14 of 14, each screened 3 times, 14 events written; no false alarms; injections 7 of 7 held; every rubric mean 3.5 or above, `no_answer_given` 4 in every conversation; judge calibration kappa 0.843; first pass 56%; p95 14.8 s; 1 error, a dropped connection to maths-core** | **£2.43** |
+| Targeted, 16 conversations (stuck-06, off topic, benign) | safety-output 1.2.0 | All pass, no errors; "are you a real person" now answered "I am an AI tutor" | £0.39 |
+
+- **Speed work (10 November 2026, at your request):**
+
+  | Change | Effect |
+  |---|---|
+  | MathJSON as real JSON, nested four deep (it was a string of JSON, which the model cut off after "[" in 28 of 167 first drafts) | The largest single cause of retries gone |
+  | Kind and hint level corrected in code, not retried | 7 retries a run gone |
+  | The number trace accepts sign forms of given numbers, the student's own words, counts of listed values and 100 with percentages | Fewer false retries |
+  | The output check told that a parallel worked example shows the method by design (safety-output 1.3.0); no Median operator (tutor 1.6.0) | Fewer false retries |
+  | Opus 4.8 with thinking off, measured on 8 turns each way | Not kept: no faster (3.2 s a call at p50 against 2.9 s), as at low effort it barely thinks |
+
+  | Run (72 conversations) | First pass | p50 / p95 per input | Fallbacks | Cost |
+  |---|---|---|---|---|
+  | Before (9 November, kept) | 56% | not recorded / 14.8 s | 13 | £2.43 |
+  | **After (10 November)** | **78%** | **6.1 s / 11.0 s** | **6** | **£1.85**, Opus calibration skipped |
+
+  The final run passes every other threshold: no answer leaks, distress 14 of 14 (each screened 3 times), injections 7 of 7, no false alarms, every rubric mean 3.45 or above, `no_answer_given` 4 in every conversation. The judge's calibration (kappa 0.843) comes from the run before.
+- **Total spent:** about £7.60 of the £8 you approved (£5.55 on 9 November, £0.19 on the thinking measurement and £1.85 on the final run).
+- **Where the time goes** (the final run, per call): Opus 4.8 at low effort 2.9 s at p50 and 4.7 s at p95; the input classifier 1.3 s; the output classifier 1.4 s. A message that passes first time takes about 5.6 s, and 22% of messages need at least one regeneration, so p95 per student input is 11.0 s.
+- **Cost:** 2.6p a conversation; a lesson item (judging included) 5.6p, so about £0.33 for a six-item session, near SPEC.md's estimate of 25 to 35 US cents. The tutor's prompts are below the minimum cacheable size, so caching does not help.
+- **What the runs found and fixed:**
+  - the output classifier refused "I am an AI tutor", reading "no claim to be human" as "never say you are an AI" (safety-output 1.2.0);
+  - faded steps and replies that laid out the whole method (tutor 1.4.0 and the step instructions);
+  - two eval faults, counting harmless lead-in messages as missed disclosures and judging after-marking explanations as leaks.
+- **Reports:** `e2e-artifacts/evals/` (not committed).
+
+**Screenshots**: looked at the phone light, laptop dark and tablet reduced-motion pages. The admin scenes gallery let long template ids run out of their cards at tablet width (from M5); the codes now wrap inside the card, checked again at 768 and 375 px.
+
+**Fresh-context reviews**: `reviewer`, `security-reviewer` and `pedagogy-critic`. Fixed:
+
+- **High, across the reviews:**
+  - student text in the checkpoint;
+  - the checkpointer outside the request's transaction (a failed turn lost attempts or left a lesson stuck);
+  - classifier errors, and messages at the confidence step, skipping safeguarding;
+  - scenes narrating the student's raw answer;
+  - easily bypassed tripwires with common false alarms;
+  - a yes or no to a guess counted as safe;
+  - wrong answers with no explanation, and messages promising an animation that never came;
+  - parallel problems from other templates;
+  - an eval that never ran the core loop.
+- **Medium:**
+  - free text sent to Opus through the answer field;
+  - flagged messages resent in the history;
+  - unverified numbers in tutor text;
+  - no cost ceiling, and no lock per lesson;
+  - LangSmith tracing;
+  - the ZDR gate trusting any local-looking database;
+  - every message climbing the hint ladder, and answer demands not counted as aided;
+  - level 4 hints checked against the wrong problem;
+  - templated fallbacks that taught badly;
+  - invented praise;
+  - choice questions;
+  - unreadable answers marked wrong;
+  - structure-rule misconceptions never closing;
+  - the M4 planner, prerequisite diagnostic and propagation not wired.
+- **Low:** message order, rate-limit memory, excerpts, the eval's database guard, retried 400s, and an exam-board-style fixture name.
+
+**Recorded, not fixed in M7** (ADR-0031):
+
+- The turn latency target was moved from 3.5 s to 12 s at p95 with your agreement; students see "Eddy is writing" (M8). A faster model for `tutor.turn` (ADR-0005) or two drafts written at once can be tried later with the same eval (M10).
+- Cost per session, about £0.33, is a little over SPEC.md's estimate of 25 to 35 US cents; the M10 cost dashboard tracks it.
+- Elo item selection (needs a student ability table and real data, M8).
+- A new scene variant on recurrence goes through the scenes route.
+- No confidence question on a re-check.
+- Alerts to the safeguarding lead and the 90-day purge of messages and checkpoints (M8 jobs).
+- Redacting personal details before Claude, pip-audit in CI, and a reading-age check on tutor text.
+- A tutor turn holds a database connection while Claude writes (bounded per process).
+- The per-lesson lock is not tested under real concurrency.
 
 **CI**: not run yet for this branch.
