@@ -1,0 +1,15 @@
+# Redis for the rate limits, on Fly's private network only, with a password (docs/deploy.md).
+# Nothing is saved to disk: losing the counters on a restart only resets the limits.
+#   fly deploy --config deploy/fly/redis.toml
+app = "eddy-staging-redis"
+primary_region = "lhr"
+
+[build]
+  image = "redis:7.4-alpine"
+
+[processes]
+  app = "sh -c 'exec redis-server --requirepass \"$REDIS_PASSWORD\" --bind \"* -::*\" --protected-mode no --save \"\" --appendonly no --maxmemory 100mb --maxmemory-policy allkeys-lru'"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

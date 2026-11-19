@@ -1,0 +1,18 @@
+# Images are built from the repository root (docs/deploy.md). Secrets never enter an image.
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.next
+.git
+.claude
+e2e-artifacts
+test-results
+playwright-report
+storybook-static
+compliance

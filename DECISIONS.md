@@ -517,7 +517,7 @@ Status: Accepted (12 November 2026, during M10)
   - The plan route's slow tail under concurrency is recorded, not fixed.
 ## ADR-0035: Hosting on Vercel, Supabase and Fly.io in London
 
-Status: Proposed (13 November 2026). It becomes Accepted when the product owner approves it and opens the accounts; until then nothing is created and the AWS plan (ADR-0014) stands.
+Status: Accepted (19 November 2026: the product owner chose Vercel, Supabase and Fly.io for staging and production, ahead of opening the accounts). It replaces ADR-0014's AWS plan. The runbook is `docs/deploy.md`; images and Fly configuration are in `deploy/`.
 
 - **Context:**
   - The brief chose AWS in eu-west-2 through CDK (ADR-0014). Nothing has been deployed. The product owner asked whether Vercel and Supabase could host Eddy instead.

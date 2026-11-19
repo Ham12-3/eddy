@@ -1,0 +1,20 @@
+# maths-core on Fly's private network only: no public address (ADR-0035, docs/deploy.md).
+# Deploy from the repository root:
+#   fly deploy . --config deploy/fly/maths-core.toml --dockerfile deploy/maths-core.Dockerfile
+app = "eddy-staging-maths"
+primary_region = "lhr"
+
+# No [http_service]: the API reaches it at http://eddy-staging-maths.internal:8310.
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8310
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

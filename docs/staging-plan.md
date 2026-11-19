@@ -4,8 +4,8 @@ Draft, 12 November 2026, revised 13 November 2026. Nothing here has been deploye
 
 There are two plans:
 
-- **Plan A (proposed, ADR-0035):** Vercel for the web app, Supabase for Postgres, and Fly.io for the API, worker, maths-core and scene-check. Everything runs in London.
-- **Plan B:** AWS in eu-west-2 through CDK (ADR-0014). It is the plan of record until ADR-0035 is accepted.
+- **Plan A (chosen, ADR-0035; runbook `docs/deploy.md`):** Vercel for the web app, Supabase for Postgres, and Fly.io for the API, worker, maths-core and scene-check. Everything runs in London.
+- **Plan B:** AWS in eu-west-2 through CDK (ADR-0014). Replaced by Plan A; kept for reference.
 
 ## What the code needs (both plans)
 
@@ -22,7 +22,7 @@ There are two plans:
 
 No S3 and no SQS are used by the code today; they exist only in `compose.yaml`.
 
-## Plan A: Vercel, Supabase and Fly.io (proposed)
+## Plan A: Vercel, Supabase and Fly.io (chosen)
 
 ### Accounts and settings
 
