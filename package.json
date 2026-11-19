@@ -55,5 +55,10 @@
     "prettier": "3.9.10",
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "nodemailer": "10.5.0"
+    }
   }
 }

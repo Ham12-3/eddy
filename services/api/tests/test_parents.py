@@ -296,3 +296,32 @@ def test_asking_to_delete_ends_parent_links_at_once(
     view = client.get(f"/v1/parent/children/{link}", headers=as_parent(parent))
     assert view.status_code == 404
     assert ("parent@example.test", "Eddy: a parent link has ended") in sent
+
+
+def test_a_parent_has_their_own_notice_download_and_deletion(
+    api: tuple[TestClient, Session, list[tuple[str, str]]],
+) -> None:
+    client, session, sent = api
+    student = a_student(client, session)
+    code = client.post("/v1/me/parent-links/code", headers=as_student(student)).json()["code"]
+    parent = a_parent(client, code)
+    link = client.get("/v1/parent/children", headers=as_parent(parent)).json()[0]["link_id"]
+    client.post(f"/v1/me/parent-links/{link}/accept", headers=as_student(student))
+
+    me = client.get("/v1/parent/me", headers=as_parent(parent)).json()
+    assert me["notice_version"] is None
+    acked = client.post("/v1/parent/notices", json={"version": "0.2.0"}, headers=as_parent(parent))
+    assert acked.json()["notice_version"] == "0.2.0"
+
+    data = client.get("/v1/parent/export", headers=as_parent(parent)).json()
+    assert data["account"]["email"] == "parent@example.test"
+    assert data["profile"] is None
+    assert len(data["parent_links"]) == 1
+
+    gone = client.post("/v1/parent/delete", json={"confirm": True}, headers=as_parent(parent))
+    assert gone.status_code == 200
+    assert ("sam@example.test", "Eddy: a parent link has ended") in sent
+    assert client.get("/v1/me", headers=as_student(student)).json()["parent_visible"] is False
+    assert client.get("/v1/parent/me", headers=as_parent(parent)).status_code == 401
+    assert jobs.erasures(session) == 1
+    assert session.get(User, parent) is None

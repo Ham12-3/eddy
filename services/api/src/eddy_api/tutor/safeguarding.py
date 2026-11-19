@@ -8,8 +8,9 @@ safeguarding lead. Parents are not told automatically, because a parent may be t
 The phrase list (config/safeguarding/tripwires.yaml) and the script below are DRAFTS. They must be
 approved by Eddy's named safeguarding lead before any real student uses the tutor (PLAN.md
 approval gate). `SCRIPT_APPROVED` records that; until it is True the tutor runs only in
-development and test (routes/tutor.py). No alert reaches the lead yet: events wait in the table
-for review, and `notified_party` stays empty until an alert is really sent (M8).
+development and test (routes/tutor.py). Events wait in the table for review;
+the alerts job (`eddy_api.jobs.alerts`, run by the worker every 15 minutes) emails the lead an
+alert with ids only and sets `notified_party` (ADR-0032, ADR-0034).
 """
 
 import logging
@@ -154,7 +155,7 @@ def record_event(
             f"Tutoring stopped; safeguarding script {SCRIPT_VERSION} shown ({source}). "
             "Awaiting review by the safeguarding lead."
         ),
-        # Set only when an alert has really been sent (no alert channel until M8).
+        # Set by the alerts job once an alert has really been sent (eddy_api.jobs).
         notified_party=None,
     )
     session.add(event)

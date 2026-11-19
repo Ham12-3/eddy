@@ -24,8 +24,10 @@ they are a number line's or a grid's own scale, not statements.
 import json
 import re
 import sys
+from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
+from math import gcd
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,30 @@ SCENES = {
     "g20-hypotenuse": "PYTH_NO_SQUARE_ROOT",
     "p8-tree-and": "TREE_ADD_ALONG_BRANCHES",
     "s4-median": "MEDIAN_UNORDERED",
+    "n1-order-unit-fractions": "UNIT_FRACTION_BIGGER_DENOMINATOR",
+    "n2-fraction-add-unlike": "FRAC_ADD_NUM_DEN",
+    "n2-fraction-subtract-unlike": "FRAC_SUB_NUM_DEN",
+    "n2-fraction-divide": "FRAC_DIV_FLIP_FIRST",
+    "n2-add-negatives": "NEG_TWO_NEGATIVES_ADD_POSITIVE",
+    "n3-order-of-operations": "ORDER_OF_OPERATIONS_LEFT_TO_RIGHT",
+    "n12-fraction-of-amount": "FRAC_OF_AMOUNT_DIVIDE_ONLY",
+    "n12-percentage-of-amount": "PCT_DIVIDE_BY_PERCENT",
+}
+
+
+def _common_denominator_at_most(limit: int) -> Callable[[dict[str, Any]], bool]:
+    def allowed(params: dict[str, Any]) -> bool:
+        b, d = int(params["b"]), int(params["d"])
+        return b * d // gcd(b, d) <= limit
+
+    return allowed
+
+
+# Items a scene declines (its params() throws), so they get a written explanation instead:
+# bars cut into more than 24 parts cannot be read on a phone.
+SCENE_ITEMS = {
+    "n2-fraction-add-unlike": _common_denominator_at_most(24),
+    "n2-fraction-subtract-unlike": _common_denominator_at_most(24),
 }
 PER_SCENE = 8
 FIRST_SEED = 2000
@@ -70,7 +96,8 @@ def inputs() -> dict[str, list[dict[str, Any]]]:
             item = TEMPLATES[template_id].generate(seed)
             wrong = [d for d in item.distractors if d.misconception == code]
             key = json.dumps(item.params, sort_keys=True)
-            if not wrong or key in seen:
+            allowed = SCENE_ITEMS.get(template_id)
+            if not wrong or key in seen or (allowed and not allowed(item.params)):
                 continue
             seen.add(key)
             rows.append(

@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Costs */
+        get: operations["getCosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/invites/check": {
         parameters: {
             query?: never;
@@ -671,6 +688,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/parent/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parent Delete
+         * @description Deactivates at once and ends every link (each child is told); the erasure job completes
+         *     it within 30 days.
+         */
+        post: operations["deleteParentAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Parent Export
+         * @description Everything held about a parent, built now and not stored.
+         */
+        get: operations["exportParentData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/parent/links": {
         parameters: {
             query?: never;
@@ -699,6 +757,40 @@ export interface paths {
         put?: never;
         /** End Link As Parent */
         post: operations["endParentLinkAsParent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parent Me */
+        get: operations["getParentMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/parent/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parent Notice */
+        post: operations["acknowledgeParentNotice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -896,6 +988,21 @@ export interface components {
              */
             id: string;
         };
+        /** CostsOut */
+        CostsOut: {
+            /** By Day */
+            by_day: components["schemas"]["DayCost"][];
+            /** By Route */
+            by_route: components["schemas"]["RouteCost"][];
+            /** Days */
+            days: number;
+            /** Lessons */
+            lessons: number;
+            /** Per Lesson Gbp */
+            per_lesson_gbp: number | null;
+            /** Total Gbp */
+            total_gbp: number;
+        };
         /** CreateUserIn */
         CreateUserIn: {
             /** Email */
@@ -949,6 +1056,18 @@ export interface components {
             requested_at: string;
             /** Status */
             status: string;
+        };
+        /** DayCost */
+        DayCost: {
+            /** Calls */
+            calls: number;
+            /** Cost Gbp */
+            cost_gbp: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
         };
         /** DetectionRule */
         DetectionRule: {
@@ -1262,6 +1381,29 @@ export interface components {
             /** Tiers */
             tiers?: ("FOUNDATION" | "HIGHER")[] | null;
         };
+        /** ParentDeleteIn */
+        ParentDeleteIn: {
+            /**
+             * Confirm
+             * @constant
+             */
+            confirm: true;
+        };
+        /** ParentMeOut */
+        ParentMeOut: {
+            /** Email */
+            email: string;
+            /** Notice Version */
+            notice_version: string | null;
+        };
+        /** ParentNoticeIn */
+        ParentNoticeIn: {
+            /**
+             * Version
+             * @constant
+             */
+            version: "0.2.0";
+        };
         /** ParentSignupIn */
         ParentSignupIn: {
             /**
@@ -1413,6 +1555,23 @@ export interface components {
             /** Misconception */
             misconception: string | null;
             next: components["schemas"]["DiagnosticOut"];
+        };
+        /** RouteCost */
+        RouteCost: {
+            /** Cached Tokens */
+            cached_tokens: number;
+            /** Calls */
+            calls: number;
+            /** Cost Gbp */
+            cost_gbp: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** P95 Latency Ms */
+            p95_latency_ms: number;
+            /** Route */
+            route: string;
         };
         /** SceneOut */
         SceneOut: {
@@ -1698,6 +1857,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    getCosts: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2814,6 +3004,63 @@ export interface operations {
             };
         };
     };
+    deleteParentAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParentDeleteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    exportParentData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     requestParentLink: {
         parameters: {
             query?: never;
@@ -2865,6 +3112,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChildOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getParentMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParentMeOut"];
+                };
+            };
+        };
+    };
+    acknowledgeParentNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParentNoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParentMeOut"];
                 };
             };
             /** @description Validation Error */

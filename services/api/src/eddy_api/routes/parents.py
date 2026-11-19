@@ -19,12 +19,20 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from eddy_api import audit, mail, parents
+from eddy_api import audit, mail, parents, privacy
 from eddy_api.auth import Caller, require_roles
 from eddy_api.config import Settings, get_settings
-from eddy_api.db.models import ParentLink, ParentLinkCode, User
+from eddy_api.db.models import (
+    DataRequest,
+    NoticeAcknowledgement,
+    ParentLink,
+    ParentLinkCode,
+    User,
+)
+from eddy_api.db.models import Session as SessionRow
 from eddy_api.db.session import get_session
 from eddy_api.routes.accounts import SignupLimiter
 from eddy_api.students import Student
@@ -353,3 +361,109 @@ def end_link_as_parent(
             "A parent ended their link to your progress in Eddy. They can no longer see it.\n",
         )
     return children(parent, session)
+
+
+# A parent's own account (ADR-0034): the privacy notice, their data, and deleting the account.
+
+
+class ParentMeOut(BaseModel):
+    email: str
+    notice_version: str | None
+
+
+@router.get("/v1/parent/me", operation_id="getParentMe")
+def parent_me(parent: Parent, session: DbSession) -> ParentMeOut:
+    version = session.scalar(
+        select(NoticeAcknowledgement.version)
+        .where(
+            NoticeAcknowledgement.user_id == parent.id,
+            NoticeAcknowledgement.notice_key == "privacy",
+        )
+        .order_by(NoticeAcknowledgement.acknowledged_at.desc())
+    )
+    return ParentMeOut(email=parent.email, notice_version=version)
+
+
+class ParentNoticeIn(BaseModel):
+    version: Literal["0.2.0"]
+
+
+@router.post("/v1/parent/notices", operation_id="acknowledgeParentNotice")
+def parent_notice(body: ParentNoticeIn, parent: Parent, session: DbSession) -> ParentMeOut:
+    session.execute(
+        insert(NoticeAcknowledgement)
+        .values(user_id=parent.id, notice_key="privacy", version=body.version)
+        .on_conflict_do_nothing()
+    )
+    audit.record(
+        session,
+        actor_id=parent.id,
+        actor_role="parent",
+        action="notice.acknowledge",
+        target_type="notice",
+        target_id=f"privacy@{body.version}",
+    )
+    session.commit()
+    return parent_me(parent, session)
+
+
+@router.get("/v1/parent/export", operation_id="exportParentData")
+def parent_export(parent: Parent, session: DbSession) -> dict[str, object]:
+    """Everything held about a parent, built now and not stored."""
+    data = privacy.export(session, parent.id)
+    audit.record(
+        session,
+        actor_id=parent.id,
+        actor_role="parent",
+        action="data.export",
+        target_type="user",
+        target_id=parent.id,
+    )
+    session.commit()
+    return data
+
+
+class ParentDeleteIn(BaseModel):
+    confirm: Literal[True]
+
+
+@router.post("/v1/parent/delete", operation_id="deleteParentAccount")
+def parent_delete(
+    body: ParentDeleteIn, parent: Parent, session: DbSession, settings: AppSettings
+) -> dict[str, str]:
+    """Deactivates at once and ends every link (each child is told); the erasure job completes
+    it within 30 days."""
+    rows = session.scalars(
+        select(ParentLink).where(
+            ParentLink.parent_user_id == parent.id, ParentLink.status.in_(LIVE)
+        )
+    ).all()
+    told = []
+    for row in rows:
+        if row.status == "ACTIVE":
+            told.append(parents.email_of(session, row.student_id))
+        row.status = "ENDED"
+        row.ended_by = "PARENT"
+        row.ended_at = datetime.now(UTC)
+    parent.deactivated_at = datetime.now(UTC)
+    session.execute(delete(SessionRow).where(SessionRow.user_id == parent.id))
+    request = DataRequest(user_id=parent.id, kind="DELETE", status="RECEIVED")
+    session.add(request)
+    session.flush()
+    audit.record(
+        session,
+        actor_id=parent.id,
+        actor_role="parent",
+        action="account.delete_request",
+        target_type="data_request",
+        target_id=request.id,
+    )
+    session.commit()
+    for email in told:
+        _tell(
+            settings,
+            email,
+            "Eddy: a parent link has ended",
+            "A parent ended their link to your progress in Eddy. They can no longer see it.\n",
+        )
+    return {"status": "RECEIVED"}

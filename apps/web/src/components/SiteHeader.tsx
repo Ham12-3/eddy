@@ -10,7 +10,10 @@ const NAV = {
     { href: "/progress", label: "Progress" },
     { href: "/settings", label: "Settings" },
   ],
-  parent: [{ href: "/parent", label: "Your children" }],
+  parent: [
+    { href: "/parent", label: "Your children" },
+    { href: "/parent/account", label: "Your account" },
+  ],
 } as const;
 
 /**

@@ -319,16 +319,16 @@ Depends on: M9. Estimate: 1.5 weeks. Gates: AWS account and any deploy, SES.
 
 Deliverables:
 
-- [ ] Rate limit review; OWASP ASVS Level 2 checklist; an automated baseline security scan; a prompt-injection red-team pass.
-- [ ] k6 load test against a production-like local stack.
-- [ ] Tutor latency revisited with the pedagogy eval: a faster model for `tutor.turn` (ADR-0005) or two drafts written at once.
-- [ ] Cost dashboard from `llm_call`, narration and infrastructure estimates.
-- [ ] DPIA and DfE standards matrix complete; Children's Code checklist complete; governance roles; runbooks for incidents, safeguarding and data breaches.
-- [ ] Staging deployment plan with CDK. Deploy only with your explicit go-ahead.
+- [ ] Rate limit review; OWASP ASVS Level 2 checklist; an automated baseline security scan; a prompt-injection red-team pass. (The review, checklist and dependency scans are done, `docs/security-review.md`; a further red-team pass needs live Claude spend and your go-ahead.)
+- [x] k6 load test against a production-like local stack. (A Python load script instead of k6, which is not installed, ADR-0034: 62 requests a second, no errors.)
+- [ ] Tutor latency revisited with the pedagogy eval: a faster model for `tutor.turn` (ADR-0005) or two drafts written at once. (Not done: needs a live eval run and your go-ahead to spend.)
+- [x] Cost dashboard from `llm_call`, narration and infrastructure estimates. (`/admin/costs`; narration costs nothing; hosting is not deployed, so not priced.)
+- [ ] DPIA and DfE standards matrix complete; Children's Code checklist complete; governance roles; runbooks for incidents, safeguarding and data breaches. (All drafted in `compliance/` with your approval; complete only once the named leads, a lawyer and you have filled their gaps.)
+- [x] Staging deployment plan with CDK. Deploy only with your explicit go-ahead. (`docs/staging-plan.md`; nothing deployed.)
 
 Definition of done:
 
-- [ ] Launch checklist signed off by you.
+- [ ] Launch checklist signed off by you. (`docs/launch-checklist.md`, ready for you.)
 
 ---
 
@@ -917,5 +917,33 @@ Environment: as M8. Branch `m9-parents`, stacked on `m8-student-app` (PR #9) and
 - **Low:** exact lesson times sent to parents; a decline worded as an ended link; the job's locks and one failure stopping the run; sign-in links and LLM cost records left linked after erasure; dates in the server's time zone; the indicator link's target size; dead code.
 
 **Recorded, not fixed in M9** (ADR-0033): parents' own download, deletion and privacy acknowledgement; keyed hashing of link codes; scheduling the jobs (M10); the Children's Code checklist evidence (your go-ahead).
+
+**CI**: not run yet for this branch.
+
+### M10: Hardening and launch prep (12 and 13 November 2026)
+
+Environment: as M8. Branch `m10-hardening`, stacked on `m9-parents` (PR #10), `m8-student-app` (PR #9) and `m7-tutor` (PR #8), none merged yet.
+
+**Status: the engineering is done; launch waits for people and agreements.** Every engineering item that needs no spend or approval is built and checked. Open: the launch checklist sign-off, the named leads and legal review behind the compliance drafts, a red-team pass and tutor latency work (live Claude spend), and staging (an AWS account).
+
+**What landed** (ADR-0034):
+
+- The worker runs alerts, purges and erasures every 15 minutes.
+- Parents' own account page: notice, download and deletion.
+- Dependency audits in CI; nodemailer 10.5.0 closes three high advisories.
+- `/admin/costs`; the load test; a keyboard-only E2E journey; maths-core's template list cached.
+- Compliance drafts (DPIA, Children's Code, DfE standards, governance, four runbooks), the security review, the staging plan and the launch checklist.
+- The full privacy notice no longer says Anthropic receives a random id: it receives none.
+
+**Checks run (final code)**
+
+| Command | Result |
+|---|---|
+| `EDDY_REQUIRE_DB=1 pnpm check` | Lint, Prettier, dash and cliché checks, typecheck and the TypeScript tests (ui 134, scenes 207 and the rest) passed; ruff then failed on two misplaced lint comments in the load script, fixed. `pnpm check:py` then: ruff and strict mypy (124 files) clean, 957 pytest passed. |
+| `pnpm e2e` (full suite, 9 projects) | 280 passed, 8 skipped (the keyboard journey runs once). |
+| `pnpm audit --audit-level high`, `pip-audit` | No high npm advisories (2 moderate, development tooling only); no Python advisories. |
+| `scripts/load/load_test.py` (20 students, 30 s) | 1,884 requests, 62 a second, no errors; today's plan has a slow tail under contention (p95 5.2 s, 55 ms alone), recorded. |
+
+**Reviews**: the compliance drafts were written by two fresh-context agents from the code and ADRs, every open decision stated as a gap. They found the privacy notice error above and an out-of-date comment in `safeguarding.py` (fixed; the script's wording is unchanged).
 
 **CI**: not run yet for this branch.

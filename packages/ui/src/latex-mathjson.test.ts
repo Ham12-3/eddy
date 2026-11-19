@@ -31,14 +31,30 @@ describe("latexToMathJson", () => {
     ["x=-3\\frac{1}{4}", ["Equal", "x", ["Negate", ["InvisibleOperator", 3, ["Divide", 1, 4]]]]],
     ["5min", ["Multiply", 5, "min"]],
     ["2x", ["Multiply", 2, "x"]],
+    // MathLive leaves out the braces around single digits.
+    ["\\frac17", ["Divide", 1, 7]],
+    ["\\frac17>\\frac13", ["Greater", ["Divide", 1, 7], ["Divide", 1, 3]]],
+    ["\\frac1{12}", ["Divide", 1, 12]],
+    ["\\frac{12}5", ["Divide", 12, 5]],
+    ["2\\frac12", ["InvisibleOperator", 2, ["Divide", 1, 2]]],
+    ["\\frac x2", ["Divide", "x", 2]],
+    ["\\sqrt2", ["Sqrt", 2]],
   ])("reads %s", (latex, expected) => {
     expect(latexToMathJson(latex)).toEqual(expected);
   });
 
-  it.each(["", "\\frac{}{2}", "3+", "\\placeholder{}", "\\int x", "\\text{hello}", "1,000", "2 3"])(
-    "explains what it cannot read: %s",
-    (latex) => {
-      expect(() => latexToMathJson(latex)).toThrow(LatexError);
-    },
-  );
+  it.each([
+    "",
+    "\\frac{}{2}",
+    "3+",
+    "\\placeholder{}",
+    "\\int x",
+    "\\text{hello}",
+    "1,000",
+    "2 3",
+    "\\frac1",
+    "\\frac.52",
+  ])("explains what it cannot read: %s", (latex) => {
+    expect(() => latexToMathJson(latex)).toThrow(LatexError);
+  });
 });

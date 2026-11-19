@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from eddy_api import __version__
 from eddy_api.auth import ROLES, Caller, Role, require_roles
-from eddy_api.routes import accounts, curriculum, learning, me, parents, scenes, tutor
+from eddy_api.routes import accounts, admin, curriculum, learning, me, parents, scenes, tutor
 
 
 class HealthResponse(BaseModel):
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(me.router)
     app.include_router(learning.router)
     app.include_router(parents.router)
+    app.include_router(admin.router)
     app.include_router(curriculum.router)
     app.include_router(scenes.router)
     app.include_router(tutor.router)

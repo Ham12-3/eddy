@@ -70,6 +70,13 @@ test("a parent links with a code, the student accepts, either can end it", async
   await expect(parent.getByRole("heading", { name: "Topics secured" })).toBeVisible();
   await expect(parent.getByText("Your answers")).toHaveCount(0);
   await check(parent, "parent-dashboard", info.project.name);
+  await parent.getByRole("link", { name: "Your account" }).click();
+  await parent.getByRole("button", { name: "I have read the privacy notice" }).click();
+  await expect(parent.getByText(/You have read version/)).toBeVisible();
+  await check(parent, "parent-account", info.project.name);
+  await parent.goto("/parent");
+  await parent.getByRole("link", { name: "See progress" }).click();
+  await expect(parent.getByRole("heading", { name: "Topics secured" })).toBeVisible();
   await parent.getByRole("button", { name: "Stop seeing their progress" }).click();
   await expect(parent.getByRole("heading", { name: "No linked children" })).toBeVisible();
   await waitForMail(studentEmail, "a parent link has ended");

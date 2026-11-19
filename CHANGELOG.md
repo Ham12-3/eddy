@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### More Tier D scenes and the Higher tier plan (13 and 14 November 2026)
+
+Added:
+
+- Eight Tier D scenes, each reviewed for pedagogy: comparing unit fractions, adding, subtracting and dividing fractions, adding two negatives, order of operations, a fraction of an amount and a percentage of an amount. 21 of the 85 misconceptions now have a scene.
+- Adding and subtracting fractions decline items whose common denominator is over 24 (bars that fine cannot be read on a phone); those items keep the written explanation, and the scene golden inputs skip them.
+- `docs/higher-tier-plan.md`: a draft plan for Higher tier (grades 4 to 9), with open questions for the product owner.
+
+### Hosting proposal (13 November 2026)
+
+- ADR-0035 (proposed): host the web app on Vercel, Postgres on Supabase, and the API, worker, maths-core and scene-check on Fly.io, all in London. `docs/staging-plan.md` now holds this plan and the AWS one; the launch checklist asks which.
+- The worker's docstring now says it keeps running the privacy jobs without Tier L.
+
+### M10: Hardening and launch prep (12 and 13 November 2026)
+
+Added:
+
+- The worker runs the privacy and safeguarding jobs every 15 minutes, alerts first (ADR-0034).
+- Parents' own account page: the privacy notice to acknowledge, a data download, and deletion that ends their links and tells each child.
+- Dependency audits in CI (`pnpm audit --audit-level high`, `pip-audit`); nodemailer forced to 10.5.0 to close three high advisories.
+- The cost dashboard, `/admin/costs`, over `GET /v1/admin/costs`.
+- A load test (`scripts/load/load_test.py`), a keyboard-only E2E journey, and maths-core's template list cached in the API.
+- Drafts for review: the DPIA, Children's Code checklist, DfE standards matrix, governance roles, and runbooks for safeguarding, incident response, data breaches and data rights (`compliance/`); `docs/security-review.md`, `docs/staging-plan.md` and `docs/launch-checklist.md`.
+
+Fixed:
+
+- The full privacy notice said Anthropic receives a random id; it receives no identifier at all.
+
 ### M9: Parent dashboard and accounts (12 November 2026)
 
 Added:
