@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     SmallInteger,
     String,
@@ -55,6 +56,33 @@ class Attempt(Base):
     is_diagnostic: Mapped[bool] = mapped_column(Boolean, default=False)
     time_ms: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = created_at()
+
+
+class DiagnosticSession(Base):
+    """The onboarding diagnostic (SPEC.md section 4.1): adaptive choice questions that can stop
+    and resume. `state` holds the questions asked and the item on screen, never free text."""
+
+    __tablename__ = "diagnostic_session"
+    __table_args__ = (
+        # One diagnostic in progress per student.
+        Index(
+            "uq_diagnostic_session_open",
+            "student_id",
+            unique=True,
+            postgresql_where=text("completed_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    state: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    started_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class MasteryState(Base):

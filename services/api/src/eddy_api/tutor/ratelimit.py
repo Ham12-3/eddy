@@ -30,8 +30,9 @@ class MemoryLimiter:
     def allow(self, key: str, now: float | None = None) -> bool:
         moment = now if now is not None else time.time()
         current = {f"{name}:{int(moment // seconds)}" for name, seconds in WINDOWS}
-        # Only the current windows are kept, so memory stays bounded.
-        for stale in [b for b in self.counts if b.split(":", 1)[1] not in current]:
+        # Only the current windows are kept, so memory stays bounded. A bucket ends with its
+        # window ("minute:28441"); the key before it may hold colons of its own.
+        for stale in [b for b in self.counts if ":".join(b.rsplit(":", 2)[1:]) not in current]:
             del self.counts[stale]
         allowed = True
         for (name, seconds), limit in zip(WINDOWS, (self.per_minute, self.per_day), strict=True):

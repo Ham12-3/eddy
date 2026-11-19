@@ -1,7 +1,27 @@
 import type { NextConfig } from "next";
 
-// A strict nonce-based Content Security Policy arrives with sign-in in M8.
+// A baseline Content Security Policy (ADR-0032): only our own origin, no plugins, no framing,
+// forms post only here. Scripts and styles still allow inline code, which Next.js and the maths
+// renderer need without nonces; the strict nonce policy is M10 hardening. `next dev` also needs
+// eval for fast refresh.
+const development = process.env.NODE_ENV === "development";
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${development ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "media-src 'self' blob:",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "DENY" },

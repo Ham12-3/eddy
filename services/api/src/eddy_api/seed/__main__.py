@@ -8,15 +8,29 @@
 
 import argparse
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
+from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
 from eddy_api.config import get_settings
 from eddy_api.db.local import is_local
-from eddy_api.db.session import session_factory
 from eddy_api.seed.curriculum import CurriculumError, default_root, load
 from eddy_api.seed.upsert import seed
+
+
+@contextmanager
+def owner_session(url: str) -> Iterator[Session]:
+    """The seed is a deploy step, so it runs as the schema owner, like the migrations."""
+    engine = create_engine(url)
+    try:
+        with Session(engine) as session:
+            yield session
+    finally:
+        engine.dispose()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    with session_factory()() as session:
+    with owner_session(url) as session:
         report = seed(session, curriculum)
         if args.dry_run:
             session.rollback()

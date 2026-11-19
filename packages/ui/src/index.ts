@@ -64,3 +64,6 @@ export { Tabs, type TabItem, type TabsProps } from "./components/Tabs";
 export { ToastProvider, useToast, type ToastMessage } from "./components/Toast";
 export { Toggle, type ToggleProps } from "./components/Toggle";
 export { WorkingPad, type WorkingPadProps } from "./components/WorkingPad";
+
+// LaTeX from the maths field to the MathJSON maths-core checks (ADR-0004)
+export { LatexError, latexToMathJson, type MathJson } from "./latex-mathjson";

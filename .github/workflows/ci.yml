@@ -91,6 +91,16 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      # The tutor's rate limits (M7) and the sign-in emails the student journey reads (M8).
+      redis:
+        image: redis:7.4.12-alpine
+        ports:
+          - 6390:6379
+      mailpit:
+        image: axllent/mailpit:v1.33
+        ports:
+          - 1025:1025
+          - 8025:8025
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

@@ -202,12 +202,14 @@ def apply_answer(
     now: datetime,
     template_codes: tuple[tuple[str, ...], ...] = (),
     prerequisites: tuple[tuple[str, float], ...] = (),
+    diagnostic: bool = False,
 ) -> NodeMastery:
     """One answer through the learner model (as the M4 simulator does), saved.
 
     `template_codes` are the misconceptions each of the node's item templates can reveal (SECURE
     must probe those), and `prerequisites` the node's prerequisite edges, whose priors are
-    raised when the node becomes SECURE.
+    raised when the node becomes SECURE. A diagnostic match only makes a misconception
+    SUSPECTED (ADR-0026).
     """
     state = load_node(session, student, node)
     was = state.status
@@ -215,7 +217,9 @@ def apply_answer(
     track: Track | None = None
     if misconception is not None:
         track = load_track(session, student, misconception)
-        event = misconceptions.match_event(options=None, confidence=confidence)
+        event = misconceptions.match_event(
+            options=None, confidence=confidence, diagnostic=diagnostic
+        )
         track = misconceptions.apply(
             track,
             event,

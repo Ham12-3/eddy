@@ -159,7 +159,7 @@ def _leaks(reply: dict[str, Any], item: ItemContext, maths_core: MathsCoreClient
 
 
 def _local_database() -> bool:
-    url = make_url(get_settings().database_url.get_secret_value())
+    url = make_url(get_settings().runtime_database_url.get_secret_value())
     if any(key in url.query for key in ("host", "hostaddr", "service")):
         return False
     return (url.host or "") in {"127.0.0.1", "localhost", "::1"}

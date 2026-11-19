@@ -73,7 +73,7 @@ def main(argv: list[str]) -> int:
         return 0
 
     settings = get_settings()
-    host = make_url(settings.database_url.get_secret_value()).host or ""
+    host = make_url(settings.runtime_database_url.get_secret_value()).host or ""
     if host not in LOCAL_HOSTS and not args.allow_remote:
         print(f"Refusing to write to a non-local database ({host}); add --allow-remote.")
         return 1

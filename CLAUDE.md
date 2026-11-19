@@ -9,7 +9,8 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | Install | `pnpm install` then `uv sync` |
 | Local secrets (first run) | `pnpm keys:dev` (writes git-ignored .env files) |
 | Run everything | `pnpm dev` (docker compose, migrate, seed, then web :3300, api :8300, maths-core :8310, scene-check :8320, the worker) |
-| Database | `pnpm db:migrate`, `pnpm db:seed` (`--dry-run --verbose` shows the diff) |
+| Database | `pnpm db:local` (creates the database, lets the runtime role log in), `pnpm db:migrate`, `pnpm db:seed` (`--dry-run --verbose` shows the diff) |
+| Invites and jobs | `uv run --package eddy-api python -m eddy_api.invites CODE --uses 30`; `python -m eddy_api.jobs purge\|alerts\|all` (privacy purges, safeguarding alerts) |
 | Curriculum YAML | `pnpm curriculum:check` (schemas and cross-file checks, no database) |
 | Maths core | `pnpm evals` (golden set, 100%), `pnpm maths:coverage` (85% or more), `pnpm maths:bench` (p95 under 150 ms) |
 | Learner model | `pnpm learner:coverage` (85% or more), `pnpm learner:report` (the synthetic-student numbers behind ADR-0026) |
@@ -46,6 +47,9 @@ Local services (`docker compose up -d --wait`): Postgres 127.0.0.1:5442 (eddy/ed
 - The guard hook (`.claude/hooks/lib/guard.mjs`) also blocks recursive `grep` over directories (use `rg` or the Grep tool, which skip `.env`), recursive deletes outside temp folders, and `git clean -f`. It fails closed: an error in the guard denies the command.
 - The hello page's system check only renders in development or with `EDDY_SYSTEM_CHECK=1` (ADR-0018). Routes in services/api name their accepted roles with `require_roles(...)`.
 - `next dev` would write an `AGENTS.md`; `agentRules: false` in `next.config.ts` stops it.
+- The API and worker connect as the runtime role `eddy_app` (`RUNTIME_DATABASE_URL`), which cannot change the schema or the audit log; migrations and the seed use the owner (`DATABASE_URL`). API tests run as `eddy_app` too (ADR-0024, ADR-0032).
+- Sign-in links point at `AUTH_URL`, which must use `localhost` (`http://localhost:3300` locally), and the app must be opened there: Next.js reports 127.0.0.1 as localhost, so Auth.js redirects to localhost and a cookie set on 127.0.0.1 is lost. Read sign-in emails in Mailpit at http://127.0.0.1:8025. E2E reads them there too, so Mailpit must be running.
+- E2E runs the tutor with no Claude key (templated messages), so it never costs money.
 - Claude calls need `ANTHROPIC_API_KEY` in services/api/.env, which the user adds and nobody reads. Without it Tier L is off and Tier D is served. Live evals and precompute cost money: always ask before `--live`.
 - The safeguarding script and tripwires (`services/api/src/eddy_api/tutor/safeguarding.py`, `config/safeguarding/tripwires.yaml`) are drafts until Eddy's named safeguarding lead approves them; never change the script's wording without that approval.
 - `pnpm keys:dev` only adds missing keys to existing .env files; `--force` replaces the ones it manages and keeps the rest. It writes `EDDY_ENVIRONMENT=development` for services/api: settings default to production, where the ZDR gate's local-database exception and the unapproved safeguarding draft are off.

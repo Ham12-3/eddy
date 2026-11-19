@@ -8,12 +8,13 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "docker compose up -d --wait && pnpm db:migrate && pnpm db:seed && concurrently --names web,api,maths,scenes,worker --prefix-colors blue,green,magenta,cyan,yellow \"pnpm --filter @eddy/web dev\" \"pnpm dev:api\" \"pnpm dev:maths\" \"pnpm dev:scenes\" \"pnpm dev:worker\"",
+    "dev": "docker compose up -d --wait && pnpm db:local && pnpm db:migrate && pnpm db:seed && concurrently --names web,api,maths,scenes,worker --prefix-colors blue,green,magenta,cyan,yellow \"pnpm --filter @eddy/web dev\" \"pnpm dev:api\" \"pnpm dev:maths\" \"pnpm dev:scenes\" \"pnpm dev:worker\"",
     "dev:api": "uv run --package eddy-api uvicorn eddy_api.main:app --reload --port 8300",
     "dev:maths": "uv run --package eddy-maths-core uvicorn eddy_maths_core.main:app --reload --port 8310",
     "dev:scenes": "pnpm --filter @eddy/scene-check serve",
     "dev:worker": "uv run --package eddy-api python -m eddy_api.worker",
     "keys:dev": "node scripts/dev-keys.mjs",
+    "db:local": "uv run --package eddy-api python -m eddy_api.db.local",
     "db:migrate": "uv run --package eddy-api alembic -c services/api/alembic.ini upgrade head",
     "db:seed": "uv run --package eddy-api python -m eddy_api.seed",
     "curriculum:check": "uv run --package eddy-api python -m eddy_api.seed --check",

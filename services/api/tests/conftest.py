@@ -94,10 +94,14 @@ def db_session(migrated_database: str) -> Iterator[Session]:
 
     session.rollback() and session.commit() only end a savepoint, so a test can roll back its
     own work (as a dry run does) without leaking anything to the next test.
+
+    It runs as the runtime role the API connects as (ADR-0024), so every test proves the API
+    needs no more than that role's rights.
     """
     engine = create_engine(migrated_database)
     with engine.connect() as connection:
         transaction = connection.begin()
+        connection.execute(text("SET LOCAL ROLE eddy_app"))
         session = Session(bind=connection, join_transaction_mode="create_savepoint")
         try:
             yield session
