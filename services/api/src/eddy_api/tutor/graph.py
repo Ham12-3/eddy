@@ -47,7 +47,7 @@ from eddy_api.db.models import (
 )
 from eddy_api.learner import planner
 from eddy_api.learner.mastery import SECURED
-from eddy_api.llm.client import LlmClient, LlmUnavailableError
+from eddy_api.llm.client import Llm, LlmUnavailableError
 from eddy_api.scenes.services import MathsCoreClient, SceneCheckClient, SceneServiceError
 from eddy_api.scenes.variants import serve_now
 from eddy_api.tutor import learner_store, safeguarding
@@ -96,9 +96,9 @@ class Deps:
     session: Session
     maths_core: MathsCoreClient
     scene_check: SceneCheckClient | None
-    #: None when Claude is off or over its cost guard: messages are templated and only the
-    #: tripwires screen input.
-    llm: LlmClient | None
+    #: Claude, or the local model. None when there is no model or it is over its cost guard:
+    #: messages are templated and only the tripwires screen input.
+    llm: Llm | None
     target_grade: int = 4
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
     #: Opens a separate session, so a safeguarding event is committed even if the turn fails.

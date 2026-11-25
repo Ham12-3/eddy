@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # SPEC.md section 10: zero data retention must be confirmed with Anthropic before any real
     # student data reaches Claude. Until it is, Tier L runs only against a local database.
     anthropic_zdr_confirmed: bool = False
+    # Which model writes the tutor's messages (ADR-0036): Claude over the internet, or the local
+    # model the desktop app serves on this computer, which sends nothing anywhere.
+    llm_provider: Literal["anthropic", "local"] = "anthropic"
+    local_llm_base_url: str = "http://127.0.0.1:8330"
     # The tutor (M7): Redis for rate limits, and how many messages a student may send.
     redis_url: str = "redis://127.0.0.1:6390/0"
     tutor_messages_per_minute: int = 12
@@ -83,6 +87,8 @@ def development(settings: Settings) -> bool:
 def tier_l_enabled(settings: Settings) -> bool:
     """Claude (Tier L scenes and the tutor) is on with a key, and with ZDR confirmed, or with a
     local database in development or test."""
+    if settings.llm_provider == "local":
+        return False  # Tier L scenes have no local model
     if not settings.anthropic_api_key.get_secret_value():
         return False
     if settings.anthropic_zdr_confirmed:

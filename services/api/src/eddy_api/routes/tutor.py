@@ -37,7 +37,8 @@ from eddy_api.config import Settings, development, get_settings, tier_l_enabled
 from eddy_api.db.models import CurriculumNode, LlmCall, SafeguardingEvent, TutorSession
 from eddy_api.db.models import TutorMessage as TutorMessageRow
 from eddy_api.db.session import get_session, session_factory
-from eddy_api.llm.client import LlmClient
+from eddy_api.llm.client import Llm, LlmClient
+from eddy_api.llm.local import LocalLlmClient
 from eddy_api.llm.records import llm_recorder
 from eddy_api.scenes.services import MathsCoreClient, SceneCheckClient, SceneServiceError
 from eddy_api.tutor import safeguarding
@@ -60,7 +61,7 @@ TURN_WAIT_S = 15
 class TutorServices:
     maths_core: MathsCoreClient
     scene_check: SceneCheckClient | None
-    llm: LlmClient | None
+    llm: Llm | None
     limiter: Limiter
     #: Tutor turns this process runs at once (each holds a database connection).
     slots: threading.BoundedSemaphore
@@ -69,9 +70,14 @@ class TutorServices:
 @lru_cache
 def get_tutor_services() -> TutorServices:
     settings = get_settings()
-    llm = None
+    llm: Llm | None = None
+    if settings.llm_provider == "local":
+        # The local model runs on this computer: student text goes nowhere.
+        llm = LocalLlmClient.from_url(
+            settings.local_llm_base_url, recorder=llm_recorder(session_factory())
+        )
     # The tutor sends student text to Claude: the same ZDR gate as Tier L scenes.
-    if tier_l_enabled(settings):
+    elif tier_l_enabled(settings):
         llm = LlmClient.from_key(
             settings.anthropic_api_key.get_secret_value(), recorder=llm_recorder(session_factory())
         )

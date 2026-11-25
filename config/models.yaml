@@ -1,6 +1,6 @@
-# The only place Claude model IDs live (SPEC.md section 10, ADR-0005).
+# The only place model IDs live (SPEC.md section 10, ADR-0005, ADR-0036).
 # Changing a route's model needs the matching eval suite to pass before merge.
-# Never add temperature, top_p or top_k: the API rejects them on every model.
+# Never add temperature, top_p or top_k to a route: the API rejects them on every model.
 
 routes:
   tutor.turn:
@@ -31,6 +31,16 @@ routes:
     model: claude-opus-4-8
     thinking: adaptive
     effort: medium
+
+# The desktop app's local model (ADR-0036): a GGUF file served on the student's own computer by
+# llama.cpp, for the routes listed. Tier L scenes have no local model. The temperature here is
+# given to the model server when it starts; requests never carry sampling settings.
+local:
+  model: granite-4.0-micro-q4 # IBM Granite 4.0 Micro, Apache 2.0, from IBM's own GGUF files
+  file: granite-4.0-micro-Q4_K_M.gguf
+  context: 8192
+  temperature: 0.2
+  routes: [tutor.turn, safety.input, safety.output]
 
 # List prices in US dollars per million tokens, for the cost estimates in llm_call (SPEC.md
 # section 6.5). Writing to the 5-minute prompt cache costs 1.25 times the input price and reading
