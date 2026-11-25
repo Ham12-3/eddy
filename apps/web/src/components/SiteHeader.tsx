@@ -23,9 +23,15 @@ const NAV = {
 export function SiteHeader({
   role,
   parentVisible,
+  local = false,
+  name = null,
 }: {
   role: "student" | "parent" | null;
   parentVisible: boolean;
+  /** The desktop app (ADR-0036): profiles in place of sign-in. */
+  local?: boolean;
+  /** The open profile's nickname, in the desktop app. */
+  name?: string | null;
 }) {
   const nav = role ? NAV[role] : [];
   return (
@@ -49,9 +55,12 @@ export function SiteHeader({
                   {item.label}
                 </NextLink>
               ))}
-              <SignOutButton />
+              {local && name ? (
+                <span className="inline-flex min-h-11 items-center text-ink-muted">{name}</span>
+              ) : null}
+              <SignOutButton local={local} />
             </nav>
-          ) : (
+          ) : local ? null : (
             <NextLink
               href="/sign-in"
               className={`${linkClassName} inline-flex min-h-11 items-center`}

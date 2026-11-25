@@ -46,17 +46,20 @@ from eddy_api.db.models import (
     VerificationToken,
 )
 from eddy_api.db.models import Session as SessionRow
+from eddy_api.students import is_local_profile
 
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
 
 
-def export(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
+def export(session: Session, user_id: uuid.UUID, *, local: bool = False) -> dict[str, Any]:
     user = session.get(User, user_id)
     if user is None:
         raise LookupError(user_id)
     profile = session.get(StudentProfile, user_id)
+    # A profile made on the computer (ADR-0036), whatever mode the process is in.
+    local = local and is_local_profile(user)
     nodes = dict(session.execute(select(CurriculumNode.id, CurriculumNode.code)).all())
     attempts = session.execute(
         select(Attempt, Item.stem_markdown)
@@ -88,7 +91,9 @@ def export(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
         "about": "Everything Eddy holds about you, as of the time below.",
         "created_at": datetime.now(UTC).isoformat(),
         "account": {
-            "email": user.email,
+            # A desktop profile has a nickname and no email address, only a placeholder
+            # (routes/local.py); an online account has an address and no name.
+            **({"name": user.name} if local else {"email": user.email}),
             "role": user.role,
             "joined": _iso(user.created_at),
         },
@@ -103,6 +108,8 @@ def export(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
             "target_grade": profile.target_grade,
             "resitting": profile.is_resitter,
             "preferences": profile.preferences,
+            # Whether a PIN is set: the PIN itself is never stored, only a scrambled form.
+            **({"pin_set": profile.pin_hash is not None} if local else {}),
         },
         "notices_acknowledged": [
             {"notice": n.notice_key, "version": n.version, "at": _iso(n.acknowledged_at)}
@@ -207,13 +214,23 @@ def export(session: Session, user_id: uuid.UUID) -> dict[str, Any]:
             {"until": _iso(row.expires)}
             for row in session.scalars(select(SessionRow).where(SessionRow.user_id == user_id))
         ],
-        "safety_records": (
-            f"{safety} safety record(s) are not in this download. Use Report a concern to ask"
-            " for them."
-            if safety
-            else "None."
-        ),
+        "safety_records": _safety_note(safety or 0, local),
     }
+
+
+def _safety_note(count: int, local: bool) -> str:
+    if not count:
+        return "None."
+    if local:
+        # The desktop app has nobody to ask (ADR-0036): say only what is true.
+        notes = "1 short note is" if count == 1 else f"{count} short notes are"
+        return (
+            f"{notes} kept on this computer from lessons Eddy stopped, with a few of the words"
+            " you wrote. They are not in this download."
+        )
+    return (
+        f"{count} safety record(s) are not in this download. Use Report a concern to ask for them."
+    )
 
 
 class AwaitingReviewError(Exception):
@@ -237,16 +254,22 @@ def awaiting_review(session: Session, user_id: uuid.UUID) -> bool:
     return event is not None or concern is not None
 
 
-def erase(session: Session, user_id: uuid.UUID) -> str:
+def erase(session: Session, user_id: uuid.UUID, *, wait_for_review: bool = True) -> str:
     """Erase an account; returns "deleted" or "anonymised". The caller commits.
 
     Raises AwaitingReviewError while a safety record waits for review: deleting the lesson it
     came from, or the way to reach the student, could cost a child their help.
+
+    The desktop app passes `wait_for_review=False` (ADR-0036): nobody reviews anything on a
+    single computer, so waiting would keep a deleted profile's data for ever. Its safety records
+    are still kept, on the anonymous anchor, like any other account's.
     """
     user = session.get(User, user_id)
     if user is None:
         return "deleted"
-    if awaiting_review(session, user_id):
+    # Only a profile made on the computer skips the wait, whatever mode the process is in.
+    waits = wait_for_review or not is_local_profile(user)
+    if waits and awaiting_review(session, user_id):
         raise AwaitingReviewError(str(user_id))
     safety = session.scalar(
         select(func.count())

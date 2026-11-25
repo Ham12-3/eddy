@@ -3,9 +3,10 @@ import NextLink from "next/link";
 
 /**
  * On every page (SPEC.md section 4.5): report a concern, the privacy notice, and who to contact
- * straight away. Nothing here asks for attention.
+ * straight away. Nothing here asks for attention. The desktop app cannot send a report to
+ * anyone, so its link says what the page is: who to talk to (ADR-0036).
  */
-export function SiteFooter() {
+export function SiteFooter({ local = false }: { local?: boolean }) {
   return (
     <footer className="mt-16 border-t border-rule px-4 py-8 md:px-8">
       <div className="flex max-w-[68ch] flex-col gap-4 md:ml-[10vw]">
@@ -14,7 +15,7 @@ export function SiteFooter() {
             href="/concern"
             className={`${linkClassName} inline-flex min-h-11 items-center`}
           >
-            Report a concern
+            {local ? "Worried about something?" : "Report a concern"}
           </NextLink>
           <NextLink
             href="/privacy"

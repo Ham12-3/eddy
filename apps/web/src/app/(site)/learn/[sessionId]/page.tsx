@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import NextLink from "next/link";
 
 import { Page } from "@/components/Page";
+import { isLocalMode } from "@/lib/local-mode";
 import { requireStudent } from "@/lib/session";
 
 import { LessonRunner } from "./LessonRunner";
@@ -29,7 +30,11 @@ export default async function LessonPage({ params }: { params: Promise<{ session
   }
   return (
     <Page title="Lesson" wide>
-      <LessonRunner initial={data} preferences={me.preferences} />
+      <LessonRunner
+        initial={data}
+        preferences={me.preferences}
+        helpLabel={isLocalMode() ? "Worried about something?" : undefined}
+      />
     </Page>
   );
 }

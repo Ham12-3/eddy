@@ -107,9 +107,12 @@ function OutboxEntry({ entry, preferences }: { entry: Entry; preferences: Prefer
 export function LessonRunner({
   initial,
   preferences,
+  helpLabel = "Report a concern",
 }: {
   initial: LessonOut;
   preferences: Preferences;
+  /** The desktop app cannot send a report, so its link is named for what the page is. */
+  helpLabel?: string;
 }) {
   const [lesson, setLesson] = useState(initial);
   const [entries, setEntries] = useState<Entry[]>(initial.outbox as Entry[]);
@@ -272,7 +275,7 @@ export function LessonRunner({
             <p className="m-0 text-caption text-ink-muted">
               Eddy gives hints, never just the answer.{" "}
               <NextLink href={`/concern?lesson=${lesson.session_id}`} className={linkClassName}>
-                Report a concern
+                {helpLabel}
               </NextLink>
             </p>
           </div>

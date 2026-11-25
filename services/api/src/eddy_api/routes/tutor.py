@@ -43,7 +43,7 @@ from eddy_api.llm.records import llm_recorder
 from eddy_api.scenes.services import MathsCoreClient, SceneCheckClient, SceneServiceError
 from eddy_api.tutor import safeguarding
 from eddy_api.tutor.graph import Deps, build
-from eddy_api.tutor.ratelimit import Limiter, RedisLimiter
+from eddy_api.tutor.ratelimit import Limiter, limiter_for
 
 router = APIRouter(prefix="/v1/tutor", tags=["tutor"])
 DbSession = Annotated[Session, Depends(get_session)]
@@ -85,7 +85,7 @@ def get_tutor_services() -> TutorServices:
         maths_core=MathsCoreClient.from_settings(settings),
         scene_check=SceneCheckClient.from_settings(settings),
         llm=llm,
-        limiter=RedisLimiter.from_url(
+        limiter=limiter_for(
             settings.redis_url, settings.tutor_messages_per_minute, settings.tutor_messages_per_day
         ),
         slots=threading.BoundedSemaphore(settings.tutor_concurrent_turns),

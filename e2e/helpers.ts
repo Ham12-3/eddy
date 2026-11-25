@@ -16,6 +16,9 @@ export async function expectNoBlockingViolations(page: Page) {
 }
 
 export async function check(page: Page, name: string, project: string) {
+  // The title streams in after the first paint: a scan that runs before it reports a page with
+  // no title, when the page does have one.
+  await expect(page).toHaveTitle(/\S/);
   await expectNoBlockingViolations(page);
   mkdirSync("e2e-artifacts/screenshots", { recursive: true });
   await page.screenshot({

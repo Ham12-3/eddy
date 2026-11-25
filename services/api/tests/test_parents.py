@@ -278,6 +278,50 @@ def test_erasure_waits_for_review_then_keeps_an_anonymous_anchor(
     assert session.scalar(text("SELECT count(*) FROM checkpoints")) == 0
 
 
+def test_the_desktop_app_does_not_wait_for_a_review_nobody_can_do(
+    api: tuple[TestClient, Session, list[tuple[str, str]]],
+) -> None:
+    client, session, _ = api
+    student = a_student(client, session)
+    lesson = TutorSession(student_id=student)
+    session.add(lesson)
+    session.flush()
+    lesson_id = lesson.id
+    session.add(
+        SafeguardingEvent(
+            student_id=student,
+            tutor_session_id=lesson_id,
+            category="test",
+            severity="LOW",
+            excerpt="x",
+            action_taken="script shown",
+        )
+    )
+    session.flush()
+    client.post(
+        "/v1/me/data-requests",
+        json={"kind": "DELETE", "confirm": True},
+        headers=as_student(student),
+    )
+    user = session.get(User, student)
+    assert user is not None
+    # An account made by email still waits for its review, even if the process is in local
+    # mode: only a profile made on the computer skips the wait.
+    assert jobs.erasures(session, datetime.now(UTC), wait_for_review=False) == 0
+    assert session.get(StudentProfile, student) is not None
+
+    # A profile: unreviewed, and it always will be on one computer. It is erased all the same,
+    # and the safety record stays on the anonymous anchor (ADR-0036).
+    user.email = f"profile-{student.hex}@local.invalid"
+    session.flush()
+    assert jobs.erasures(session, datetime.now(UTC), wait_for_review=False) == 1
+    assert user.email.endswith("@erased.invalid")
+    assert user.name is None
+    assert session.get(StudentProfile, student) is None
+    assert session.get(TutorSession, lesson_id) is None
+    assert session.scalar(select(func.count()).select_from(SafeguardingEvent)) == 1
+
+
 def test_asking_to_delete_ends_parent_links_at_once(
     api: tuple[TestClient, Session, list[tuple[str, str]]],
 ) -> None:

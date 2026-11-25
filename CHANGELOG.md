@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Desktop app, phases 0 and 1: a local model and local mode (25 November 2026)
+
+Added:
+
+- A local model provider beside Claude (`llm/local.py`): the tutor and the two safety prompts can be answered by a small model on the same computer, through llama.cpp's server. `config/models.yaml` gains a `local` block (IBM Granite 4.0 Micro). `pnpm evals:tutor` gains `--provider local`, which is free, runs no judge and saves its transcripts as it goes.
+- Local mode (`EDDY_LOCAL_MODE`), for the desktop app only: students pick a profile on the computer in place of email sign-in (`routes/local.py`, `/profiles`), with the same age check, an optional PIN and "Switch profile" in place of "Sign out". Migration 0008 adds the PIN columns.
+- A desktop privacy notice, version 0.3.0: everything stays on the computer, no AI company is involved and nobody is alerted.
+- ADR-0036, which records the move to a desktop app and the local model's eval results.
+
+Changed:
+
+- In local mode the email sign-in, invite and parent pages and routes are off, "Report a concern" shows only who to contact, Claude is never called, no alert is emailed, rate limits are counted in the API process when `REDIS_URL` is empty, and the web answers only requests addressed to this computer.
+- A deleted profile is erased without waiting for a safeguarding review that nobody could do on one computer. Its safety record is still kept.
+
+Not done:
+
+- The packaged app and installer (phases 2 and 3), and retiring the online-only code (phase 4).
+- Typed chat with the local model is not approved for students: see ADR-0036 for the eval results and the open decision.
+
 ### Deployment setup (19 November 2026)
 
 Added:

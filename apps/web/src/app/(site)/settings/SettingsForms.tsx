@@ -69,14 +69,15 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
   );
 }
 
-export function DeleteForm() {
+export function DeleteForm({ local = false }: { local?: boolean }) {
   const [state, action] = useActionState(deleteAccount, initialFormState);
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <FormError state={state} />
       <p className="m-0">
-        Your account stops working straight away and you are signed out. Everything about you is
-        erased within 30 days. This cannot be undone.
+        {local
+          ? "This profile stops working straight away and leaves the list on this computer. Eddy then erases your answers, messages and settings. If Eddy ever stopped a lesson because of something you wrote, a short note of it stays on this computer: deleting the profile does not remove that note. This cannot be undone."
+          : "Your account stops working straight away and you are signed out. Everything about you is erased within 30 days. This cannot be undone."}
       </p>
       <TextField
         label="Type DELETE to confirm"
@@ -86,7 +87,9 @@ export function DeleteForm() {
         className="max-w-xs"
       />
       <div>
-        <SubmitButton variant="secondary">Delete my account</SubmitButton>
+        <SubmitButton variant="secondary">
+          {local ? "Delete this profile" : "Delete my account"}
+        </SubmitButton>
       </div>
     </form>
   );

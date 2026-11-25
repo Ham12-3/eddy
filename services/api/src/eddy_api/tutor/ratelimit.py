@@ -70,3 +70,11 @@ class RedisLimiter:
             return self.fallback.allow(key, now)
         minute, day = int(results[0]), int(results[2])
         return minute <= self.per_minute and day <= self.per_day
+
+
+def limiter_for(url: str, per_minute: int, per_day: int) -> Limiter:
+    """Redis when there is one. With no URL (the desktop app, one process) the count is kept in
+    this process from the start, with no connection tried and no wait for it to fail."""
+    if not url:
+        return MemoryLimiter(per_minute, per_day)
+    return RedisLimiter.from_url(url, per_minute, per_day)

@@ -24,3 +24,5 @@ storybook-static/
 packages/schemas/generated/
 packages/scenes/src/layout/font-metrics.json
 evals/golden/scenes/
+# Copies of the repository that helper agents work in: not ours to format.
+.claude/worktrees/

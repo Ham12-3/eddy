@@ -4,6 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 const WEB_PORT = 3301;
 const API_PORT = 8301;
 const GATED_PORT = 3302;
+// The desktop app's mode (ADR-0036): profiles in place of email sign-in, on the same build.
+const LOCAL_WEB_PORT = 3303;
+const LOCAL_API_PORT = 8304;
 // E2E has its own database, so it never migrates or reseeds the developer's.
 const E2E_DATABASE_URL = "postgresql+psycopg://eddy:eddy@127.0.0.1:5442/eddy_e2e";
 // The API connects as the runtime role, as it does everywhere (ADR-0024).
@@ -115,6 +118,41 @@ export default defineConfig({
       command: `pnpm --filter @eddy/web exec next start --hostname 127.0.0.1 --port ${GATED_PORT}`,
       url: `http://127.0.0.1:${GATED_PORT}`,
       env: withEnv({ API_BASE_URL: `http://127.0.0.1:${API_PORT}`, EDDY_ADMIN_PREVIEW: "0" }),
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      // A second API on the same eddy_e2e database, in local mode: its profile routes exist,
+      // and no Redis is used (limits are counted in the process, as in the desktop app).
+      command: `uv run --package eddy-api uvicorn eddy_api.main:app --host 127.0.0.1 --port ${LOCAL_API_PORT}`,
+      url: `http://127.0.0.1:${LOCAL_API_PORT}/health`,
+      env: withEnv({
+        SERVICE_TOKEN_PUBLIC_KEY_B64: b64(publicKey),
+        DATABASE_URL: E2E_DATABASE_URL,
+        RUNTIME_DATABASE_URL: E2E_RUNTIME_DATABASE_URL,
+        MATHS_CORE_BASE_URL: `http://127.0.0.1:${MATHS_PORT}`,
+        MATHS_CORE_SERVICE_TOKEN: mathsToken,
+        EDDY_ENVIRONMENT: "test",
+        ANTHROPIC_API_KEY: "",
+        EDDY_LOCAL_MODE: "1",
+        REDIS_URL: "",
+        // Every parallel E2E browser makes its own profiles in the one database.
+        LOCAL_PROFILE_LIMIT: "100000",
+      }),
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      // The same production build in local mode (e2e/desktop.spec.ts).
+      command: `pnpm --filter @eddy/web exec next start --hostname 127.0.0.1 --port ${LOCAL_WEB_PORT}`,
+      url: `http://127.0.0.1:${LOCAL_WEB_PORT}`,
+      env: withEnv({
+        SERVICE_TOKEN_PRIVATE_KEY_B64: b64(privateKey),
+        API_BASE_URL: `http://127.0.0.1:${LOCAL_API_PORT}`,
+        AUTH_SECRET: authSecret,
+        AUTH_URL: `http://localhost:${LOCAL_WEB_PORT}`,
+        EDDY_LOCAL_MODE: "1",
+      }),
       reuseExistingServer: false,
       timeout: 120_000,
     },

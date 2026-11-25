@@ -117,8 +117,17 @@ def test_a_failing_job_does_not_stop_the_others(monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(jobs, "alerts", boom)
     monkeypatch.setattr(jobs, "purge", lambda *_: ran.append("purge"))
-    monkeypatch.setattr(jobs, "erasures", lambda *_: ran.append("erasures"))
+    waits: list[bool] = []
+
+    def erasures(*_: object, wait_for_review: bool) -> None:
+        ran.append("erasures")
+        waits.append(wait_for_review)
+
+    monkeypatch.setattr(jobs, "erasures", erasures)
     session = MagicMock()
     worker.privacy_tick(lambda: nullcontext(session), Settings())  # type: ignore[arg-type]
     assert ran == ["purge", "erasures"]
     session.rollback.assert_called_once()
+    # The desktop app has nobody to review a safety record, so its erasures do not wait.
+    worker.privacy_tick(lambda: nullcontext(session), Settings(eddy_local_mode=True))  # type: ignore[arg-type]
+    assert waits == [True, False]

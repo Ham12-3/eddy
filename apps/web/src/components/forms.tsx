@@ -9,6 +9,8 @@ export interface FormState {
   error?: string;
   /** Errors for single fields, by field name. */
   fields?: Record<string, string>;
+  /** What was typed, to fill the form in again after a problem. Never a PIN or a password. */
+  values?: Record<string, string>;
 }
 
 export const initialFormState: FormState = {};

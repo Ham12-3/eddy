@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { isLocalMode } from "@/lib/local-mode";
 import { signedInRole, signedInStudent } from "@/lib/session";
 
 /** Every student-facing page: a skip link, the header, the page, and the footer. */
@@ -20,9 +21,11 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       <SiteHeader
         role={student ? "student" : role === "parent" ? "parent" : null}
         parentVisible={student?.me.parent_visible ?? false}
+        local={isLocalMode()}
+        name={student?.me.name ?? null}
       />
       {children}
-      <SiteFooter />
+      <SiteFooter local={isLocalMode()} />
     </>
   );
 }
