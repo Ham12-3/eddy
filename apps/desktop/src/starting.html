@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>Eddy</title>
+    <!-- The design tokens, copied here by build:shell: light and dark, as the app itself. -->
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: 18px;
+        line-height: 1.5;
+      }
+      main {
+        margin-left: 10vw;
+        max-width: 60ch;
+        padding: 12vh 2rem;
+        border-left: 1px solid var(--rule);
+      }
+      h1 {
+        margin: 0 0 1rem;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 2.5rem;
+      }
+      p {
+        margin: 0 0 0.75rem;
+      }
+      .muted {
+        color: var(--ink-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Eddy is starting</h1>
+      <p id="step" role="status">Getting ready</p>
+      <p class="muted">
+        The first time takes a little longer, while Eddy sets up on this computer.
+      </p>
+    </main>
+  </body>
+</html>

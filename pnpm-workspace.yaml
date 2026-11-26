@@ -5,6 +5,7 @@ packages:
   - infra
 
 onlyBuiltDependencies:
+  - electron
   - esbuild
   - sharp
   - unrs-resolver

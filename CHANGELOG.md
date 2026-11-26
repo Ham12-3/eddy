@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Desktop app, phase 2: the packaged parts and the shell (26 November 2026)
+
+Added:
+
+- `apps/desktop`: the Electron shell and the build of everything it runs. `pnpm --filter @eddy/desktop build` makes the web app a standalone server, bundles scene-check into one file with no browser, packages the API and maths-core as programs that need no Python, and fetches PostgreSQL 16.15. `start` opens the app.
+- `eddy_api/desktop.py`: the one program the shell runs for services/api (`setup`, `serve`, `worker`). `EDDY_HOME` names the folder holding the config, prompts, curriculum and migrations.
+- Each install makes its own database passwords, service-token key pair and cookie secret on first run. Every service listens on 127.0.0.1 only, on ports chosen at each start, and the window makes no request to anywhere else.
+- A test that runs the whole app without its window from an empty data folder: set-up, every service, a profile, a lesson, a clean stop, and the same data on restart.
+
+Changed:
+
+- Typed chat is off in the desktop app (the product owner's decision, ADR-0036): a lesson takes answers and hint requests, there is no box to type a message, and no model is shipped. The desktop privacy notice is now version 0.4.0 and says so.
+
+Not done:
+
+- The installer (phase 3) and retiring the online-only code (phase 4).
+
 ### Desktop app, phases 0 and 1: a local model and local mode (25 November 2026)
 
 Added:

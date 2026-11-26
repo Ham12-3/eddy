@@ -48,3 +48,4 @@ apps/desktop/resources/
 apps/desktop/.cache/
 apps/desktop/dist/
 apps/desktop/release/
+apps/desktop/src/tokens.css

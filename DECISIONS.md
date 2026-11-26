@@ -617,6 +617,14 @@ Status: Accepted (25 and 26 November 2026). The product owner chose a Windows de
       - A fixed line under the help script in local mode, saying that Eddy has not told anyone. The script ends "You did the right thing by saying something", which online is followed by a person reading the record. The line needs the lead's approval with the script, so it is not added.
       - The notice now tells a child that Eddy is not a safe place to write something they do not want people at home to read. That sentence needs the lead's sign-off.
     - For legal review: the desktop notice names no contact and no complaint route, as nobody holds the data but the family.
+  - **Packaging (phase 2, 26 November 2026):**
+    - **Shell:** Electron, one window in an in-memory session, so closing Eddy forgets the open profile. No Node in the page, no new windows, no permissions, and every request to anywhere but `127.0.0.1` is cancelled.
+    - **PostgreSQL 16.15,** the version the tests run against, not the 17 first planned. The Windows binaries come from EnterpriseDB, which postgresql.org links to. The programs inside the archive are not code-signed, so the build checks the archive against a SHA-256 fixed when the script was written.
+    - **Python** services are packaged with PyInstaller as folders, not single files, so they start quickly. The web server and scene-check run in Electron's own Node.
+    - **Secrets** are made on first run and kept in the user's app-data folder: database passwords, the service-token key pair, the cookie secret and two shared tokens. The database asks for a password on every connection, even from this computer.
+    - **Children inherit a short allow-list** of the computer's environment, so a key or database URL set on the machine never reaches Eddy.
+    - **Preview builds** run the API in its development environment. A release build must not: the tutor then stays locked until the safeguarding script is approved. With typed chat off the script can never be shown, so whether that lock should still apply to the desktop app is a question for the product owner and the safeguarding lead.
+    - **Size:** about 280 MB before the installer compresses it.
   - **For the packaging phase** (from the security review):
     - A fresh random `AUTH_SECRET`, service-token key pair and database passwords for each install, never fixed ones.
     - The worker must run inside the app: the 90-day message purge and the 30-day erasure happen only while it does.
