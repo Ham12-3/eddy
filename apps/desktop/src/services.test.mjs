@@ -3,13 +3,16 @@
 // again, as when Eddy is closed and reopened. Skips when the parts have not been built
 // (`pnpm --filter @eddy/desktop build`). Heavy: `pnpm --filter @eddy/desktop test:app`.
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { sign } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { resourcesDir } from "../scripts/paths.mjs";
+import { stopPostgres } from "./postgres.mjs";
 import { baseEnv, startServices, WINDOW_COOKIE } from "./services.mjs";
 
 const PARTS = [
@@ -59,7 +62,6 @@ describe(
       startServices({
         resources: resourcesDir,
         dataDir,
-        node: { command: process.execPath },
         environment: "development",
         onFailure: (name, reason) => failures.push(`${name}: ${reason}`),
       });
@@ -202,6 +204,67 @@ describe(
       const stale = token(firstLaunch.privateKeyB64, "system:local", "system");
       assert.equal((await api("/v1/local/profiles", stale)).status, 401);
       assert.deepEqual(failures, [], "no service stopped by itself");
+    });
+
+    it("leaves nothing running when the shell is ended, not closed", async () => {
+      // Task Manager's "End task", a crash, a power cut: no clean-up code runs. Everything the
+      // shell started must notice it has gone and stop, the database included.
+      const dir = mkdtempSync(path.join(tmpdir(), "eddy desktop ended-"));
+      const script = path.join(path.dirname(fileURLToPath(import.meta.url)), "run-services.mjs");
+      const shell = spawn(process.execPath, [script, dir], { stdio: ["ignore", "pipe", "pipe"] });
+      try {
+        /** @type {{ ports: Record<string, number> }} */
+        const started = await new Promise((resolve, reject) => {
+          let output = "";
+          let errors = "";
+          shell.stdout.on("data", (chunk) => {
+            output += chunk;
+            const line = output.split("\n").find((candidate) => candidate.startsWith("{"));
+            if (line) resolve(JSON.parse(line));
+          });
+          shell.stderr.on("data", (chunk) => (errors += chunk));
+          shell.on("exit", (code) => reject(new Error(`the shell exited (${code}): ${errors}`)));
+        });
+        const pid = path.join(dir, "postgres", "postmaster.pid");
+        assert.ok(existsSync(pid), "the database is running");
+
+        shell.kill(); // On Windows this ends the process at once.
+
+        const { api: apiPort, maths, scenes, web } = started.ports;
+        const stillUp = async () => {
+          const answering = [];
+          for (const [name, port] of Object.entries({ api: apiPort, maths, scenes, web })) {
+            try {
+              await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(1000) });
+              answering.push(name);
+            } catch {
+              // Gone, as it should be.
+            }
+          }
+          if (existsSync(pid)) answering.push("the database");
+          return answering;
+        };
+        let left = await stillUp();
+        for (let tries = 0; left.length > 0 && tries < 60; tries += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          left = await stillUp();
+        }
+        assert.deepEqual(left, [], "still running after the shell was ended");
+      } finally {
+        shell.kill();
+        // If the test failed, the database may still be running: stop it, so that the failure
+        // shown is the test's own and the folder can be removed.
+        await stopPostgres({
+          binDir: path.join(resourcesDir, "postgres", "bin"),
+          dataDir: path.join(dir, "postgres"),
+          env: baseEnv(),
+        });
+        try {
+          rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+        } catch {
+          // A file still held open: the folder is in the temp folder and can stay.
+        }
+      }
     });
   },
 );

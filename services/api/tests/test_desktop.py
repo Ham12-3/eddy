@@ -1,6 +1,9 @@
 """The desktop app's entry program (ADR-0036): set-up of an empty database, and where it finds
 its files when there is no repository around it."""
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -58,6 +61,85 @@ def test_an_older_eddy_says_plainly_that_the_data_is_newer(
     monkeypatch.setattr(desktop, "get_settings", lambda: settings)
     assert desktop.main(["setup"]) == desktop.NEWER_DATABASE
     assert "older than the one that last used this data" in capsys.readouterr().err
+
+
+WATCHER = """
+import sys, time
+from eddy_api.desktop import exit_with_parent
+exit_with_parent(before=lambda: print("stopping the database", flush=True))
+print("started", flush=True)
+time.sleep(60)
+print("still here", flush=True)
+"""
+
+
+def _watched(env_value: str | None) -> subprocess.Popen[str]:
+    env = {key: value for key, value in os.environ.items() if key != "EDDY_EXIT_WITH_PARENT"}
+    if env_value is not None:
+        env["EDDY_EXIT_WITH_PARENT"] = env_value
+    # A fixed script run with this very interpreter: nothing here comes from outside the test.
+    return subprocess.Popen(  # noqa: S603
+        [sys.executable, "-c", WATCHER],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+        env=env,
+    )
+
+
+def test_a_program_ends_when_the_shell_that_started_it_goes() -> None:
+    child = _watched("1")
+    assert child.stdout is not None
+    assert child.stdin is not None
+    try:
+        assert child.stdout.readline().strip() == "started"
+        # The shell goes: its end of the pipe closes, as it does when a process is killed.
+        child.stdin.close()
+        assert child.wait(timeout=20) == 0
+        # What must happen first did happen, and the program did not carry on.
+        assert child.stdout.read().split() == ["stopping", "the", "database"]
+    finally:
+        child.kill()
+
+
+def test_a_program_started_by_hand_is_left_alone() -> None:
+    child = _watched(None)
+    assert child.stdout is not None
+    assert child.stdin is not None
+    try:
+        assert child.stdout.readline().strip() == "started"
+        child.stdin.close()
+        with pytest.raises(subprocess.TimeoutExpired):
+            child.wait(timeout=3)
+    finally:
+        child.kill()
+
+
+def test_stopping_the_database_needs_to_be_told_where_it_is(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    ran: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **_: ran.append(args))
+    monkeypatch.delenv("EDDY_PG_CTL", raising=False)
+    monkeypatch.delenv("EDDY_PG_DATA", raising=False)
+    desktop.stop_database()
+    assert ran == []
+    monkeypatch.setenv("EDDY_PG_CTL", "pg_ctl.exe")
+    monkeypatch.setenv("EDDY_PG_DATA", str(tmp_path))
+    desktop.stop_database()  # no postmaster.pid: no database is running there
+    assert ran == []
+    (tmp_path / "postmaster.pid").write_bytes(b"1234")
+    desktop.stop_database()
+    assert ran == [["pg_ctl.exe", "stop", "-D", str(tmp_path), "-m", "fast", "-w", "-t", "30"]]
+
+
+def test_the_database_watcher_is_only_for_the_shell(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("EDDY_EXIT_WITH_PARENT", raising=False)
+    # Started by hand it would wait for ever and stop nothing, so it says so and ends.
+    assert desktop.main(["watch-database"]) == 2
+    assert "started by the desktop shell" in capsys.readouterr().err
 
 
 def test_the_commands_need_what_they_need() -> None:

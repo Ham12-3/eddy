@@ -8,6 +8,7 @@ import { spawn } from "node:child_process";
 import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   clusterIsReady,
@@ -30,6 +31,32 @@ const SETTLE_MS = 1500;
 const SETUP_TIMEOUT_MS = 5 * 60 * 1000;
 /** `eddy-api setup` exits with this when the data belongs to a newer Eddy (eddy_api/desktop.py). */
 const NEWER_DATABASE = 3;
+
+/**
+ * A running JavaScript service: what `child_process` and Electron's `utilityProcess` both give.
+ * @typedef {object} NodeChild
+ * @property {import("node:stream").Readable | null} stdout
+ * @property {import("node:stream").Readable | null} stderr
+ * @property {() => boolean} kill
+ * @property {(event: "exit", listener: (code: number | null) => void) => unknown} on
+ */
+
+/**
+ * Runs a script with this very Node. The script is started through `node-child.mjs`, which ends
+ * it when this process goes, so nothing is left behind if the parent is killed.
+ * @param {string} script
+ * @param {{ env: NodeJS.ProcessEnv, cwd?: string }} options
+ * @returns {NodeChild}
+ */
+export function runWithNode(script, { env, cwd }) {
+  const launcher = path.join(path.dirname(fileURLToPath(import.meta.url)), "node-child.mjs");
+  return spawn(process.execPath, [launcher, script], {
+    cwd,
+    env,
+    windowsHide: true,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
 
 /** Eddy was closed while it was starting: not a failure, and nothing to tell anyone. */
 export class StoppedError extends Error {
@@ -114,8 +141,8 @@ async function waitFor(url, name, check, headers = {}, seconds = 90) {
  * @param {object} options
  * @param {string} options.resources the built parts (web, scene-check, python, data, postgres)
  * @param {string} options.dataDir this install's data: the database, its passwords and logs
- * @param {{ command: string, env?: NodeJS.ProcessEnv }} options.node what runs JavaScript: Node,
- *   or the Electron program itself with ELECTRON_RUN_AS_NODE set
+ * @param {typeof runWithNode} [options.runNode] what runs the two JavaScript services: this
+ *   Node by default, and Electron's own helper processes in the shell
  * @param {"development" | "production"} options.environment `development` for a preview build:
  *   the tutor stays locked in production until the safeguarding script is approved
  * @param {import("./secrets.mjs").Codec} [options.codec] seals the saved database passwords
@@ -129,7 +156,7 @@ async function waitFor(url, name, check, headers = {}, seconds = 90) {
 export async function startServices({
   resources,
   dataDir,
-  node,
+  runNode = runWithNode,
   environment,
   codec,
   log = () => {},
@@ -141,10 +168,12 @@ export async function startServices({
   const binDir = path.join(resources, "postgres", "bin");
   const cluster = path.join(dataDir, "postgres");
 
-  /** @type {{ name: string, child: import("node:child_process").ChildProcess }[]} */
+  /** @type {{ name: string, child: NodeChild }[]} */
   const children = [];
   /** @type {import("node:child_process").ChildProcess | undefined} */
   let settingUp;
+  /** @type {import("node:child_process").ChildProcess | undefined} */
+  let watcher;
   /** @type {Map<string, string>} */
   const died = new Map();
   let started = false;
@@ -157,6 +186,8 @@ export async function startServices({
     // The web first, the database last: nothing is left talking to something already gone.
     for (const { child } of [...children].reverse()) child.kill();
     await stopPostgres({ binDir, dataDir: cluster, env });
+    // The database is stopped, so its watcher has nothing left to do.
+    watcher?.kill();
   }
   onStoppable(stop);
 
@@ -174,32 +205,53 @@ export async function startServices({
   const logFile = (name) => path.join(logs, `${name}.log`);
 
   /**
+   * Keeps a service's output, and notices if it stops by itself.
+   * @param {string} name
+   * @param {NodeChild} child
+   */
+  function watch(name, child) {
+    const out = createWriteStream(logFile(name));
+    child.stdout?.pipe(out);
+    child.stderr?.pipe(out);
+    child.on("exit", (code) => {
+      if (stopped || died.has(name)) return;
+      died.set(name, `exit code ${code}; see ${logFile(name)}`);
+      // After start-up nothing is waiting on `died`, so the shell is told straight away.
+      if (started) onFailure(name, died.get(name) ?? "");
+    });
+    children.push({ name, child });
+  }
+
+  /**
+   * Starts one of the packaged Python programs. Its input is a pipe that is never written to:
+   * when this process goes, however it goes, the pipe closes and the program ends itself
+   * (EDDY_EXIT_WITH_PARENT, eddy_api/desktop.py). Nothing is left running without its shell.
    * @param {string} name
    * @param {string} command
    * @param {string[]} args
    * @param {NodeJS.ProcessEnv} extra
+   */
+  function startProgram(name, command, args, extra) {
+    const child = spawn(command, args, {
+      env: { ...env, ...extra, EDDY_EXIT_WITH_PARENT: "1" },
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    child.on("error", (error) => {
+      if (!stopped && !died.has(name)) died.set(name, error.message);
+    });
+    watch(name, child);
+  }
+
+  /**
+   * Starts one of the two JavaScript services.
+   * @param {string} name
+   * @param {string} script
+   * @param {NodeJS.ProcessEnv} extra
    * @param {string} [cwd]
    */
-  function start(name, command, args, extra, cwd) {
-    const out = createWriteStream(logFile(name));
-    const child = spawn(command, args, {
-      cwd,
-      env: { ...env, ...extra },
-      windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    child.stdout.pipe(out);
-    child.stderr.pipe(out);
-    const gone = (/** @type {string} */ reason) => {
-      if (stopped || died.has(name)) return;
-      died.set(name, reason);
-      // After start-up nothing is waiting on `died`, so the shell is told straight away.
-      if (started) onFailure(name, reason);
-    };
-    child.on("exit", (code) => gone(`exit code ${code}; see ${logFile(name)}`));
-    child.on("error", (error) => gone(error.message));
-    children.push({ name, child });
-    return child;
+  function startScript(name, script, extra, cwd) {
+    watch(name, runNode(script, { env: { ...env, ...extra }, cwd }));
   }
 
   /**
@@ -267,6 +319,23 @@ export async function startServices({
     // Each port is chosen just before its service takes it, so there is little time for
     // another program to take it first.
     ports.postgres = await freePort();
+    const api = path.join(resources, "python", "eddy-api", "eddy-api.exe");
+    // If this process is ended, not closed (Task Manager, a crash), Windows ends the programs
+    // it started with it, but not the database: PostgreSQL is started through its own launcher.
+    // So one small program is started apart from this one. It holds a pipe from here and waits;
+    // when the pipe closes because this process has gone, it stops the database.
+    watcher = spawn(api, ["watch-database"], {
+      env: {
+        ...env,
+        EDDY_EXIT_WITH_PARENT: "1",
+        EDDY_PG_CTL: path.join(binDir, "pg_ctl.exe"),
+        EDDY_PG_DATA: cluster,
+      },
+      detached: true,
+      windowsHide: true,
+      stdio: ["pipe", "ignore", "ignore"],
+    });
+    watcher.on("error", () => {});
     await startPostgres({
       binDir,
       dataDir: cluster,
@@ -276,7 +345,6 @@ export async function startServices({
     });
     halt();
 
-    const api = path.join(resources, "python", "eddy-api", "eddy-api.exe");
     /** @type {NodeJS.ProcessEnv} What the API, its worker and its set-up share. */
     const apiEnv = {
       EDDY_HOME: path.join(resources, "data"),
@@ -311,20 +379,19 @@ export async function startServices({
 
     log("Starting Eddy");
     ports.maths = await freePort();
-    start(
+    startProgram(
       "maths",
       path.join(resources, "python", "eddy-maths", "eddy-maths.exe"),
       ["--port", String(ports.maths)],
       { MATHS_CORE_SERVICE_TOKEN: secrets.mathsToken },
     );
     ports.scenes = await freePort();
-    start("scenes", node.command, [path.join(resources, "scene-check", "server.mjs")], {
-      ...node.env,
+    startScript("scenes", path.join(resources, "scene-check", "server.mjs"), {
       SCENE_CHECK_SERVICE_TOKEN: secrets.sceneToken,
       SCENE_CHECK_PORT: String(ports.scenes),
     });
     ports.api = await freePort();
-    start("api", api, ["serve", "--port", String(ports.api)], {
+    startProgram("api", api, ["serve", "--port", String(ports.api)], {
       ...apiEnv,
       SERVICE_TOKEN_PUBLIC_KEY_B64: secrets.publicKeyB64,
       MATHS_CORE_BASE_URL: `http://${HOST}:${ports.maths}`,
@@ -333,15 +400,14 @@ export async function startServices({
       SCENE_CHECK_SERVICE_TOKEN: secrets.sceneToken,
     });
     // The worker only runs the privacy jobs: it needs the database and nothing else.
-    start("worker", api, ["worker"], apiEnv);
+    startProgram("worker", api, ["worker"], apiEnv);
     ports.web = await freePort();
     const webUrl = `http://${HOST}:${ports.web}`;
-    start(
+    const webDir = path.join(resources, "web", "apps", "web");
+    startScript(
       "web",
-      node.command,
-      ["server.js"],
+      path.join(webDir, "server.js"),
       {
-        ...node.env,
         NODE_ENV: "production",
         PORT: String(ports.web),
         HOSTNAME: HOST,
@@ -352,7 +418,7 @@ export async function startServices({
         API_BASE_URL: `http://${HOST}:${ports.api}`,
         SERVICE_TOKEN_PRIVATE_KEY_B64: secrets.privateKeyB64,
       },
-      path.join(resources, "web", "apps", "web"),
+      webDir,
     );
 
     await Promise.all([
@@ -376,6 +442,7 @@ export async function startServices({
     // Closed in the middle of starting the database: the step in flight may have finished
     // after `stop` looked. Stopping it again is harmless when there is nothing to stop.
     await stopPostgres({ binDir, dataDir: cluster, env });
+    watcher?.kill();
     throw error;
   }
 }

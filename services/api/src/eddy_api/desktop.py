@@ -9,10 +9,22 @@ The desktop shell starts a private Postgres and then runs this, packaged as one 
 
 Settings come from the environment, as everywhere else. `EDDY_HOME` names the folder that holds
 `config/`, `prompts/`, `curriculum/` and `migrations/`; in the repository it is not needed.
+
+- `watch-database`: does nothing until the shell that started it goes, then stops the database.
+  Windows ends the shell's own programs with it, but PostgreSQL is started through its own
+  launcher and would run on, holding the student's data open. The shell starts this one apart
+  from itself, so it is still there to stop the database when the shell has been ended.
+
+With `EDDY_EXIT_WITH_PARENT=1` a long-running command ends when the shell that started it goes,
+however it goes (`exit_with_parent`).
 """
 
 import argparse
+import os
+import subprocess
 import sys
+import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from alembic import command
@@ -91,6 +103,49 @@ def setup(settings: Settings, home: Path = REPO_ROOT) -> None:
     print(report.render(verbose=False), flush=True)
 
 
+def exit_with_parent(before: Callable[[], None] | None = None) -> None:
+    """End this process when the one that started it goes.
+
+    The shell gives each program a pipe as its input and never writes to it. While the shell is
+    alive a read from that pipe waits; when the shell exits, crashes or is ended from Task
+    Manager, the pipe closes and the read returns. Nothing of Eddy is then left running on the
+    computer. Only with EDDY_EXIT_WITH_PARENT=1: started by hand, a closed input means nothing.
+    """
+    if os.environ.get("EDDY_EXIT_WITH_PARENT") != "1":
+        return
+
+    def wait() -> None:
+        try:
+            sys.stdin.buffer.read()
+        except (OSError, ValueError):
+            pass  # No usable input at all is treated like a closed one.
+        try:
+            if before is not None:
+                before()
+        finally:
+            os._exit(0)
+
+    threading.Thread(target=wait, name="exit-with-parent", daemon=True).start()
+
+
+def stop_database() -> None:
+    """Stops the desktop app's PostgreSQL, when the shell could not (EDDY_PG_CTL, EDDY_PG_DATA).
+
+    The database is not this program's child, so it would otherwise run on, holding the
+    student's data open, until the computer was signed out of.
+    """
+    pg_ctl, data = os.environ.get("EDDY_PG_CTL"), os.environ.get("EDDY_PG_DATA")
+    if not pg_ctl or not data or not Path(data, "postmaster.pid").exists():
+        return
+    # Both paths come from the shell that started this program, not from anyone's input.
+    subprocess.run(  # noqa: S603
+        [pg_ctl, "stop", "-D", data, "-m", "fast", "-w", "-t", "30"],
+        check=False,
+        capture_output=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+
+
 def serve(port: int) -> None:
     import uvicorn
 
@@ -107,6 +162,7 @@ def main(argv: list[str]) -> int:
     serving = commands.add_parser("serve", help="run the API on this computer")
     serving.add_argument("--port", type=int, required=True)
     commands.add_parser("worker", help="run the privacy jobs")
+    commands.add_parser("watch-database", help="stop the database when the shell has gone")
     args = parser.parse_args(argv)
     if args.command == "setup":
         try:
@@ -120,10 +176,19 @@ def main(argv: list[str]) -> int:
             return NEWER_DATABASE
         return 0
     if args.command == "serve":
+        exit_with_parent()
         serve(args.port)
+        return 0
+    if args.command == "watch-database":
+        if os.environ.get("EDDY_EXIT_WITH_PARENT") != "1":
+            print("watch-database is started by the desktop shell, not by hand.", file=sys.stderr)
+            return 2
+        exit_with_parent(before=stop_database)
+        threading.Event().wait()  # until the shell goes, or ends this program itself
         return 0
     from eddy_api import worker
 
+    exit_with_parent()
     return worker.main([])
 
 

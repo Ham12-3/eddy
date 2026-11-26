@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, dialog, Menu, safeStorage, session } from "electron";
+import { app, BrowserWindow, dialog, Menu, safeStorage, session, utilityProcess } from "electron";
 
 import { startServices, StoppedError, WINDOW_COOKIE } from "./services.mjs";
 import { isAllowedUrl, shellFileUrls } from "./window-policy.mjs";
@@ -137,9 +137,13 @@ async function start() {
       ? path.join(process.resourcesPath, "eddy")
       : path.join(here, "..", "resources"),
     dataDir: path.join(app.getPath("userData"), "data"),
-    // Electron is also a Node: the web server and scene-check run in it, so no second copy of
-    // Node is shipped.
-    node: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
+    // The web server and scene-check run in Electron's own helper processes: no second copy of
+    // Node is shipped, the program need not be able to run as a bare Node, and they end with
+    // the shell however it ends.
+    runNode: (script, { env, cwd }) =>
+      /** @type {import("./services.mjs").NodeChild} */ (
+        /** @type {unknown} */ (utilityProcess.fork(script, [], { env, cwd, stdio: "pipe" }))
+      ),
     environment: PREVIEW ? "development" : "production",
     // The saved database passwords are sealed with the Windows account's own key, so a copy of
     // the data folder does not open on another computer or for another account.
@@ -203,6 +207,8 @@ app.on("before-quit", (event) => {
   if (quitting) return;
   event.preventDefault();
   quitting = true;
+  // The window goes first: a page still open would ask a server that is being stopped.
+  if (window && !window.isDestroyed()) window.destroy();
   stopServices()
     .catch(() => {})
     .finally(() => app.exit(0));
