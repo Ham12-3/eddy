@@ -4,6 +4,7 @@ import { SelectField, TextField } from "@eddy/ui";
 import { useActionState } from "react";
 
 import { FormError, initialFormState, SubmitButton } from "@/components/forms";
+import { MONTHS } from "@/lib/months";
 
 import { checkAge, checkInvite, sendSignUpLink } from "./actions";
 
@@ -29,21 +30,6 @@ export function InviteForm() {
     </form>
   );
 }
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 /**
  * Month and year only, on a neutral screen that never shows the cut-off (SPEC.md section 4.1).

@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signOut } from "@/auth";
 import type { FormState } from "@/components/forms";
+import { isLocalMode } from "@/lib/local-mode";
+import { clearProfile } from "@/lib/local-profile";
 import { requireStudent } from "@/lib/session";
 
 const preferencesSchema = z.object({
@@ -42,7 +44,8 @@ export async function deleteAccount(_: FormState, form: FormData): Promise<FormS
     body: { kind: "DELETE", confirm: true },
   });
   if (!response.ok) return { error: "Eddy could not take that request just now. Try again soon." };
-  await signOut({ redirect: false });
+  if (isLocalMode()) await clearProfile();
+  else await signOut({ redirect: false });
   redirect("/deleted");
 }
 
@@ -54,6 +57,7 @@ export interface CodeState {
 
 /** A new parent link code, shown once (ADR-0033). */
 export async function makeParentCode(): Promise<CodeState> {
+  if (isLocalMode()) notFound(); // no parent accounts in the desktop app (ADR-0036)
   const { api } = await requireStudent({ onboarding: true });
   const { data } = await api.POST("/v1/me/parent-links/code");
   if (!data) return { error: "Eddy could not make a code just now. Try again soon." };
@@ -62,6 +66,7 @@ export async function makeParentCode(): Promise<CodeState> {
 }
 
 export async function answerParentLink(linkId: string, accept: boolean): Promise<string | null> {
+  if (isLocalMode()) notFound();
   const { api } = await requireStudent({ onboarding: true });
   const params = { params: { path: { link_id: linkId } } };
   const { response } = accept

@@ -86,6 +86,8 @@ class ProfileOut(BaseModel):
 class MeOut(BaseModel):
     id: uuid.UUID
     role: str
+    #: The nickname of a profile in the desktop app (routes/local.py); nothing online.
+    name: str | None
     profile: ProfileOut
     preferences: Preferences
     notices: list[NoticeOut]
@@ -111,6 +113,7 @@ def _me(session: Session, student: Student) -> MeOut:
     return MeOut(
         id=student.id,
         role=student.role,
+        name=student.name,
         profile=ProfileOut(
             birth_year=profile.birth_year,
             birth_month=profile.birth_month,
@@ -136,18 +139,30 @@ def get_me(student: Student, session: DbSession) -> MeOut:
     return _me(session, student)
 
 
-#: The privacy notice version shown now. Keep in step with PRIVACY_NOTICE_VERSION in
-#: apps/web/src/lib/notices.ts: only the current version can be acknowledged.
+#: The privacy notice version shown now. Keep in step with apps/web/src/lib/notices.ts: only the
+#: current version can be acknowledged. The desktop app shows its own notice (the data stays on
+#: the computer and no AI company is involved), so it has its own version (ADR-0036).
 PRIVACY_NOTICE_VERSION = "0.2.0"
+LOCAL_PRIVACY_NOTICE_VERSION = "0.3.0"
+
+
+def privacy_notice_version(settings: Settings) -> str:
+    return LOCAL_PRIVACY_NOTICE_VERSION if settings.eddy_local_mode else PRIVACY_NOTICE_VERSION
 
 
 class NoticeIn(BaseModel):
     notice_key: Literal["privacy"]
-    version: Literal["0.2.0"]
+    version: Literal["0.2.0", "0.3.0"]
 
 
 @router.post("/notices", operation_id="acknowledgeNotice")
-def acknowledge_notice(body: NoticeIn, student: Student, session: DbSession) -> MeOut:
+def acknowledge_notice(
+    body: NoticeIn, student: Student, session: DbSession, settings: AppSettings
+) -> MeOut:
+    if body.version != privacy_notice_version(settings):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, detail="That is not the current notice."
+        )
     session.execute(
         insert(NoticeAcknowledgement)
         .values(user_id=student.id, notice_key=body.notice_key, version=body.version)
@@ -301,7 +316,12 @@ class ConcernOut(BaseModel):
 
 
 @router.post("/concerns", operation_id="reportConcern")
-def report_concern(body: ConcernIn, student: Student, session: DbSession) -> ConcernOut:
+def report_concern(
+    body: ConcernIn, student: Student, session: DbSession, settings: AppSettings
+) -> ConcernOut:
+    if settings.eddy_local_mode:
+        # Nobody could ever read it: the desktop app shows who to contact instead (ADR-0036).
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found.")
     since = datetime.now(UTC) - timedelta(days=1)
     recent = session.scalar(
         select(func.count())
@@ -346,7 +366,9 @@ EXPORT_DOWNLOADS_PER_HOUR = 5
 
 
 @router.get("/export", operation_id="exportMyData")
-def export_my_data(student: Student, session: DbSession, download: bool = False) -> dict[str, Any]:
+def export_my_data(
+    student: Student, session: DbSession, settings: AppSettings, download: bool = False
+) -> dict[str, Any]:
     """Everything held about the student, built now and not stored. Viewing it changes nothing;
     downloading it as a file is recorded as a met request (UK GDPR accountability), at most
     EXPORT_DOWNLOADS_PER_HOUR times an hour."""
@@ -363,7 +385,7 @@ def export_my_data(student: Student, session: DbSession, download: bool = False)
         )
         if (recent or 0) >= EXPORT_DOWNLOADS_PER_HOUR:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail="Try again in an hour.")
-    data = privacy.export(session, student.id)
+    data = privacy.export(session, student.id, local=settings.eddy_local_mode)
     if not download:
         return data
     now = datetime.now(UTC)

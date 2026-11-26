@@ -68,10 +68,15 @@ export async function stoppedByAge(): Promise<boolean> {
   return (await cookies()).get(STOP_COOKIE)?.value === "1";
 }
 
-export async function stopForAge(): Promise<void> {
+/**
+ * Stops an immediate retry after an under-13 answer. Online that is a day. The desktop app is
+ * one browser shared by a household, so it passes a few minutes: a younger child's try must not
+ * shut an older brother or sister out until tomorrow.
+ */
+export async function stopForAge(minutes: number = STOP_HOURS * 60): Promise<void> {
   const jar = await cookies();
   jar.delete(JOIN_COOKIE);
-  jar.set(STOP_COOKIE, "1", { ...cookieOptions, maxAge: STOP_HOURS * 60 * 60 });
+  jar.set(STOP_COOKIE, "1", { ...cookieOptions, maxAge: minutes * 60 });
 }
 
 /**

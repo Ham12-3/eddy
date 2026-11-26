@@ -38,3 +38,6 @@ Thumbs.db
 
 # Storybook build
 storybook-static/
+
+# Local model runtime and model files for the desktop app (downloaded, never committed).
+.vendor/

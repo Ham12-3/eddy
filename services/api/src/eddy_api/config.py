@@ -4,11 +4,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+import httpx
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
 _ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 
 class Settings(BaseSettings):
@@ -47,7 +49,18 @@ class Settings(BaseSettings):
     # SPEC.md section 10: zero data retention must be confirmed with Anthropic before any real
     # student data reaches Claude. Until it is, Tier L runs only against a local database.
     anthropic_zdr_confirmed: bool = False
-    # The tutor (M7): Redis for rate limits, and how many messages a student may send.
+    # Which model writes the tutor's messages (ADR-0036): Claude over the internet, or the local
+    # model the desktop app serves on this computer, which sends nothing anywhere.
+    llm_provider: Literal["anthropic", "local"] = "anthropic"
+    local_llm_base_url: str = "http://127.0.0.1:8330"
+    # The desktop app (ADR-0036): no email, no invites and no parents by email. Students pick a
+    # profile on this computer (routes/local.py). Off everywhere else.
+    eddy_local_mode: bool = False
+    # Profiles one computer may hold: a household's worth, and a bound on the picker. Only E2E
+    # raises it, as its parallel browsers all make profiles in one database.
+    local_profile_limit: int = 12
+    # The tutor (M7): Redis for rate limits, and how many messages a student may send. Empty
+    # means no Redis: limits are counted in this process (the desktop app runs one).
     redis_url: str = "redis://127.0.0.1:6390/0"
     tutor_messages_per_minute: int = 12
     tutor_messages_per_day: int = 400
@@ -70,6 +83,14 @@ class Settings(BaseSettings):
     smtp_url: str = "smtp://127.0.0.1:1025"
     mail_from: str = "Eddy <alerts@eddy.localhost>"
 
+    @model_validator(mode="after")
+    def _the_local_model_is_on_this_computer(self) -> "Settings":
+        # The desktop notice promises a student's words go no further than the computer
+        # (ADR-0036), so the local model server may never be anywhere else.
+        if httpx.URL(self.local_llm_base_url).host not in LOOPBACK_HOSTS:
+            raise ValueError("LOCAL_LLM_BASE_URL must be on this computer (127.0.0.1).")
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -83,6 +104,12 @@ def development(settings: Settings) -> bool:
 def tier_l_enabled(settings: Settings) -> bool:
     """Claude (Tier L scenes and the tutor) is on with a key, and with ZDR confirmed, or with a
     local database in development or test."""
+    if settings.llm_provider == "local":
+        return False  # Tier L scenes have no local model
+    if settings.eddy_local_mode:
+        # The desktop app never calls Claude, whatever else is set: its notice says no AI
+        # company sees a student's words (ADR-0036).
+        return False
     if not settings.anthropic_api_key.get_secret_value():
         return False
     if settings.anthropic_zdr_confirmed:
@@ -94,6 +121,6 @@ def tier_l_enabled(settings: Settings) -> bool:
         # Query options can send the connection elsewhere (host, hostaddr, a service file entry).
         if any(key in url.query for key in ("host", "hostaddr", "service")):
             return False
-        if (url.host or "") not in {"127.0.0.1", "localhost", "::1"}:
+        if (url.host or "") not in LOOPBACK_HOSTS:
             return False
     return True

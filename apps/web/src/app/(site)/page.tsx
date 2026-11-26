@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { Page } from "@/components/Page";
 import { apiClientFor, ServiceTokenConfigError } from "@/lib/api";
+import { isLocalMode } from "@/lib/local-mode";
 import { signedInRole, signedInStudent } from "@/lib/session";
 import { isSystemCheckEnabled } from "@/lib/system-check";
 
@@ -108,6 +109,8 @@ async function SystemCheck() {
 
 export default async function HomePage() {
   if ((await signedInStudent()) || (await signedInRole()) === "parent") redirect("/welcome");
+  // The desktop app has no public front page: its front door is the profile picker.
+  if (isLocalMode()) redirect("/profiles");
   return (
     <Page
       title="Eddy"

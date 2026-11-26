@@ -401,6 +401,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/local/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["listLocalProfiles"];
+        put?: never;
+        /** Create Profile */
+        post: operations["createLocalProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/local/profiles/{profile_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open Profile
+         * @description Says the profile may be opened: the web then keeps it in a signed cookie.
+         */
+        post: operations["openLocalProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -1217,6 +1255,29 @@ export interface components {
              */
             status: "REQUESTED" | "ACTIVE";
         };
+        /** LocalProfile */
+        LocalProfile: {
+            /** Has Pin */
+            has_pin: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** LocalProfileIn */
+        LocalProfileIn: {
+            /** Birth Month */
+            birth_month: number;
+            /** Birth Year */
+            birth_year: number;
+            /** Name */
+            name: string;
+            /** Pin */
+            pin?: string | null;
+        };
         /** MaySignInIn */
         MaySignInIn: {
             /** Email */
@@ -1239,6 +1300,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Name */
+            name: string | null;
             /** Notices */
             notices: components["schemas"]["NoticeOut"][];
             /** Parent Visible */
@@ -1350,9 +1413,9 @@ export interface components {
             notice_key: "privacy";
             /**
              * Version
-             * @constant
+             * @enum {string}
              */
-            version: "0.2.0";
+            version: "0.2.0" | "0.3.0";
         };
         /** NoticeOut */
         NoticeOut: {
@@ -1365,6 +1428,21 @@ export interface components {
             notice_key: string;
             /** Version */
             version: string;
+        };
+        /** OpenIn */
+        OpenIn: {
+            /** Pin */
+            pin?: string | null;
+        };
+        /** OpenOut */
+        OpenOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Role */
+            role: string;
         };
         /** Paper */
         Paper: {
@@ -2549,6 +2627,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HelloResponse"];
+                };
+            };
+        };
+    };
+    listLocalProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProfile"][];
+                };
+            };
+        };
+    };
+    createLocalProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openLocalProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

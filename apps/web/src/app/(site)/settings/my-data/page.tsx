@@ -2,6 +2,7 @@ import { buttonClassName, Card, ErrorState } from "@eddy/ui";
 import type { Metadata } from "next";
 
 import { Page } from "@/components/Page";
+import { isLocalMode } from "@/lib/local-mode";
 import { requireStudent } from "@/lib/session";
 
 export const metadata: Metadata = { title: "My data" };
@@ -26,6 +27,10 @@ const LABELS: Record<string, string> = {
   signed_in_on: "Where you are signed in",
   safety_records: "Safety records",
 };
+
+/** In the desktop app: a profile, and no parents, invites, sign-ins or reports (ADR-0036). */
+const LOCAL_LABELS: Record<string, string> = { account: "Your profile" };
+const ONLINE_ONLY = new Set(["parent_links", "invite", "signed_in_on", "concerns_you_reported"]);
 
 function words(key: string): string {
   return key.replaceAll("_", " ");
@@ -78,9 +83,20 @@ export default async function MyDataPage() {
       </Page>
     );
   }
-  const sections = Object.entries(data as Record<string, Json>).filter(([key]) => key in LABELS);
+  const local = isLocalMode();
+  const sections = Object.entries(data as Record<string, Json>).filter(
+    ([key]) => key in LABELS && !(local && ONLINE_ONLY.has(key)),
+  );
   return (
-    <Page title="My data" lead="Everything Eddy holds about you, right now." wide>
+    <Page
+      title="My data"
+      lead={
+        local
+          ? "What Eddy holds in your profile, right now. The privacy notice says what is not shown here."
+          : "Everything Eddy holds about you, right now."
+      }
+      wide
+    >
       <p className="m-0 mb-6">
         <a href="/settings/my-data/download" className={buttonClassName("secondary")}>
           Download as a file
@@ -95,7 +111,7 @@ export default async function MyDataPage() {
             className="flex flex-col gap-3"
           >
             <h2 id={`data-${key}`} className="m-0 text-h3">
-              {LABELS[key]}
+              {(local && LOCAL_LABELS[key]) || LABELS[key]}
             </h2>
             <Value value={value} />
           </Card>

@@ -98,6 +98,9 @@ def _send(settings: Settings, subject: str, body: str) -> None:
 
 def alerts(session: Session, settings: Settings) -> int:
     """Emails one alert per unnotified event or SAFETY concern. Returns how many were sent."""
+    if settings.eddy_local_mode:
+        # The desktop app sends nothing anywhere: its notice says nobody is alerted (ADR-0036).
+        return 0
     if not settings.safeguarding_alert_email:
         logger.warning("SAFEGUARDING_ALERT_EMAIL is not set: no safeguarding alerts were sent")
         return 0
@@ -135,10 +138,12 @@ def alerts(session: Session, settings: Settings) -> int:
     return sent
 
 
-def erasures(session: Session, now: datetime | None = None) -> int:
+def erasures(session: Session, now: datetime | None = None, *, wait_for_review: bool = True) -> int:
     """Completes deletion requests (SPEC.md 4.5: within 30 days). One with a safety record
     waiting for review stays IN_PROGRESS until it is reviewed; one that fails is logged and the
-    rest carry on. A completed request is kept, without its link to the person."""
+    rest carry on. A completed request is kept, without its link to the person.
+
+    The desktop app has no reviewer, so it does not wait (`privacy.erase`)."""
     now = now or datetime.now(UTC)
     done = 0
     ids = list(
@@ -163,7 +168,7 @@ def erasures(session: Session, now: datetime | None = None) -> int:
         user_id = request.user_id
         try:
             if user_id is not None:
-                privacy.erase(session, user_id)
+                privacy.erase(session, user_id, wait_for_review=wait_for_review)
         except privacy.AwaitingReviewError:
             session.rollback()
             held = session.get(DataRequest, request_id)
@@ -195,7 +200,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.job in ("alerts", "all"):
             print(f"alerts sent: {alerts(session, settings)}")
         if args.job in ("erase", "all"):
-            print(f"erasures completed: {erasures(session)}")
+            waits = not settings.eddy_local_mode
+            print(f"erasures completed: {erasures(session, wait_for_review=waits)}")
     return 0
 
 

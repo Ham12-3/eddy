@@ -17,7 +17,7 @@ import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 import anthropic
 
@@ -88,6 +88,22 @@ class StructuredResult:
 
 
 Recorder = Callable[[CallRecord], None]
+
+
+class Llm(Protocol):
+    """Anything that answers a structured request: Claude, or the local model (llm/local.py)."""
+
+    def structured(
+        self,
+        *,
+        prompt: Prompt,
+        context: Sequence[str],
+        messages: list[dict[str, Any]],
+        schema: dict[str, Any],
+        student_id: uuid.UUID | None = None,
+        max_tokens: int = ...,
+        route_name: str | None = None,
+    ) -> StructuredResult: ...
 
 
 def cost_gbp(config: ModelConfig, model: str, usage: Usage) -> float:

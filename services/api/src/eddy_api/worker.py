@@ -96,7 +96,10 @@ def privacy_tick(sessions: sessionmaker[Session], settings: Settings) -> None:
         for name, job in (
             ("alerts", lambda: jobs.alerts(session, settings)),
             ("purge", lambda: jobs.purge(session, settings)),
-            ("erasures", lambda: jobs.erasures(session)),
+            (
+                "erasures",
+                lambda: jobs.erasures(session, wait_for_review=not settings.eddy_local_mode),
+            ),
         ):
             try:
                 log.info("%s: %s", name, job())

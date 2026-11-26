@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import type { FormState } from "@/components/forms";
-import { PRIVACY_NOTICE_VERSION } from "@/lib/notices";
+import { privacyNoticeVersion } from "@/lib/notices";
 import { requireStudent } from "@/lib/session";
 
 export async function acknowledgePrivacy(): Promise<FormState> {
   const { api } = await requireStudent({ onboarding: true });
   const { response } = await api.POST("/v1/me/notices", {
-    body: { notice_key: "privacy", version: PRIVACY_NOTICE_VERSION },
+    body: { notice_key: "privacy", version: privacyNoticeVersion() },
   });
   if (!response.ok) return { error: "Eddy could not save that just now. Try again in a moment." };
   redirect("/welcome");

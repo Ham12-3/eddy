@@ -883,6 +883,75 @@
         "title": "LinkOut",
         "type": "object"
       },
+      "LocalProfile": {
+        "properties": {
+          "has_pin": {
+            "title": "Has Pin",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "has_pin"
+        ],
+        "title": "LocalProfile",
+        "type": "object"
+      },
+      "LocalProfileIn": {
+        "additionalProperties": false,
+        "properties": {
+          "birth_month": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Birth Month",
+            "type": "integer"
+          },
+          "birth_year": {
+            "maximum": 2100.0,
+            "minimum": 1900.0,
+            "title": "Birth Year",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 24,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f<>]+$",
+            "title": "Name",
+            "type": "string"
+          },
+          "pin": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "minLength": 4,
+                "pattern": "^[0-9]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pin"
+          }
+        },
+        "required": [
+          "name",
+          "birth_year",
+          "birth_month"
+        ],
+        "title": "LocalProfileIn",
+        "type": "object"
+      },
       "MaySignInIn": {
         "properties": {
           "email": {
@@ -924,6 +993,17 @@
             "title": "Id",
             "type": "string"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "notices": {
             "items": {
               "$ref": "#/components/schemas/NoticeOut"
@@ -949,6 +1029,7 @@
         "required": [
           "id",
           "role",
+          "name",
           "profile",
           "preferences",
           "notices",
@@ -1248,7 +1329,10 @@
             "type": "string"
           },
           "version": {
-            "const": "0.2.0",
+            "enum": [
+              "0.2.0",
+              "0.3.0"
+            ],
             "title": "Version",
             "type": "string"
           }
@@ -1282,6 +1366,46 @@
           "acknowledged_at"
         ],
         "title": "NoticeOut",
+        "type": "object"
+      },
+      "OpenIn": {
+        "additionalProperties": false,
+        "properties": {
+          "pin": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "minLength": 4,
+                "pattern": "^[0-9]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pin"
+          }
+        },
+        "title": "OpenIn",
+        "type": "object"
+      },
+      "OpenOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ],
+        "title": "OpenOut",
         "type": "object"
       },
       "Paper": {
@@ -3662,6 +3786,139 @@
           }
         ],
         "summary": "Hello"
+      }
+    },
+    "/v1/local/profiles": {
+      "get": {
+        "operationId": "listLocalProfiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LocalProfile"
+                  },
+                  "title": "Response Listlocalprofiles",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Profiles",
+        "tags": [
+          "local"
+        ]
+      },
+      "post": {
+        "operationId": "createLocalProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalProfileIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Profile",
+        "tags": [
+          "local"
+        ]
+      }
+    },
+    "/v1/local/profiles/{profile_id}/open": {
+      "post": {
+        "description": "Says the profile may be opened: the web then keeps it in a signed cookie.",
+        "operationId": "openLocalProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open Profile",
+        "tags": [
+          "local"
+        ]
       }
     },
     "/v1/me": {

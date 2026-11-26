@@ -15,6 +15,15 @@ from eddy_api.auth import Caller, require_roles
 from eddy_api.db.models import StudentProfile, User
 from eddy_api.db.session import get_session
 
+#: The address of a profile made in the desktop app (routes/local.py, ADR-0036): `.invalid` is
+#: reserved, so it can never receive mail. Only accounts with one are profiles; an account made
+#: by email sign-up is never listed or opened as one.
+LOCAL_PROFILE_DOMAIN = "@local.invalid"
+
+
+def is_local_profile(user: User) -> bool:
+    return user.email.endswith(LOCAL_PROFILE_DOMAIN)
+
 
 def current_student(
     caller: Annotated[Caller, Depends(require_roles("student"))],

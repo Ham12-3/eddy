@@ -109,6 +109,12 @@ class StudentProfile(Base):
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     setup_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     diagnostic_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The desktop app only (ADR-0036): an optional PIN that keeps a brother or sister out of a
+    # profile on a shared computer. A salted scrypt hash, never the PIN, and never exported.
+    pin_hash: Mapped[str | None] = mapped_column(String(200))
+    # Wrong PINs in a row, and until when the profile is paused because of them.
+    pin_failed_tries: Mapped[int] = mapped_column(SmallInteger, server_default="0")
+    pin_locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

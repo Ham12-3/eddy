@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import NextLink from "next/link";
 
 import { Page } from "@/components/Page";
+import { isLocalMode } from "@/lib/local-mode";
 import { requireStudent } from "@/lib/session";
 
 import { ParentAccess } from "./ParentAccess";
@@ -14,7 +15,9 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   // Reachable before onboarding is finished: deleting an account never waits on a notice.
   const { api, me } = await requireStudent({ onboarding: true });
-  const { data: links } = await api.GET("/v1/me/parent-links");
+  // The desktop app has no parent accounts: nothing leaves this computer (ADR-0036).
+  const local = isLocalMode();
+  const links = local ? undefined : (await api.GET("/v1/me/parent-links")).data;
   const joinUrl = `${process.env.AUTH_URL ?? ""}/parent/join`;
   return (
     <Page title="Settings">
@@ -25,16 +28,18 @@ export default async function SettingsPage() {
           </h2>
           <PreferencesForm preferences={me.preferences} />
         </Card>
-        <Card as="section" aria-labelledby="parent-access" className="flex flex-col gap-4">
-          <h2 id="parent-access" className="m-0 text-h3">
-            Parent access
-          </h2>
-          {links ? (
-            <ParentAccess links={links} joinUrl={joinUrl} />
-          ) : (
-            <p className="m-0">Parent access could not be loaded. Try again in a moment.</p>
-          )}
-        </Card>
+        {local ? null : (
+          <Card as="section" aria-labelledby="parent-access" className="flex flex-col gap-4">
+            <h2 id="parent-access" className="m-0 text-h3">
+              Parent access
+            </h2>
+            {links ? (
+              <ParentAccess links={links} joinUrl={joinUrl} />
+            ) : (
+              <p className="m-0">Parent access could not be loaded. Try again in a moment.</p>
+            )}
+          </Card>
+        )}
         <Card as="section" aria-labelledby="your-data" className="flex flex-col gap-4">
           <h2 id="your-data" className="m-0 text-h3">
             Your data
@@ -48,9 +53,9 @@ export default async function SettingsPage() {
         </Card>
         <Card as="section" aria-labelledby="delete" className="flex flex-col gap-4">
           <h2 id="delete" className="m-0 text-h3">
-            Delete your account
+            {local ? "Delete this profile" : "Delete your account"}
           </h2>
-          <DeleteForm />
+          <DeleteForm local={local} />
         </Card>
       </div>
     </Page>

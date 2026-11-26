@@ -1,8 +1,10 @@
 "use server";
 
+import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import type { FormState } from "@/components/forms";
+import { isLocalMode } from "@/lib/local-mode";
 import { requireStudent } from "@/lib/session";
 
 const concernSchema = z.object({
@@ -12,6 +14,8 @@ const concernSchema = z.object({
 });
 
 export async function reportConcern(_: FormState, form: FormData): Promise<FormState> {
+  // Nobody could read a report in the desktop app: its page shows who to contact (ADR-0036).
+  if (isLocalMode()) notFound();
   const { api } = await requireStudent();
   const parsed = concernSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) {

@@ -4,6 +4,10 @@
  * `auth()` reads the session through the adapter (services/api), so a deactivated account is
  * signed out at once. Calls for a student carry a 60-second token with their account id as the
  * subject and the role `student` (ADR-0018).
+ *
+ * In the desktop app (ADR-0036) there is no sign-in: `currentUser` is the open profile, read
+ * from its signed cookie. Everything else here works the same, because a profile is a student
+ * account, and services/api still refuses one that has been deleted.
  */
 import "server-only";
 
@@ -14,7 +18,9 @@ import { cache } from "react";
 import { auth } from "@/auth";
 
 import { apiClientFor } from "./api";
-import { PRIVACY_NOTICE_VERSION } from "./notices";
+import { isLocalMode, signInPath } from "./local-mode";
+import { readProfile } from "./local-profile";
+import { privacyNoticeVersion } from "./notices";
 
 export type Me = components["schemas"]["MeOut"];
 export type Preferences = components["schemas"]["Preferences"];
@@ -25,6 +31,10 @@ export interface SignedIn {
 }
 
 export const currentUser = cache(async (): Promise<SignedIn | null> => {
+  if (isLocalMode()) {
+    const id = await readProfile();
+    return id ? { id, role: "student" } : null;
+  }
   const session = await auth();
   const user = session?.user;
   if (!user?.id || !user.role) return null;
@@ -58,8 +68,9 @@ export async function signedInStudent(): Promise<{ user: SignedIn; me: Me } | nu
 
 /** What a student must do before learning, in order, or null when they are ready. */
 export function onboardingStep(me: Me): "/welcome/privacy" | "/welcome/set-up" | null {
+  const version = privacyNoticeVersion();
   const acknowledged = me.notices.some(
-    (notice) => notice.notice_key === "privacy" && notice.version === PRIVACY_NOTICE_VERSION,
+    (notice) => notice.notice_key === "privacy" && notice.version === version,
   );
   if (!acknowledged) return "/welcome/privacy";
   if (!me.profile.setup_completed_at) return "/welcome/set-up";
@@ -78,7 +89,7 @@ export async function requireStudent(options: { onboarding?: boolean } = {}): Pr
   const current = await currentStudent();
   if (!current) {
     const user = await currentUser();
-    redirect(user?.role === "parent" ? "/parent" : "/sign-in");
+    redirect(user?.role === "parent" ? "/parent" : signInPath());
   }
   if (!options.onboarding) {
     const step = onboardingStep(current.me);
@@ -90,7 +101,7 @@ export async function requireStudent(options: { onboarding?: boolean } = {}): Pr
 /** For a parent's pages (ADR-0033): anyone else is sent to sign in, or to their own pages. */
 export async function requireParent(): Promise<{ user: SignedIn; api: ApiClient }> {
   const user = await currentUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect(signInPath());
   if (user.role !== "parent") redirect("/welcome");
   return { user, api: await apiClientFor({ subject: user.id, role: "parent" }) };
 }

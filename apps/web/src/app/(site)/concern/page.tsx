@@ -3,11 +3,14 @@ import type { Metadata } from "next";
 import NextLink from "next/link";
 
 import { Page } from "@/components/Page";
+import { isLocalMode } from "@/lib/local-mode";
 import { signedInStudent } from "@/lib/session";
 
 import { ConcernForm } from "./ConcernForm";
 
-export const metadata: Metadata = { title: "Report a concern" };
+export function generateMetadata(): Metadata {
+  return { title: isLocalMode() ? "If you are worried about something" : "Report a concern" };
+}
 
 const HELP = (
   <section aria-labelledby="now" className="mb-8">
@@ -29,6 +32,21 @@ export default async function ConcernPage({
   searchParams: Promise<{ lesson?: string }>;
 }) {
   const { lesson } = await searchParams;
+  if (isLocalMode()) {
+    // Eddy on this computer cannot send a report to anyone, so it must not look as if it can.
+    return (
+      <Page
+        title="If you are worried about something"
+        lead="Eddy runs only on this computer, so it cannot pass a message on to anyone. These people can help."
+      >
+        {HELP}
+        <p className="m-0">
+          If something in Eddy worried you or felt wrong, tell an adult you trust, such as a
+          teacher, your school nurse or someone in your family.
+        </p>
+      </Page>
+    );
+  }
   const student = await signedInStudent();
   return (
     <Page

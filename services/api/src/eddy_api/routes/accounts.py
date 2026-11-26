@@ -45,7 +45,7 @@ from eddy_api.db.models import (
 )
 from eddy_api.db.models import Session as SessionRow
 from eddy_api.db.session import get_session
-from eddy_api.tutor.ratelimit import Limiter, RedisLimiter
+from eddy_api.tutor.ratelimit import Limiter, limiter_for
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 DbSession = Annotated[Session, Depends(get_session)]
@@ -68,14 +68,12 @@ LINKS_PER_DAY = 10
 def get_signup_limiter() -> Limiter:
     settings = get_settings()
     scale = settings.signup_limit_scale
-    return RedisLimiter.from_url(
-        settings.redis_url, SIGNUPS_PER_MINUTE * scale, SIGNUPS_PER_DAY * scale
-    )
+    return limiter_for(settings.redis_url, SIGNUPS_PER_MINUTE * scale, SIGNUPS_PER_DAY * scale)
 
 
 @lru_cache
 def get_link_limiter() -> Limiter:
-    return RedisLimiter.from_url(get_settings().redis_url, LINKS_PER_MINUTE, LINKS_PER_DAY)
+    return limiter_for(get_settings().redis_url, LINKS_PER_MINUTE, LINKS_PER_DAY)
 
 
 SignupLimiter = Annotated[Limiter, Depends(get_signup_limiter)]

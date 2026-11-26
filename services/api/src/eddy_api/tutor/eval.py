@@ -43,9 +43,10 @@ from eddy_api.config import get_settings
 from eddy_api.db.models import TutorSession, User
 from eddy_api.db.session import get_engine
 from eddy_api.english.metrics import quadratic_weighted_kappa
-from eddy_api.llm.client import CallRecord, LlmClient, LlmError
+from eddy_api.llm.client import CallRecord, Llm, LlmClient, LlmError
 from eddy_api.llm.config import REPO_ROOT
 from eddy_api.llm.io import PedagogyJudgement
+from eddy_api.llm.local import LocalLlmClient
 from eddy_api.llm.prompts import load_prompt
 from eddy_api.llm.structured import output_schema, parse
 from eddy_api.scenes.generate import data
@@ -199,7 +200,7 @@ def _event_recorded(
 class Conversation:
     """One scripted conversation: the tutor's replies and every student input's latency."""
 
-    def __init__(self, conv: dict[str, Any], llm: LlmClient, maths_core: MathsCoreClient) -> None:
+    def __init__(self, conv: dict[str, Any], llm: Llm, maths_core: MathsCoreClient) -> None:
         self.conv, self.llm, self.maths_core = conv, llm, maths_core
         self.item, self.generated = _item(
             maths_core, conv["item"]["template"], conv["item"]["seed"]
@@ -364,7 +365,7 @@ class Conversation:
 
 
 def run_conversation(
-    conv: dict[str, Any], llm: LlmClient, maths_core: MathsCoreClient, *, allow_remote: bool = False
+    conv: dict[str, Any], llm: Llm, maths_core: MathsCoreClient, *, allow_remote: bool = False
 ) -> dict[str, Any]:
     talk = Conversation(conv, llm, maths_core)
     if conv["scenario"] == "lesson":
@@ -380,7 +381,7 @@ def judge(
     outcome: dict[str, Any],
     conv: dict[str, Any],
     item: ItemContext,
-    llm: LlmClient,
+    llm: Llm,
     route: str | None = None,
 ) -> dict[str, int]:
     transcript = []
@@ -523,7 +524,8 @@ def run(args: argparse.Namespace) -> int:
     if args.only:
         convs = [c for c in convs if c["id"] in args.only or c["scenario"] in args.only]
     convs = convs[: args.limit] if args.limit else convs
-    if not args.live:
+    local = args.provider == "local"
+    if not args.live and not local:
         print(
             f"Dry run: {len(convs)} conversations, about £{_estimate(convs):.2f} "
             f"(capped at £{args.max_gbp:.2f}). Nothing was sent. Add --live to call Claude."
@@ -531,9 +533,21 @@ def run(args: argparse.Namespace) -> int:
         return 0
     settings = get_settings()
     calls: list[CallRecord] = []
-    llm = LlmClient.from_key(settings.anthropic_api_key.get_secret_value(), recorder=calls.append)
+    llm: Llm
+    if local:
+        # The local model costs nothing and sends nothing off this computer. It is not asked to
+        # judge its own pedagogy: the rubric is reported as not run.
+        llm = LocalLlmClient.from_url(settings.local_llm_base_url, recorder=calls.append)
+    else:
+        llm = LlmClient.from_key(
+            settings.anthropic_api_key.get_secret_value(), recorder=calls.append
+        )
     maths_core = MathsCoreClient.from_settings(settings)
     results: list[dict[str, Any]] = []
+    # A local run takes hours: the transcripts so far are saved after every conversation, so a
+    # run that is stopped part-way still leaves them behind.
+    REPORTS.mkdir(parents=True, exist_ok=True)
+    partial = REPORTS / f"tutor-{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}.partial.json"
     for index, conv in enumerate(convs):
         spent = sum(c.cost_gbp for c in calls)
         if spent >= args.max_gbp:
@@ -543,8 +557,9 @@ def run(args: argparse.Namespace) -> int:
         try:
             outcome = run_conversation(conv, llm, maths_core, allow_remote=args.allow_remote)
             item, _ = _item(maths_core, conv["item"]["template"], conv["item"]["seed"])
-            outcome["scores"] = judge(outcome, conv, item, llm)
-            if args.calibrate and index % CALIBRATE_EVERY == 0:
+            if not local:
+                outcome["scores"] = judge(outcome, conv, item, llm)
+            if not local and args.calibrate and index % CALIBRATE_EVERY == 0:
                 outcome["calibration"] = judge(
                     outcome, conv, item, llm, route="eval.judge.calibration"
                 )
@@ -563,7 +578,11 @@ def run(args: argparse.Namespace) -> int:
         print(
             f"{len(results):3d} {conv['id']:<14} leaks {outcome['leaks']} £{total:.2f}", flush=True
         )
+        partial.write_bytes(json.dumps({"results": results}, indent=1, ensure_ascii=False).encode())
     summary = summarise(results, thresholds())
+    summary["provider"] = args.provider
+    if local:
+        summary["judge"] = "not run: the local model does not judge itself"
     summary["cost_gbp_total"] = round(sum(c.cost_gbp for c in calls), 4)
     # Where the time goes: each model route's own latency.
     routes: dict[str, list[int]] = {}
@@ -588,12 +607,12 @@ def run(args: argparse.Namespace) -> int:
         summary["estimated_gbp_per_session"] = round(
             statistics.mean(lessons) * ITEMS_PER_SESSION, 3
         )
-    REPORTS.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     path = REPORTS / f"tutor-{stamp}.json"
     path.write_bytes(
         json.dumps({"summary": summary, "results": results}, indent=1, ensure_ascii=False).encode()
     )
+    partial.unlink(missing_ok=True)
     print(json.dumps(summary, indent=1, ensure_ascii=False))
     print(f"Report: {path.relative_to(REPO_ROOT).as_posix()}")
     return 0 if all(summary["meets"].values()) and len(results) == len(convs) else 1
@@ -608,6 +627,12 @@ def main(argv: list[str]) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     runner = sub.add_parser("run", help="run the conversations (a dry run unless --live)")
     runner.add_argument("--live", action="store_true", help="call Claude (costs money)")
+    runner.add_argument(
+        "--provider",
+        choices=["claude", "local"],
+        default="claude",
+        help="local runs the conversations on the local model server (free, no judge)",
+    )
     runner.add_argument("--max-gbp", type=float, default=8.0)
     runner.add_argument("--limit", type=int, default=0)
     runner.add_argument(

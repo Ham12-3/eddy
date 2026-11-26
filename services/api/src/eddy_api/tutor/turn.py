@@ -30,7 +30,7 @@ from fractions import Fraction
 from typing import Any, Literal
 
 from eddy_api.llm.client import (
-    LlmClient,
+    Llm,
     LlmError,
     LlmRefusalError,
     LlmRequestError,
@@ -291,7 +291,7 @@ def script_message() -> TutorMessage:
 
 def screen(
     text: str,
-    llm: LlmClient,
+    llm: Llm,
     student_id: uuid.UUID | None = None,
     earlier: Sequence[str] = (),
 ) -> Screened:
@@ -632,9 +632,7 @@ def maths_problems(
     return problems
 
 
-def output_check(
-    message: TutorMessage, request: TurnRequest, llm: LlmClient
-) -> tuple[list[str], float]:
+def output_check(message: TutorMessage, request: TurnRequest, llm: Llm) -> tuple[list[str], float]:
     kind, level = expected(request)
     parts = [
         f"<question>{data(request.item.stem)}</question>",
@@ -666,7 +664,7 @@ def output_check(
     return problems, result.record.cost_gbp
 
 
-def generate(request: TurnRequest, *, llm: LlmClient, maths_core: MathsCoreClient) -> TurnResult:
+def generate(request: TurnRequest, *, llm: Llm, maths_core: MathsCoreClient) -> TurnResult:
     """Steps 5 to 7: generate, check, regenerate at most twice, then the templated message.
 
     Raises LlmUnavailableError when Claude cannot be reached (the caller uses the template).
