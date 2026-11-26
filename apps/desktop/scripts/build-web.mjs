@@ -15,10 +15,32 @@ const standalone = path.join(built, "standalone");
 const out = path.join(resourcesDir, "web");
 const app = path.join(out, "apps/web");
 
+// The build is given what it needs to run and nothing else of this computer's environment, so
+// no key or setting of the developer's can be baked into what ships.
+/** @type {NodeJS.ProcessEnv} */
+const buildEnv = {};
+for (const key of [
+  "SystemRoot",
+  "windir",
+  "PATH",
+  "Path",
+  "PATHEXT",
+  "TEMP",
+  "TMP",
+  "USERPROFILE",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "COMSPEC",
+  "HOME",
+  "NUMBER_OF_PROCESSORS",
+  "PROCESSOR_ARCHITECTURE",
+]) {
+  if (process.env[key] !== undefined) buildEnv[key] = process.env[key];
+}
 const build = spawnSync("pnpm", ["exec", "next", "build"], {
   cwd: web,
   // EDDY_DESKTOP_BUILD switches next.config.ts to the standalone output in its own folder.
-  env: { ...process.env, EDDY_DESKTOP_BUILD: "1", EDDY_LOCAL_MODE: "1" },
+  env: { ...buildEnv, EDDY_DESKTOP_BUILD: "1", EDDY_LOCAL_MODE: "1" },
   stdio: "inherit",
   shell: true,
 });
@@ -26,9 +48,14 @@ if (build.status !== 0) process.exit(build.status ?? 1);
 
 rmSync(out, { recursive: true, force: true });
 // Everything but node_modules is plain files: the server, its compiled pages and manifests.
+// Left out: any .env file (Next copies some into this output), and source maps, which nothing
+// reads on a student's computer.
 cpSync(path.join(standalone, "apps"), path.join(out, "apps"), {
   recursive: true,
-  filter: (source) => path.basename(source) !== "node_modules",
+  filter: (source) => {
+    const name = path.basename(source);
+    return name !== "node_modules" && !name.startsWith(".env") && !name.endsWith(".map");
+  },
 });
 cpSync(path.join(built, "static"), path.join(app, ".next-desktop/static"), { recursive: true });
 if (existsSync(path.join(web, "public"))) {

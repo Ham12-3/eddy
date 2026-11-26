@@ -239,7 +239,11 @@ export function LessonRunner({
           <div className="flex flex-col gap-3 rounded-card border border-rule p-4">
             {/* With typed chat off (the desktop app, ADR-0036) a lesson never waits for a
                 message: there is no box to type in, only the hint button. */}
-            <h2 className="m-0 text-h4">{waiting.has("message") ? "Ask Eddy" : "Stuck?"}</h2>
+            {waiting.has("message") ? (
+              <h2 className="m-0 text-h4">Ask Eddy</h2>
+            ) : waiting.has("help") ? (
+              <h2 className="m-0 text-h4">Stuck?</h2>
+            ) : null}
             {!waiting.has("message") && waiting.has("help") ? (
               <div>
                 <Button variant="secondary" busy={pending} onClick={() => send({ kind: "help" })}>

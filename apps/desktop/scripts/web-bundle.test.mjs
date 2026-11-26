@@ -79,6 +79,17 @@ describe("the web server bundle", { skip: !existsSync(app) && "not built" }, () 
     assert.deepEqual(links(root), []);
   });
 
+  it("carries no settings file of the developer's", () => {
+    /** @param {string} dir @returns {string[]} */
+    const envFiles = (dir) =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) return envFiles(full);
+        return entry.name.startsWith(".env") ? [full] : [];
+      });
+    assert.deepEqual(envFiles(root), []);
+  });
+
   it("serves the desktop privacy notice and its styles", async () => {
     const page = await fetch(`${base}/privacy`);
     assert.equal(page.status, 200);
@@ -92,7 +103,8 @@ describe("the web server bundle", { skip: !existsSync(app) && "not built" }, () 
   it("is in local mode: sign-in is off and the picker is the way in", async () => {
     const signIn = await fetch(`${base}/sign-in`, { redirect: "manual" });
     assert.equal(signIn.status, 307);
-    assert.equal(new URL(signIn.headers.get("location") ?? "", base).pathname, "/");
+    // To the start of this very server: the window refuses any other origin.
+    assert.equal(new URL(signIn.headers.get("location") ?? "", base).href, `${base}/`);
     assert.equal((await fetch(`${base}/api/auth/session`)).status, 404);
     // No API is running here, so the picker says it is still starting, and does not crash.
     const picker = await fetch(`${base}/profiles`);

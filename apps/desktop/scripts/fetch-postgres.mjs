@@ -7,6 +7,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   createReadStream,
   createWriteStream,
   existsSync,
@@ -71,10 +72,27 @@ const unpacked = spawnSync(
 );
 if (unpacked.status !== 0) process.exit(unpacked.status ?? 1);
 
-// Programs the app never runs. The server, initdb and pg_ctl stay, with every library.
-const KEEP = new Set(["postgres.exe", "initdb.exe", "pg_ctl.exe", "pg_isready.exe", "psql.exe"]);
+// Programs the app never runs. The server, initdb and pg_ctl stay, with the libraries they load.
+const KEEP = new Set(["postgres.exe", "initdb.exe", "pg_ctl.exe"]);
+// Left over from tools that are not shipped: StackBuilder's windows, the embedded-SQL client
+// libraries, a test plug-in and an import library.
+const UNUSED = /^(wx.*\.dll|libecpg.*\.dll|libpgtypes\.dll|testplug\.dll|.*\.lib)$/i;
 for (const entry of readdirSync(path.join(out, "bin"))) {
-  if (entry.endsWith(".exe") && !KEEP.has(entry)) rmSync(path.join(out, "bin", entry));
+  const unused = (entry.endsWith(".exe") && !KEEP.has(entry)) || UNUSED.test(entry);
+  if (unused) rmSync(path.join(out, "bin", entry));
+}
+
+// PostgreSQL's programs need Microsoft's Visual C++ runtime, which a fresh Windows may not have.
+// Without it initdb exits at once and prints nothing. The runtime's libraries are copied beside
+// the programs from this computer, where Visual C++ or its redistributable installed them.
+const system32 = path.join(process.env.SystemRoot ?? "C:\\Windows", "System32");
+for (const library of ["vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll"]) {
+  const from = path.join(system32, library);
+  if (!existsSync(from)) {
+    console.error(`postgres: ${library} is not in ${system32}. Install the Visual C++ runtime.`);
+    process.exit(1);
+  }
+  copyFileSync(from, path.join(out, "bin", library));
 }
 for (const extra of ["share/doc", "share/man", "lib/pgxs"]) {
   rmSync(path.join(out, extra), { recursive: true, force: true });

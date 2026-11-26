@@ -17,6 +17,9 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
+from alembic.util import CommandError
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from eddy_api.config import Settings, get_settings
 from eddy_api.db.local import ensure_database, ensure_runtime_login
@@ -26,6 +29,8 @@ from eddy_api.seed.curriculum import load
 from eddy_api.seed.upsert import seed
 
 HOST = "127.0.0.1"
+#: The exit code of `setup` when the data belongs to a newer Eddy: the shell says so in words.
+NEWER_DATABASE = 3
 
 
 def migrations_dir(home: Path = REPO_ROOT) -> Path:
@@ -44,15 +49,40 @@ def migrations_config(url: str, home: Path = REPO_ROOT) -> Config:
     return config
 
 
+class NewerDatabaseError(Exception):
+    """The database was last opened by a later version of Eddy than this one."""
+
+
+def can_log_in(url: str) -> bool:
+    """Whether the role in `url` can already connect with its password."""
+    engine = create_engine(url, hide_parameters=True)
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return True
+    except SQLAlchemyError:
+        return False
+    finally:
+        engine.dispose()
+
+
 def setup(settings: Settings, home: Path = REPO_ROOT) -> None:
     """Everything the API needs in its database before it starts. Each step is safe to repeat."""
     owner = settings.database_url.get_secret_value()
+    runtime = settings.runtime_database_url.get_secret_value()
     created = ensure_database(owner)
     print(f"database {'created' if created else 'ready'}", flush=True)
     # Before the migrations: 0006 grants the runtime role its rights, and makes it only if it
     # is not there. Here it is made with its login, as `pnpm db:local` does in development.
-    ensure_runtime_login(owner, settings.runtime_database_url.get_secret_value())
-    command.upgrade(migrations_config(owner, home), "head")
+    # Only when needed: the statement carries the password, so it is not run at every start.
+    if created or not can_log_in(runtime):
+        ensure_runtime_login(owner, runtime)
+    try:
+        command.upgrade(migrations_config(owner, home), "head")
+    except CommandError as error:
+        if "Can't locate revision" in str(error):
+            raise NewerDatabaseError from error
+        raise
     print("schema up to date", flush=True)
     curriculum = load(home / "curriculum")
     with owner_session(owner) as session:
@@ -79,7 +109,15 @@ def main(argv: list[str]) -> int:
     commands.add_parser("worker", help="run the privacy jobs")
     args = parser.parse_args(argv)
     if args.command == "setup":
-        setup(get_settings())
+        try:
+            setup(get_settings())
+        except NewerDatabaseError:
+            print(
+                "This copy of Eddy is older than the one that last used this data. "
+                "Install the newer Eddy to open it.",
+                file=sys.stderr,
+            )
+            return NEWER_DATABASE
         return 0
     if args.command == "serve":
         serve(args.port)

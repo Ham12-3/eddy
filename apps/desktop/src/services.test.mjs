@@ -1,16 +1,16 @@
 // The whole desktop app without its window: the built parts, a brand-new data folder, a private
 // PostgreSQL, set-up, every service, and a student's first steps. Then it is stopped and started
 // again, as when Eddy is closed and reopened. Skips when the parts have not been built
-// (`pnpm --filter @eddy/desktop build`).
+// (`pnpm --filter @eddy/desktop build`). Heavy: `pnpm --filter @eddy/desktop test:app`.
 import assert from "node:assert/strict";
 import { sign } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, describe, it } from "node:test";
 
 import { resourcesDir } from "../scripts/paths.mjs";
-import { baseEnv, startServices } from "./services.mjs";
+import { baseEnv, startServices, WINDOW_COOKIE } from "./services.mjs";
 
 const PARTS = [
   "web/apps/web/server.js",
@@ -48,21 +48,35 @@ describe(
   "the desktop app's services",
   { skip: missing.length > 0 && `not built: ${missing.join(", ")}` },
   () => {
-    const dataDir = mkdtempSync(path.join(tmpdir(), "eddy-desktop-"));
+    // A folder like a real one: a space, and a letter outside plain ASCII, as in a Windows
+    // user name such as "Zoë Smith". PostgreSQL's programs read paths in the system code page.
+    const dataDir = mkdtempSync(path.join(tmpdir(), "eddy desktop Zoë-"));
     /** @type {import("./services.mjs").Running | undefined} */
     let running;
+    /** @type {string[]} */
+    const failures = [];
     const start = () =>
       startServices({
         resources: resourcesDir,
         dataDir,
         node: { command: process.execPath },
         environment: "development",
+        onFailure: (name, reason) => failures.push(`${name}: ${reason}`),
       });
 
     after(async () => {
       await running?.stop();
       rmSync(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
     });
+
+    /** A page as Eddy's own window asks for it: with this launch's secret. */
+    async function page(/** @type {string} */ route) {
+      assert.ok(running);
+      const response = await fetch(`${running.webUrl}${route}`, {
+        headers: { cookie: `${WINDOW_COOKIE}=${running.secrets.windowSecret}` },
+      });
+      return { status: response.status, text: await response.text() };
+    }
 
     /** @param {string} route @param {string} bearer @param {unknown} [body] */
     async function api(route, bearer, body) {
@@ -79,21 +93,46 @@ describe(
 
     it("starts from nothing: a new database, set up and seeded, and every service answering", async () => {
       running = await start();
-      const picker = await (await fetch(`${running.webUrl}/profiles`)).text();
+      const picker = await page("/profiles");
       // The web reached the API through a signed token and found no profiles yet.
-      assert.match(picker, /Welcome to Eddy/);
-      assert.match(picker, /There are no profiles on this computer yet/);
+      assert.equal(picker.status, 200);
+      assert.match(picker.text, /Welcome to Eddy/);
+      assert.match(picker.text, /There are no profiles on this computer yet/);
     });
 
-    it("keeps its secrets to this install, and passes none of the computer's own settings on", () => {
+    it("serves its own window and nobody else on the computer", async () => {
+      assert.ok(running);
+      // Another program, or another Windows account, can reach a local port. Without this
+      // launch's secret it gets nothing: no page, no profile names, no way to open one.
+      for (const route of ["/profiles", "/privacy", "/settings/my-data/download", "/"]) {
+        const bare = await fetch(`${running.webUrl}${route}`, { redirect: "manual" });
+        assert.equal(bare.status, 403, route);
+      }
+      const guess = await fetch(`${running.webUrl}/profiles`, {
+        headers: { cookie: `${WINDOW_COOKIE}=${"0".repeat(64)}` },
+      });
+      assert.equal(guess.status, 403);
+      // The API and the two helpers each ask for their own secret.
+      const { api: apiPort, maths, scenes } = running.ports;
+      assert.equal((await fetch(`http://127.0.0.1:${apiPort}/v1/local/profiles`)).status, 401);
+      assert.equal((await fetch(`http://127.0.0.1:${maths}/v1/templates`)).status, 401);
+      const scene = await fetch(`http://127.0.0.1:${scenes}/v1/scenes/context`, { method: "POST" });
+      assert.equal(scene.status, 401);
+    });
+
+    it("keeps only the database passwords, and passes none of the computer's settings on", () => {
       assert.ok(running);
       const saved = JSON.parse(readFileSync(path.join(dataDir, "secrets.json"), "utf8"));
+      assert.deepEqual(Object.keys(saved).sort(), ["ownerPassword", "runtimePassword"]);
       assert.equal(saved.ownerPassword, running.secrets.ownerPassword);
       assert.notEqual(saved.ownerPassword, saved.runtimePassword);
+      // The password file initdb reads is gone, and nothing else was written beside the data.
+      assert.deepEqual(readdirSync(dataDir).sort(), ["logs", "postgres", "secrets.json"]);
       const env = baseEnv({
         SystemRoot: "C:\\Windows",
         ANTHROPIC_API_KEY: "sk-nope",
         DATABASE_URL: "x",
+        NODE_OPTIONS: "--inspect",
       });
       assert.deepEqual(env, { SystemRoot: "C:\\Windows" });
     });
@@ -109,7 +148,7 @@ describe(
       });
       assert.equal(made.status, 201, JSON.stringify(made.body));
       profileId = made.body.id;
-      assert.match(await (await fetch(`${running.webUrl}/profiles`)).text(), /Sam/);
+      assert.match((await page("/profiles")).text, /Sam/);
 
       // A lesson needs the database, maths-core and the curriculum seed all working together.
       const student = token(running.secrets.privateKeyB64, profileId, "student");
@@ -119,19 +158,37 @@ describe(
       assert.ok(!lesson.body.waiting_for.includes("message"), "typed chat is off");
     });
 
+    it("runs the privacy jobs: the worker is alive and has done its first round", () => {
+      // The 90-day purge and the erasure of deleted profiles happen only in the worker.
+      const log = readFileSync(path.join(dataDir, "logs", "worker.log"), "utf8");
+      assert.match(log, /purge:/);
+      assert.match(log, /erasures:/);
+      assert.deepEqual(failures, []);
+    });
+
     it("stops everything, and finds the same data when it is opened again", async () => {
       assert.ok(running);
-      const before = running.ports.api;
+      const before = running.ports;
+      const firstLaunch = running.secrets;
       await running.stop();
-      await assert.rejects(
-        fetch(`http://127.0.0.1:${before}/health`, { signal: AbortSignal.timeout(2000) }),
-      );
+      // Every one of them is gone, not just the API.
+      for (const port of [before.api, before.maths, before.scenes, before.web]) {
+        await assert.rejects(
+          fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) }),
+          `something still answers on port ${port}`,
+        );
+      }
       assert.ok(
         !existsSync(path.join(dataDir, "postgres", "postmaster.pid")),
         "PostgreSQL has stopped",
       );
 
       running = await start();
+      // The same database passwords, and everything else made afresh for this launch.
+      assert.equal(running.secrets.ownerPassword, firstLaunch.ownerPassword);
+      assert.notEqual(running.secrets.windowSecret, firstLaunch.windowSecret);
+      assert.notEqual(running.secrets.authSecret, firstLaunch.authSecret);
+      assert.notEqual(running.secrets.privateKeyB64, firstLaunch.privateKeyB64);
       const local = token(running.secrets.privateKeyB64, "system:local", "system");
       const listed = await api("/v1/local/profiles", local);
       assert.deepEqual(
@@ -141,6 +198,10 @@ describe(
         ]),
         [[profileId, "Sam"]],
       );
+      // A token signed with the last launch's key opens nothing now.
+      const stale = token(firstLaunch.privateKeyB64, "system:local", "system");
+      assert.equal((await api("/v1/local/profiles", stale)).status, 401);
+      assert.deepEqual(failures, [], "no service stopped by itself");
     });
   },
 );

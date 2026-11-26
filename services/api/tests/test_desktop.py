@@ -4,6 +4,7 @@ its files when there is no repository around it."""
 from pathlib import Path
 
 import pytest
+from alembic.script import ScriptDirectory
 from pydantic import SecretStr
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
@@ -37,6 +38,28 @@ def test_the_home_folder_can_be_named_by_the_desktop_app(
     assert (REPO_ROOT / "config" / "models.yaml").is_file()
 
 
+def test_an_older_eddy_says_plainly_that_the_data_is_newer(
+    empty_database: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    owner = make_url(empty_database)
+    runtime = owner.set(username="eddy_app", password="eddy_app")
+    settings = Settings(
+        database_url=SecretStr(owner.render_as_string(hide_password=False)),
+        runtime_database_url=SecretStr(runtime.render_as_string(hide_password=False)),
+    )
+    desktop.setup(settings)
+    # As if a later version of Eddy had migrated this database further than this one knows.
+    engine = create_engine(owner)
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("UPDATE alembic_version SET version_num = '9999'"))
+    finally:
+        engine.dispose()
+    monkeypatch.setattr(desktop, "get_settings", lambda: settings)
+    assert desktop.main(["setup"]) == desktop.NEWER_DATABASE
+    assert "older than the one that last used this data" in capsys.readouterr().err
+
+
 def test_the_commands_need_what_they_need() -> None:
     with pytest.raises(SystemExit):
         desktop.main([])
@@ -56,6 +79,7 @@ def test_set_up_prepares_an_empty_database_and_can_be_run_again(empty_database: 
     )
     desktop.setup(settings)
     desktop.setup(settings)  # every start of the desktop app runs it
+    config = desktop.migrations_config(owner.render_as_string(hide_password=False))
 
     engine = create_engine(runtime)
     try:
@@ -64,7 +88,7 @@ def test_set_up_prepares_an_empty_database_and_can_be_run_again(empty_database: 
             assert connection.scalar(text("SELECT count(*) FROM curriculum_node")) > 0
             assert connection.scalar(text("SELECT count(*) FROM misconception")) > 0
             head = connection.scalar(text("SELECT version_num FROM alembic_version"))
-            assert head == "0008"
+            assert head == ScriptDirectory.from_config(config).get_current_head()
             # And it still cannot change the schema (ADR-0024).
             with pytest.raises(Exception, match=r"permission denied|must be owner"):
                 connection.execute(text("ALTER TABLE users ADD COLUMN nope int"))

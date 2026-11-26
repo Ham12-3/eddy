@@ -1,20 +1,43 @@
 // Starts and stops everything the desktop app runs (ADR-0036), all on 127.0.0.1 with ports chosen
-// at each start and secrets made for this install:
+// at each start:
 //
 //   PostgreSQL -> eddy-api setup -> maths-core, scene-check -> the API and its worker -> the web
 //
 // The Electron shell calls this; so does the test that runs the built parts without a window.
 import { spawn } from "node:child_process";
-import { createWriteStream, mkdirSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 
-import { databaseUrl, initCluster, OWNER, startPostgres, stopPostgres } from "./postgres.mjs";
-import { loadOrCreateSecrets } from "./secrets.mjs";
+import {
+  clusterIsReady,
+  databaseUrl,
+  initCluster,
+  OWNER,
+  startPostgres,
+  stopPostgres,
+} from "./postgres.mjs";
+import { createLaunchSecrets, loadOrCreatePasswords, SECRETS_FILE } from "./secrets.mjs";
 
 const HOST = "127.0.0.1";
 const RUNTIME_ROLE = "eddy_app";
 const DATABASE = "eddy";
+/** The cookie the web server asks every request for (apps/web/src/lib/window-secret.ts). */
+export const WINDOW_COOKIE = "eddy_window";
+/** How long a child that lost its port to another program takes to give up and exit. */
+const SETTLE_MS = 1500;
+/** Set-up is a few seconds; a first run on a slow disk is longer. Past this it has hung. */
+const SETUP_TIMEOUT_MS = 5 * 60 * 1000;
+/** `eddy-api setup` exits with this when the data belongs to a newer Eddy (eddy_api/desktop.py). */
+const NEWER_DATABASE = 3;
+
+/** Eddy was closed while it was starting: not a failure, and nothing to tell anyone. */
+export class StoppedError extends Error {
+  constructor() {
+    super("Eddy was closed while it was starting.");
+    this.name = "StoppedError";
+  }
+}
 
 /** @returns {Promise<number>} a port nothing is listening on */
 export function freePort() {
@@ -61,15 +84,15 @@ export function baseEnv(source = process.env) {
  * Waits for a service to answer its health check.
  * @param {string} url
  * @param {string} name
- * @param {() => string | null} failed says why the service died, if it has
+ * @param {() => void} check throws when the service has died or Eddy is being closed
+ * @param {Record<string, string>} [headers]
  */
-async function waitFor(url, name, failed, seconds = 90) {
+async function waitFor(url, name, check, headers = {}, seconds = 90) {
   const deadline = Date.now() + seconds * 1000;
   while (Date.now() < deadline) {
-    const reason = failed();
-    if (reason) throw new Error(`${name} stopped while starting: ${reason}`);
+    check();
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      const response = await fetch(url, { headers, signal: AbortSignal.timeout(2000) });
       if (response.ok) return;
     } catch {
       // Not listening yet.
@@ -90,42 +113,65 @@ async function waitFor(url, name, failed, seconds = 90) {
 /**
  * @param {object} options
  * @param {string} options.resources the built parts (web, scene-check, python, data, postgres)
- * @param {string} options.dataDir this install's data: the database, secrets and logs
+ * @param {string} options.dataDir this install's data: the database, its passwords and logs
  * @param {{ command: string, env?: NodeJS.ProcessEnv }} options.node what runs JavaScript: Node,
  *   or the Electron program itself with ELECTRON_RUN_AS_NODE set
  * @param {"development" | "production"} options.environment `development` for a preview build:
  *   the tutor stays locked in production until the safeguarding script is approved
+ * @param {import("./secrets.mjs").Codec} [options.codec] seals the saved database passwords
  * @param {(line: string) => void} [options.log]
+ * @param {(stop: () => Promise<void>) => void} [options.onStoppable] given the way to stop
+ *   everything as soon as there is anything to stop, so Eddy can be closed while it starts
+ * @param {(name: string, reason: string) => void} [options.onFailure] a service stopped by
+ *   itself after start-up: Eddy cannot carry on without it
  * @returns {Promise<Running>}
  */
-export async function startServices({ resources, dataDir, node, environment, log = () => {} }) {
+export async function startServices({
+  resources,
+  dataDir,
+  node,
+  environment,
+  codec,
+  log = () => {},
+  onStoppable = () => {},
+  onFailure = () => {},
+}) {
   const env = baseEnv();
   const logs = path.join(dataDir, "logs");
-  mkdirSync(logs, { recursive: true });
-  const secrets = loadOrCreateSecrets(dataDir);
-  const ports = {
-    postgres: await freePort(),
-    api: await freePort(),
-    maths: await freePort(),
-    scenes: await freePort(),
-    web: await freePort(),
-  };
-
   const binDir = path.join(resources, "postgres", "bin");
   const cluster = path.join(dataDir, "postgres");
+
   /** @type {{ name: string, child: import("node:child_process").ChildProcess }[]} */
   const children = [];
+  /** @type {import("node:child_process").ChildProcess | undefined} */
+  let settingUp;
   /** @type {Map<string, string>} */
   const died = new Map();
+  let started = false;
   let stopped = false;
 
   async function stop() {
     if (stopped) return;
     stopped = true;
+    settingUp?.kill();
     // The web first, the database last: nothing is left talking to something already gone.
     for (const { child } of [...children].reverse()) child.kill();
     await stopPostgres({ binDir, dataDir: cluster, env });
   }
+  onStoppable(stop);
+
+  /** Between every step: Eddy may have been closed while the last one ran. */
+  const halt = () => {
+    if (stopped) throw new StoppedError();
+  };
+  /** @param {string} name */
+  const alive = (name) => () => {
+    halt();
+    const reason = died.get(name);
+    if (reason) throw new Error(`${name} stopped while starting: ${reason}`);
+  };
+  /** @param {string} name */
+  const logFile = (name) => path.join(logs, `${name}.log`);
 
   /**
    * @param {string} name
@@ -135,7 +181,7 @@ export async function startServices({ resources, dataDir, node, environment, log
    * @param {string} [cwd]
    */
   function start(name, command, args, extra, cwd) {
-    const out = createWriteStream(path.join(logs, `${name}.log`), { flags: "a" });
+    const out = createWriteStream(logFile(name));
     const child = spawn(command, args, {
       cwd,
       env: { ...env, ...extra },
@@ -144,95 +190,151 @@ export async function startServices({ resources, dataDir, node, environment, log
     });
     child.stdout.pipe(out);
     child.stderr.pipe(out);
-    child.on("exit", (code) => {
-      if (!stopped) died.set(name, `exit code ${code}; see ${path.join(logs, `${name}.log`)}`);
-    });
-    child.on("error", (error) => died.set(name, error.message));
+    const gone = (/** @type {string} */ reason) => {
+      if (stopped || died.has(name)) return;
+      died.set(name, reason);
+      // After start-up nothing is waiting on `died`, so the shell is told straight away.
+      if (started) onFailure(name, reason);
+    };
+    child.on("exit", (code) => gone(`exit code ${code}; see ${logFile(name)}`));
+    child.on("error", (error) => gone(error.message));
     children.push({ name, child });
     return child;
   }
 
-  /** @param {string} name @param {string} command @param {string[]} args @param {NodeJS.ProcessEnv} extra */
-  function runToEnd(name, command, args, extra) {
+  /**
+   * Runs set-up to the end.
+   * @param {string} command
+   * @param {NodeJS.ProcessEnv} extra
+   */
+  function runSetup(command, extra) {
     return new Promise((resolve, reject) => {
-      const out = createWriteStream(path.join(logs, `${name}.log`), { flags: "a" });
-      const child = spawn(command, args, {
+      const out = createWriteStream(logFile("setup"));
+      const child = spawn(command, ["setup"], {
         env: { ...env, ...extra },
         windowsHide: true,
         stdio: ["ignore", "pipe", "pipe"],
       });
+      settingUp = child;
       child.stdout.pipe(out);
       child.stderr.pipe(out);
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(`Preparing the data took too long; see ${logFile("setup")}`));
+      }, SETUP_TIMEOUT_MS);
       child.on("error", reject);
-      child.on("exit", (code) =>
-        code === 0
-          ? resolve(undefined)
-          : reject(
-              new Error(
-                `${name} failed (exit code ${code}); see ${path.join(logs, `${name}.log`)}`,
-              ),
+      child.on("exit", (code) => {
+        clearTimeout(timer);
+        settingUp = undefined;
+        if (code === 0) resolve(undefined);
+        else if (stopped) reject(new StoppedError());
+        else if (code === NEWER_DATABASE) {
+          reject(
+            new Error(
+              "This copy of Eddy is older than the one that last used this data. Install the newer Eddy to open it.",
             ),
-      );
+          );
+        } else {
+          reject(
+            new Error(`Preparing the data failed (exit code ${code}); see ${logFile("setup")}`),
+          );
+        }
+      });
     });
   }
 
   try {
+    // Logs are for finding out why the last start failed. Each start begins them again, so they
+    // never grow without end and never outlive the data they might mention by long.
+    rmSync(logs, { recursive: true, force: true });
+    mkdirSync(logs, { recursive: true });
+    if (clusterIsReady(cluster) && !existsSync(path.join(dataDir, SECRETS_FILE))) {
+      // New passwords would not open the old database, and would hide that anything was wrong.
+      throw new Error(
+        `Eddy's database is in ${dataDir}, but the file that opens it (${SECRETS_FILE}) is missing. To start again with nothing saved, delete that folder.`,
+      );
+    }
+    /** @type {import("./secrets.mjs").Secrets} */
+    const secrets = {
+      ...(await loadOrCreatePasswords(dataDir, codec)),
+      ...createLaunchSecrets(),
+    };
+    const ports = { postgres: 0, api: 0, maths: 0, scenes: 0, web: 0 };
+
     log("Starting the database");
     await initCluster({ binDir, dataDir: cluster, password: secrets.ownerPassword, env });
+    halt();
+    // Each port is chosen just before its service takes it, so there is little time for
+    // another program to take it first.
+    ports.postgres = await freePort();
     await startPostgres({
       binDir,
       dataDir: cluster,
       port: ports.postgres,
-      logFile: path.join(logs, "postgres.log"),
+      logFile: logFile("postgres"),
       env,
     });
+    halt();
 
     const api = path.join(resources, "python", "eddy-api", "eddy-api.exe");
-    /** @type {NodeJS.ProcessEnv} */
+    /** @type {NodeJS.ProcessEnv} What the API, its worker and its set-up share. */
     const apiEnv = {
       EDDY_HOME: path.join(resources, "data"),
       EDDY_LOCAL_MODE: "1",
       EDDY_ENVIRONMENT: environment,
-      DATABASE_URL: databaseUrl({
-        user: OWNER,
-        password: secrets.ownerPassword,
-        port: ports.postgres,
-        database: DATABASE,
-      }),
       RUNTIME_DATABASE_URL: databaseUrl({
         user: RUNTIME_ROLE,
         password: secrets.runtimePassword,
         port: ports.postgres,
         database: DATABASE,
       }),
-      SERVICE_TOKEN_PUBLIC_KEY_B64: secrets.publicKeyB64,
-      MATHS_CORE_BASE_URL: `http://${HOST}:${ports.maths}`,
-      MATHS_CORE_SERVICE_TOKEN: secrets.mathsToken,
-      SCENE_CHECK_BASE_URL: `http://${HOST}:${ports.scenes}`,
-      SCENE_CHECK_SERVICE_TOKEN: secrets.sceneToken,
-      // No Redis and no Claude: limits are counted in the API process, and no key is ever set.
+      // No Redis, no Claude and no local model: limits are counted in the API process, no key
+      // is ever set, and typed chat stays off.
       REDIS_URL: "",
       ANTHROPIC_API_KEY: "",
+      LLM_PROVIDER: "anthropic",
     };
 
     log("Preparing your data");
-    await runToEnd("setup", api, ["setup"], apiEnv);
+    // Only set-up is given the database owner's password: it makes the schema. The API and the
+    // worker run as the runtime role, which cannot change the schema or the audit log.
+    await runSetup(api, {
+      ...apiEnv,
+      DATABASE_URL: databaseUrl({
+        user: OWNER,
+        password: secrets.ownerPassword,
+        port: ports.postgres,
+        database: DATABASE,
+      }),
+    });
+    halt();
 
     log("Starting Eddy");
+    ports.maths = await freePort();
     start(
       "maths",
       path.join(resources, "python", "eddy-maths", "eddy-maths.exe"),
       ["--port", String(ports.maths)],
       { MATHS_CORE_SERVICE_TOKEN: secrets.mathsToken },
     );
+    ports.scenes = await freePort();
     start("scenes", node.command, [path.join(resources, "scene-check", "server.mjs")], {
       ...node.env,
       SCENE_CHECK_SERVICE_TOKEN: secrets.sceneToken,
       SCENE_CHECK_PORT: String(ports.scenes),
     });
-    start("api", api, ["serve", "--port", String(ports.api)], apiEnv);
+    ports.api = await freePort();
+    start("api", api, ["serve", "--port", String(ports.api)], {
+      ...apiEnv,
+      SERVICE_TOKEN_PUBLIC_KEY_B64: secrets.publicKeyB64,
+      MATHS_CORE_BASE_URL: `http://${HOST}:${ports.maths}`,
+      MATHS_CORE_SERVICE_TOKEN: secrets.mathsToken,
+      SCENE_CHECK_BASE_URL: `http://${HOST}:${ports.scenes}`,
+      SCENE_CHECK_SERVICE_TOKEN: secrets.sceneToken,
+    });
+    // The worker only runs the privacy jobs: it needs the database and nothing else.
     start("worker", api, ["worker"], apiEnv);
-    const webDir = path.join(resources, "web", "apps", "web");
+    ports.web = await freePort();
     const webUrl = `http://${HOST}:${ports.web}`;
     start(
       "web",
@@ -244,24 +346,36 @@ export async function startServices({ resources, dataDir, node, environment, log
         PORT: String(ports.web),
         HOSTNAME: HOST,
         EDDY_LOCAL_MODE: "1",
+        EDDY_WINDOW_SECRET: secrets.windowSecret,
         AUTH_SECRET: secrets.authSecret,
         AUTH_URL: webUrl,
         API_BASE_URL: `http://${HOST}:${ports.api}`,
         SERVICE_TOKEN_PRIVATE_KEY_B64: secrets.privateKeyB64,
       },
-      webDir,
+      path.join(resources, "web", "apps", "web"),
     );
 
-    const why = (/** @type {string} */ name) => () => died.get(name) ?? null;
     await Promise.all([
-      waitFor(`http://${HOST}:${ports.maths}/health`, "maths-core", why("maths")),
-      waitFor(`http://${HOST}:${ports.scenes}/health`, "scene-check", why("scenes")),
-      waitFor(`http://${HOST}:${ports.api}/health`, "the API", why("api")),
+      waitFor(`http://${HOST}:${ports.maths}/health`, "maths-core", alive("maths")),
+      waitFor(`http://${HOST}:${ports.scenes}/health`, "scene-check", alive("scenes")),
+      waitFor(`http://${HOST}:${ports.api}/health`, "the API", alive("api")),
     ]);
-    await waitFor(`${webUrl}/privacy`, "the web app", why("web"));
+    await waitFor(`${webUrl}/privacy`, "the web app", alive("web"), {
+      cookie: `${WINDOW_COOKIE}=${secrets.windowSecret}`,
+    });
+
+    // If another program took a port first, it is that program which answered the health check,
+    // and our own service is about to exit because the port is taken. So every one of them, the
+    // worker included, must still be running a moment later, or Eddy does not start.
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+    for (const { name } of children) alive(name)();
+    started = true;
     return { webUrl, ports, secrets, stop };
   } catch (error) {
     await stop();
+    // Closed in the middle of starting the database: the step in flight may have finished
+    // after `stop` looked. Stopping it again is harmless when there is nothing to stop.
+    await stopPostgres({ binDir, dataDir: cluster, env });
     throw error;
   }
 }

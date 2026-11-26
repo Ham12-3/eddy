@@ -47,8 +47,11 @@ const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
  * web page that points its own domain name at 127.0.0.1 (DNS rebinding) would otherwise be the
  * same origin as Eddy and could open a profile.
  */
-export function isLoopbackHost(host: string | null | undefined): boolean {
+export function isLoopbackHost(host: string | null | undefined, port?: string): boolean {
   if (!host) return false;
-  const name = host.trim().toLowerCase().replace(/:\d+$/, "");
-  return LOOPBACK.has(name);
+  const value = host.trim().toLowerCase();
+  const name = value.replace(/:\d+$/, "");
+  if (!LOOPBACK.has(name)) return false;
+  // When this server knows its own port (the desktop shell sets it), the Host must name it.
+  return port ? value === `${name}:${port}` : true;
 }

@@ -39,7 +39,16 @@ def online_only(settings: Annotated[Settings, Depends(get_settings)]) -> None:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Eddy API", version=__version__)
+    # In the desktop app the schema pages answer to nobody: the port can be reached by any
+    # program on the computer, and only Eddy's own web server has a use for the API.
+    desktop = get_settings().eddy_local_mode
+    app = FastAPI(
+        title="Eddy API",
+        version=__version__,
+        docs_url=None if desktop else "/docs",
+        redoc_url=None if desktop else "/redoc",
+        openapi_url=None if desktop else "/openapi.json",
+    )
 
     @app.get("/health", operation_id="getHealth")
     def health() -> HealthResponse:

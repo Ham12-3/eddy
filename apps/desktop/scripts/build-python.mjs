@@ -33,6 +33,9 @@ const programs = [
   },
 ];
 
+/** Test and lint tools, and uvicorn's file watcher, which only its reload mode uses. */
+const EXCLUDED = ["hypothesis", "mypy", "pytest", "_pytest", "ruff", "watchfiles", "IPython"];
+
 const only = process.argv.slice(2);
 mkdirSync(work, { recursive: true });
 for (const program of programs) {
@@ -57,6 +60,8 @@ for (const program of programs) {
       path.join(work, program.name),
       "--specpath",
       work,
+      // Development tools that are installed beside the services and are no part of them.
+      ...EXCLUDED.flatMap((name) => ["--exclude-module", name]),
       ...program.extra,
       path.join(desktopDir, "python", program.entry),
     ],

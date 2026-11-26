@@ -198,6 +198,7 @@ def _deps(
         maths_core=services.maths_core,
         scene_check=services.scene_check,
         llm=llm,
+        typed_chat=services.typed_chat,
         durable=_durable(session),
     )
 
@@ -369,7 +370,7 @@ def send(
     if row is None or not _owned(caller, row.student_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No such lesson.")
     if row.ended_at is not None:
-        if row.end_reason == "SAFEGUARDING":
+        if row.end_reason == "SAFEGUARDING" and services.typed_chat:
             return _after_safeguarding(session, row, body)
         raise HTTPException(status.HTTP_409_CONFLICT, detail="This lesson has ended.")
     caught = body.kind == "message" and body.text and safeguarding.tripwire(body.text)

@@ -12,6 +12,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The desktop app's Electron program is not used here, so its download is skipped: it is large,
+# and a failed download would fail a job that has no need of it.
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
 jobs:
   checks:
     name: Lint, typecheck, unit tests, synth

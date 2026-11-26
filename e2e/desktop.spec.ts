@@ -148,8 +148,12 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByLabel("Your message")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Give me a hint" })).toBeVisible();
   await check(page, "desktop-lesson", info.project.name);
+  const said = page.getByText("Eddy", { exact: true });
+  const before = await said.count();
   await page.getByRole("button", { name: "Give me a hint" }).click();
-  await expect(page.getByText("Eddy is writing")).toHaveCount(0, { timeout: 30_000 });
+  // The hint itself arrives: one more thing Eddy said, and no error.
+  await expect(said).toHaveCount(before + 1, { timeout: 30_000 });
+  await expect(page.getByText("That did not work")).toHaveCount(0);
   await expect(page.getByLabel("Your message")).toHaveCount(0);
   await check(page, "desktop-lesson-hint", info.project.name);
 

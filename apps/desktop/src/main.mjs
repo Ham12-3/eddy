@@ -2,34 +2,61 @@
 //
 // It starts the services (src/services.mjs), shows the web app they serve, and stops them when
 // the window closes. The window is locked down: no Node in the page, no new windows, no
-// navigation away from Eddy, no permissions, and no request to anywhere but this computer.
+// navigation away from Eddy, no permissions, and no request to anywhere but Eddy's own server.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, dialog, Menu, session } from "electron";
+import { app, BrowserWindow, dialog, Menu, safeStorage, session } from "electron";
 
-import { startServices } from "./services.mjs";
-
-// A preview build runs the API in its development environment. The tutor refuses to start in
-// production until Eddy's safeguarding lead has approved the help script (routes/tutor.py), so a
-// build for real students is made with this off, and stays locked until that approval.
-const PREVIEW = true;
+import { startServices, StoppedError, WINDOW_COOKIE } from "./services.mjs";
+import { isAllowedUrl, shellFileUrls } from "./window-policy.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-// Tests and the build check point Eddy at a throwaway data folder, and ask for one picture of
-// the window before it closes again.
-const dataOverride = process.env.EDDY_DESKTOP_DATA;
-const smokeShot = process.env.EDDY_DESKTOP_SMOKE;
+
+/**
+ * Whether this is a preview build, from `eddy.preview` in package.json. A preview runs the API
+ * in its development environment. The tutor refuses to start in production until Eddy's
+ * safeguarding lead has approved the help script (routes/tutor.py), so a build for real students
+ * is made without the flag, and stays locked until that approval. Anything but an explicit
+ * `true` is not a preview: a build can only be unlocked on purpose.
+ */
+function isPreview() {
+  try {
+    const manifest = JSON.parse(readFileSync(path.join(app.getAppPath(), "package.json"), "utf8"));
+    return manifest?.eddy?.preview === true;
+  } catch {
+    return false;
+  }
+}
+const PREVIEW = isPreview();
+
+// The build check and the tests point Eddy at a throwaway data folder, and ask for one picture
+// of the window before it closes again. An installed copy ignores both.
+const dataOverride = app.isPackaged ? undefined : process.env.EDDY_DESKTOP_DATA;
+const smokeShot = app.isPackaged ? undefined : process.env.EDDY_DESKTOP_SMOKE;
 
 app.setName("Eddy");
+// The local app-data folder, not the roaming one: a roaming profile or folder redirection would
+// copy the database to a server, and the notice says it stays on this computer.
+const localAppData = process.env.LOCALAPPDATA;
 if (dataOverride) app.setPath("userData", dataOverride);
+else if (localAppData) app.setPath("userData", path.join(localAppData, "Eddy"));
 
-/** @type {import("./services.mjs").Running | undefined} */
-let running;
 /** @type {BrowserWindow | undefined} */
 let window;
 let quitting = false;
+/** Eddy's own server, once it has started. */
+let webOrigin = "";
+/** The way to stop the services, from the moment there is anything to stop. */
+let stopServices = async () => {};
+
+const shellFiles = shellFileUrls(here);
+
+/** Only Eddy's own server and its own starting page: nothing else is ever asked for. */
+function allowed(/** @type {string} */ url) {
+  return isAllowedUrl(url, { webOrigin, shellFiles, devtools: !app.isPackaged });
+}
 
 /** The paper colour from the design tokens, so the window does not flash white as it opens. */
 function paperColour() {
@@ -38,23 +65,16 @@ function paperColour() {
   return /--paper:\s*(#[0-9a-f]{6})/i.exec(readFileSync(tokens, "utf8"))?.[1];
 }
 
-/** Only this computer: Eddy never asks the internet for anything. */
-function isLocal(/** @type {string} */ url) {
-  try {
-    const { protocol, hostname } = new URL(url);
-    if (protocol === "file:" || protocol === "data:" || protocol === "devtools:") return true;
-    return (protocol === "http:" || protocol === "ws:") && hostname === "127.0.0.1";
-  } catch {
-    return false;
-  }
-}
-
-function createWindow() {
+async function createWindow() {
   // Its own session, kept in memory: closing Eddy forgets the open profile, so the next person
   // starts at the profile picker.
   const eddy = session.fromPartition("eddy");
   eddy.setPermissionRequestHandler((_contents, _permission, allow) => allow(false));
-  eddy.webRequest.onBeforeRequest((details, respond) => respond({ cancel: !isLocal(details.url) }));
+  eddy.setPermissionCheckHandler(() => false);
+  eddy.setDevicePermissionHandler(() => false);
+  // No proxy and no proxy discovery: that would be a request to the network.
+  await eddy.setProxy({ mode: "direct" });
+  eddy.webRequest.onBeforeRequest((details, respond) => respond({ cancel: !allowed(details.url) }));
 
   const paper = paperColour();
   const created = new BrowserWindow({
@@ -71,31 +91,48 @@ function createWindow() {
       contextIsolation: true,
       sandbox: true,
       webSecurity: true,
+      spellcheck: false,
       devTools: !app.isPackaged,
     },
   });
   created.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   created.webContents.on("will-navigate", (event, url) => {
-    if (!isLocal(url)) event.preventDefault();
+    if (!allowed(url)) event.preventDefault();
   });
   // The page sets its own titles; the window keeps saying which build this is.
   created.on("page-title-updated", (event, title) => {
     event.preventDefault();
     created.setTitle(PREVIEW ? `${title} (preview)` : title);
   });
-  return created;
+  return { created, eddy };
+}
+
+/** Says what went wrong and closes. The build check has nobody to read a dialog. */
+function fail(/** @type {unknown} */ error) {
+  // Closed while it was starting: that is what was asked for, not something to report.
+  if (error instanceof StoppedError || quitting) return;
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(error);
+  if (smokeShot) {
+    quitting = true;
+    stopServices().finally(() => app.exit(1));
+    return;
+  }
+  dialog.showErrorBox("Eddy could not carry on", message);
+  app.quit();
 }
 
 async function start() {
   Menu.setApplicationMenu(null);
-  window = createWindow();
-  await window.loadFile(path.join(here, "starting.html"));
+  const { created, eddy } = await createWindow();
+  window = created;
+  await created.loadFile(path.join(here, "starting.html"));
   const say = (/** @type {string} */ step) => {
     const script = `document.getElementById("step").textContent = ${JSON.stringify(step)};`;
-    window?.webContents.executeJavaScript(script).catch(() => {});
+    created.webContents.executeJavaScript(script).catch(() => {});
   };
 
-  running = await startServices({
+  const running = await startServices({
     resources: app.isPackaged
       ? path.join(process.resourcesPath, "eddy")
       : path.join(here, "..", "resources"),
@@ -104,23 +141,51 @@ async function start() {
     // Node is shipped.
     node: { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" } },
     environment: PREVIEW ? "development" : "production",
+    // The saved database passwords are sealed with the Windows account's own key, so a copy of
+    // the data folder does not open on another computer or for another account.
+    codec: (await safeStorage.isAsyncEncryptionAvailable())
+      ? {
+          seal: async (text) => (await safeStorage.encryptStringAsync(text)).toString("base64"),
+          open: async (sealed) =>
+            (await safeStorage.decryptStringAsync(Buffer.from(sealed, "base64"))).result,
+        }
+      : undefined,
     log: say,
+    onStoppable: (stop) => {
+      stopServices = stop;
+    },
+    onFailure: (name, reason) => fail(new Error(`A part of Eddy stopped (${name}): ${reason}`)),
+  });
+  webOrigin = new URL(running.webUrl).origin;
+  // The web server answers only requests that carry this launch's secret. It is put in this
+  // window's cookie jar and nowhere else, so no other program on the computer can ask.
+  await eddy.cookies.set({
+    url: running.webUrl,
+    name: WINDOW_COOKIE,
+    value: running.secrets.windowSecret,
+    httpOnly: true,
+    sameSite: "strict",
   });
   // Straight to the profile picker: the window starts with no profile open. A page that sends
   // the window on elsewhere ends its own load early, which is not a failure.
-  await window.loadURL(`${running.webUrl}/profiles`).catch((error) => {
+  await created.loadURL(`${running.webUrl}/profiles`).catch((error) => {
     if (error?.code !== "ERR_ABORTED") throw error;
   });
 
   if (smokeShot) {
     // Give the page a moment to paint its fonts, take the picture, and close.
     await new Promise((resolve) => setTimeout(resolve, 2500));
-    writeFileSync(smokeShot, (await window.webContents.capturePage()).toPNG());
+    writeFileSync(smokeShot, (await created.webContents.capturePage()).toPNG());
     app.quit();
   }
 }
 
-if (!app.requestSingleInstanceLock()) {
+// An installed copy never opens a debugging port: it would hand the window, and the profile
+// open in it, to any program on the computer.
+const debugging = ["remote-debugging-port", "remote-debugging-pipe", "inspect", "inspect-brk"];
+if (app.isPackaged && debugging.some((name) => app.commandLine.hasSwitch(name))) {
+  app.exit(1);
+} else if (!app.requestSingleInstanceLock()) {
   // A second copy would start a second database on the same files.
   app.quit();
 } else {
@@ -128,25 +193,17 @@ if (!app.requestSingleInstanceLock()) {
     if (window?.isMinimized()) window.restore();
     window?.focus();
   });
-  app.whenReady().then(() =>
-    start().catch((error) => {
-      console.error(error);
-      // The build check has nobody to read a dialog: it fails with the reason on the console.
-      if (smokeShot) app.exit(1);
-      dialog.showErrorBox("Eddy could not start", String(error?.message ?? error));
-      app.quit();
-    }),
-  );
+  app.whenReady().then(() => start().catch(fail));
 }
 
 app.on("window-all-closed", () => app.quit());
-// Quitting waits for the services to stop: the database must close cleanly.
+// Quitting waits for the services to stop: the database must close cleanly. That holds while
+// Eddy is still starting too, when some of them are already running.
 app.on("before-quit", (event) => {
-  if (quitting || !running) return;
+  if (quitting) return;
   event.preventDefault();
   quitting = true;
-  running
-    .stop()
+  stopServices()
     .catch(() => {})
-    .finally(() => app.quit());
+    .finally(() => app.exit(0));
 });

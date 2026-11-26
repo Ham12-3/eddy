@@ -5,6 +5,9 @@
   "type": "module",
   "description": "The Eddy desktop app (ADR-0036): one window, and every service on this computer.",
   "main": "src/main.mjs",
+  "eddy": {
+    "preview": true
+  },
   "scripts": {
     "build": "pnpm build:shell && pnpm build:scene-check && pnpm build:web && pnpm build:python && pnpm build:postgres",
     "build:shell": "node scripts/build-shell.mjs",
@@ -15,8 +18,8 @@
     "start": "electron .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"scripts/*.test.mjs\"",
-    "test:app": "node --test \"src/*.test.mjs\""
+    "test": "node --test \"scripts/*.test.mjs\" \"src/secrets.test.mjs\" \"src/window-policy.test.mjs\"",
+    "test:app": "node --test \"src/services.test.mjs\""
   },
   "devDependencies": {
     "@types/node": "22.20.5",

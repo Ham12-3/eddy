@@ -10,6 +10,7 @@ Added:
 - `eddy_api/desktop.py`: the one program the shell runs for services/api (`setup`, `serve`, `worker`). `EDDY_HOME` names the folder holding the config, prompts, curriculum and migrations.
 - Each install makes its own database passwords, service-token key pair and cookie secret on first run. Every service listens on 127.0.0.1 only, on ports chosen at each start, and the window makes no request to anywhere else.
 - A test that runs the whole app without its window from an empty data folder: set-up, every service, a profile, a lesson, a clean stop, and the same data on restart.
+- After a second security review and a code review: the web server answers only Eddy's own window (a per-launch secret), most secrets are made per launch and never saved, the saved database passwords are sealed by Windows, a first run that is cut short leaves nothing broken, quitting during start-up stops everything, every service must stay alive, and text hidden in a hand-made answer no longer reaches the safeguarding flow when typed chat is off.
 
 Changed:
 
