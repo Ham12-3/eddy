@@ -1,4 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import type { NextConfig } from "next";
+
+// The desktop app (ADR-0036) ships the web app as a self-contained server: `pnpm desktop:web`
+// sets this and builds into its own folder, so an ordinary build and `next start` are untouched.
+const desktopBuild = process.env.EDDY_DESKTOP_BUILD === "1";
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 // A baseline Content Security Policy (ADR-0032): only our own origin, no plugins, no framing,
 // forms post only here. Scripts and styles still allow inline code, which Next.js and the maths
@@ -32,6 +40,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  ...(desktopBuild
+    ? {
+        output: "standalone" as const,
+        distDir: ".next-desktop",
+        // The workspace packages live above apps/web: trace files from the repository root.
+        outputFileTracingRoot: repoRoot,
+      }
+    : {}),
   // Workspace packages export TypeScript source; Next compiles them.
   transpilePackages: ["@eddy/api-client", "@eddy/scenes", "@eddy/schemas", "@eddy/ui"],
   // Import only the components a page uses from the @eddy/ui barrel, not all of them.

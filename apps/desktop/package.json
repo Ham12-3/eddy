@@ -1,0 +1,20 @@
+{
+  "name": "@eddy/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The Eddy desktop app (ADR-0036): one window, and every service on this computer.",
+  "scripts": {
+    "build:scene-check": "node scripts/build-scene-check.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"scripts/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3"
+  }
+}

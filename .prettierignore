@@ -5,6 +5,7 @@ pnpm-lock.yaml
 uv.lock
 .venv/
 .next/
+.next-desktop/
 dist/
 cdk.out/
 e2e-artifacts/
@@ -26,3 +27,7 @@ packages/scenes/src/layout/font-metrics.json
 evals/golden/scenes/
 # Copies of the repository that helper agents work in: not ours to format.
 .claude/worktrees/
+apps/desktop/resources/
+apps/desktop/.cache/
+apps/desktop/dist/
+apps/desktop/release/

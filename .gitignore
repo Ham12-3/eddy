@@ -4,6 +4,7 @@ node_modules/
 
 # Builds and caches
 .next/
+.next-desktop/
 dist/
 cdk.out/
 *.tsbuildinfo
@@ -41,3 +42,9 @@ storybook-static/
 
 # Local model runtime and model files for the desktop app (downloaded, never committed).
 .vendor/
+
+# The desktop app: built parts and downloads (pnpm --filter @eddy/desktop build:*)
+apps/desktop/resources/
+apps/desktop/.cache/
+apps/desktop/dist/
+apps/desktop/release/
