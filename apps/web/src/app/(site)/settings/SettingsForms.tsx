@@ -76,7 +76,7 @@ export function DeleteForm({ local = false }: { local?: boolean }) {
       <FormError state={state} />
       <p className="m-0">
         {local
-          ? "This profile stops working straight away and leaves the list on this computer. Eddy then erases your answers, messages and settings. If Eddy ever stopped a lesson because of something you wrote, a short note of it stays on this computer: deleting the profile does not remove that note. This cannot be undone."
+          ? "This profile stops working straight away and leaves the list on this computer. Eddy then erases your answers, progress and settings. This cannot be undone."
           : "Your account stops working straight away and you are signed out. Everything about you is erased within 30 days. This cannot be undone."}
       </p>
       <TextField

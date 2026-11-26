@@ -29,8 +29,15 @@ const LABELS: Record<string, string> = {
 };
 
 /** In the desktop app: a profile, and no parents, invites, sign-ins or reports (ADR-0036). */
-const LOCAL_LABELS: Record<string, string> = { account: "Your profile" };
-const ONLINE_ONLY = new Set(["parent_links", "invite", "signed_in_on", "concerns_you_reported"]);
+const LOCAL_LABELS: Record<string, string> = { account: "Your profile", lessons: "Lessons" };
+/** Nothing is typed to the tutor there, so there are no messages and no safety records. */
+const ONLINE_ONLY = new Set([
+  "parent_links",
+  "invite",
+  "signed_in_on",
+  "concerns_you_reported",
+  "safety_records",
+]);
 
 function words(key: string): string {
   return key.replaceAll("_", " ");

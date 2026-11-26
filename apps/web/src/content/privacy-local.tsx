@@ -4,6 +4,12 @@
  * these say something different from the online notices in `privacy.tsx`. Both are drafts until
  * legal review (SPEC.md section 16.2), and say only what Eddy actually does today. Raise
  * LOCAL_PRIVACY_NOTICE_VERSION in src/lib/notices.ts whenever the meaning changes.
+ *
+ * The desktop app ships with typed chat off: a student answers questions and asks for hints, and
+ * never types a message to the tutor. So there is no AI model at work, nothing typed is stored,
+ * and a lesson is never stopped to show the help message. If typed chat is ever switched on
+ * (`typed_chat_enabled` in services/api), these notices must say so first: version 0.3.0 in the
+ * git history has the wording for messages, the built-in model and safety notes.
  */
 import { linkClassName } from "@eddy/ui";
 import NextLink from "next/link";
@@ -47,10 +53,12 @@ export function LocalChildPrivacyNotice() {
           <li>
             Your answers, how sure you felt, the hints you used and the explanations you watched.
           </li>
-          <li>The messages you send to the tutor.</li>
           <li>Your PIN, if you set one, scrambled so that nobody can read it.</li>
         </ul>
-        <p className="m-0">Eddy does not ask for your email, school, address or phone number.</p>
+        <p className="m-0">
+          Eddy does not ask for your email, school, address or phone number. You answer maths
+          questions and ask for hints. There is nowhere to type a message.
+        </p>
       </Section>
       <Section title="Why">
         <p className="m-0">
@@ -58,62 +66,46 @@ export function LocalChildPrivacyNotice() {
           an explanation made for that mistake.
         </p>
       </Section>
-      <Section title="The AI that writes Eddy's replies">
+      <Section title="No AI is listening">
         <p className="m-0">
-          A small AI model is built into Eddy and runs on this computer. Your messages go to it and
-          no further. No AI company sees them.
+          Eddy&apos;s hints and explanations were written in advance. No AI model runs while you use
+          Eddy, and no AI company sees anything you do.
         </p>
       </Section>
-      <Section title="If Eddy stops a lesson to show you help">
-        <p className="m-0 mb-3">
-          If you write something that sounds as if you might not be safe, Eddy stops the lesson and
-          shows you who can help.
-        </p>
-        <p className="m-0 mb-3">
-          Eddy does not tell anyone. No teacher, parent or other person gets a message, and nobody
-          reads what you wrote. Eddy cannot get help for you. So please contact the people Eddy
-          shows you, or talk to an adult you trust.
-        </p>
-        <p className="m-0 mb-3">
-          Eddy saves a short note on this computer, with a few of the words you wrote.
-        </p>
+      <Section title="If you are worried about something">
         <p className="m-0">
-          Eddy sometimes gets this wrong and stops over a joke or a saying. If that happens, you are
-          not in trouble and nobody is told.
+          Eddy only does maths, and it cannot tell anyone anything. If something is worrying you,
+          the people at the bottom of every page are there to listen, or you can talk to an adult
+          you trust.
         </p>
       </Section>
       <Section title="Other people who use this computer">
         <p className="m-0 mb-3">
           Each person has their own profile. Without a PIN, anyone who uses this computer can open
-          your profile and read your messages. A PIN stops them opening it from the list. Choose
-          Switch profile when you finish.
+          your profile and see your answers and progress. A PIN stops them opening it from the list.
+          Choose Switch profile when you finish.
         </p>
-        <p className="m-0 mb-3">
+        <p className="m-0">
           A PIN is a simple lock, not a safe. A person who can sign in to this computer could still
           find Eddy&apos;s files, with or without your PIN. Eddy cannot show or reset a PIN: if you
           forget it, the profile cannot be opened again.
         </p>
-        <p className="m-0">
-          If there is something you do not want people at home to read, Eddy is not a safe place to
-          write it. The people at the bottom of every page are there to listen.
-        </p>
       </Section>
       <Section title="How long Eddy keeps it">
         <p className="m-0 mb-3">
-          Eddy deletes your messages with the tutor after 90 days. When a profile is deleted, Eddy
-          erases its answers, messages and settings. Eddy can only do this tidying while it is open.
+          Eddy keeps your profile until you delete it. When a profile is deleted, Eddy erases its
+          answers, progress and settings. Eddy can only do this tidying while it is open.
         </p>
         <p className="m-0">
-          Two things stay on this computer after a profile is deleted. One is the short note from
-          any lesson Eddy stopped, with a few of your words but not your profile name. The other is
-          a plain list of actions, such as when a profile was made or opened. You cannot see or
-          delete these from inside Eddy.
+          One thing stays on this computer after a profile is deleted: a plain list of actions, such
+          as when a profile was made or opened, without your profile name. You cannot see or delete
+          it from inside Eddy.
         </p>
       </Section>
       <Section title="What you can do">
         <p className="m-0">
           In Settings you can see and download what Eddy holds in your profile, or delete the
-          profile. The short notes and the list of actions are not in the download.
+          profile. The list of actions is not in the download.
         </p>
       </Section>
       <p className="m-0">
@@ -134,7 +126,7 @@ export function LocalFullPrivacyNotice() {
           Eddy is a GCSE Maths tutor that runs on one computer. It does not connect to the internet
           and has no accounts. The people who made Eddy receive nothing from it and hold no data
           about you. Who is responsible for Eddy, and how to contact them, will be named here before
-          Eddy is given to students.
+          Eddy is finished.
         </p>
       </Section>
       <Section title="The data kept on this computer">
@@ -155,7 +147,8 @@ export function LocalFullPrivacyNotice() {
             explanations you watched, and what Eddy estimates you know.
           </li>
           <li>
-            Tutor: your messages to the tutor and its replies, and a note of any safety concern.
+            Lessons: the hints and feedback Eddy showed you. You do not type messages to Eddy, so
+            none are kept.
           </li>
           <li>
             A log of important actions (such as making a profile, reading this notice or deleting a
@@ -172,59 +165,48 @@ export function LocalFullPrivacyNotice() {
       </Section>
       <Section title="Who else handles it">
         <p className="m-0">
-          Nobody. The AI model that writes Eddy&apos;s replies is part of the program and runs on
-          this computer. No message, answer or other data is sent to any company or server.
+          Nobody. Eddy&apos;s hints and explanations were written in advance and are part of the
+          program. No AI model runs while Eddy is in use, and no answer or other data is sent to any
+          company or server.
         </p>
       </Section>
       <Section title="Safety">
         <p className="m-0">
-          If something you write suggests you may be at risk, the lesson stops and you are shown who
-          can help (Childline, Shout and 999). A record is kept on this computer with a short
-          extract of what you wrote. Because Eddy sends nothing anywhere, no person reviews it and
-          nobody is told. Eddy cannot get help for you: please contact the services shown, or an
-          adult you trust.
+          Eddy takes no free text, so it cannot notice that someone is at risk, and it cannot tell
+          anyone anything. Every page shows who to contact (Childline, Shout and 999). Nobody
+          reviews what happens in Eddy.
         </p>
       </Section>
       <Section title="Sharing a computer">
         <p className="m-0">
           Profiles keep each person&apos;s work apart. Without a PIN, anyone using Eddy can open a
-          profile and read its messages. An optional PIN stops a profile being opened from the list,
-          until its owner chooses Switch profile or closes Eddy. The data is stored in the files of
-          the Windows account Eddy was installed in. Anyone who can sign in to that account, or to
-          an administrator account, could reach those files, so a PIN is not strong protection.
+          profile and see its answers and progress. An optional PIN stops a profile being opened
+          from the list, until its owner chooses Switch profile or closes Eddy. The data is stored
+          in the files of the Windows account Eddy was installed in. Anyone who can sign in to that
+          account, or to an administrator account, could reach those files, so a PIN is not strong
+          protection.
         </p>
       </Section>
       <Section title="How long it is kept">
         <ul className="m-0 flex flex-col gap-2 pl-6">
           <li>
-            Tutor messages: deleted after 90 days. Eddy does this tidying while it is running, so it
-            happens the next time Eddy is opened after that.
+            The hints and feedback shown in lessons: deleted after 90 days. Eddy does this tidying
+            while it is running, so it happens the next time Eddy is opened after that.
           </li>
           <li>
             A profile and its learning data: until you delete the profile. It stops working straight
-            away, and its answers, messages and settings are erased within 30 days, the next time
-            Eddy is running.
-          </li>
-          <li>
-            Records of safety concerns: kept on this computer after a profile is deleted, without
-            the profile name, with their short extract. Whether they should be erased too is being
-            decided.
+            away, and its answers, progress and settings are erased the next time Eddy is running.
           </li>
           <li>
             The log of important actions: kept, and cannot be changed. It holds a profile&apos;s
             internal number, the action and the time, never a name or anything you wrote.
-          </li>
-          <li>
-            Technical records of each reply the AI model wrote (when, and how long it took), with no
-            link to a profile once it is deleted.
           </li>
         </ul>
       </Section>
       <Section title="Your choices">
         <p className="m-0 mb-3">
           Downloading your data and deleting your profile are in Settings, two clicks from any page.
-          The download holds everything in your profile except records of safety concerns and the
-          log of actions.
+          The download holds everything in your profile except the log of actions.
         </p>
         <p className="m-0">
           A PIN cannot be recovered. A profile whose PIN is forgotten cannot be opened, downloaded

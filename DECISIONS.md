@@ -563,7 +563,7 @@ Status: Accepted (19 November 2026: the product owner chose Vercel, Supabase and
 
 ## ADR-0036: A desktop app with a local model, in place of hosting
 
-Status: Accepted in part (25 November 2026). The product owner chose a Windows desktop app that works with no internet and no API, replacing the hosted service. It replaces ADR-0035; the hosting files stay until the tidy-up phase removes them. Whether typed chat stays on is open (see the last section). The plan is in phases: prove the model, local mode, package the parts, the installer, tidy up.
+Status: Accepted (25 and 26 November 2026). The product owner chose a Windows desktop app that works with no internet and no API, replacing the hosted service. It replaces ADR-0035; the hosting files stay until the tidy-up phase removes them. On 26 November the product owner chose to ship with typed chat off. The plan is in phases: prove the model, local mode, package the parts, the installer, tidy up.
 
 - **Context:**
   - Eddy was built as a hosted service: a Next.js web app, a Python API and worker, maths-core, scene-check, Postgres, Redis, email, and Claude over the internet (ADR-0035).
@@ -604,8 +604,11 @@ Status: Accepted in part (25 November 2026). The product owner chose a Windows d
   - **No processors:** no hosting, email or AI company handles student data. The DPIA, the notices and the compliance drafts need rewriting for a desktop app.
   - **No human sees a safeguarding stop.** The help message is the only response, so it matters more. The script is still a draft that needs a named safeguarding lead's approval, and the tutor stays locked outside development until then.
   - **Parents by email are gone.** A parent view on the same computer comes in the tidy-up phase.
+  - **Typed chat is off in the desktop app** (decided 26 November 2026). The safety thresholds on answer leaks, distress and injections were met, but the false stops and the slow, mostly discarded replies were not good enough for students.
+    - `typed_chat_enabled` is false in local mode unless a local model is switched on. A lesson then never waits for a message, the page shows no box to type in, and a message sent by hand is refused before anything is stored.
+    - No model ships in the installer and none runs: hints are the templated ones, explanations are the Tier D scenes. The local model provider stays in the code for a better model or faster hardware.
+    - Nothing a student types as free text is ever stored, so a lesson is never stopped to show the help script and no safeguarding record is made. The questions below about extracts and the help script matter only if typed chat is switched on, and the notice (version 0.4.0) says there is nowhere to type a message.
   - **Open, for the product owner:**
-    - Whether typed chat ships switched on. The safety thresholds on answer leaks, distress and injections are met, but the false stops and the slow, mostly discarded replies are not good enough for students. The alternative is hint buttons, templated replies and animations only, which already work and are instant.
     - Whether deleting a profile should also erase its safety records, as nobody will ever review them on the computer. The security review recommends erasing them, or at least their extract: the only people who could read one are those with the computer's own account.
     - How an adult clears a profile whose PIN is forgotten, and whether a PIN can be changed or removed in Settings.
     - From the child-safety review, for the safeguarding lead as well:

@@ -101,6 +101,16 @@ def development(settings: Settings) -> bool:
     return settings.eddy_environment in ("development", "test")
 
 
+def typed_chat_enabled(settings: Settings) -> bool:
+    """Whether a student may type a message to the tutor.
+
+    The desktop app ships with typed chat off (ADR-0036): it never calls Claude, and the small
+    local model is not good enough yet. A lesson there offers answers, hints and explanations,
+    and takes no free text at all. It comes back on only if a local model is switched on.
+    """
+    return not settings.eddy_local_mode or settings.llm_provider == "local"
+
+
 def tier_l_enabled(settings: Settings) -> bool:
     """Claude (Tier L scenes and the tutor) is on with a key, and with ZDR confirmed, or with a
     local database in development or test."""
