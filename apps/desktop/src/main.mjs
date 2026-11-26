@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, dialog, Menu, safeStorage, session, utilityProcess } from "electron";
 
 import { startServices, StoppedError, WINDOW_COOKIE } from "./services.mjs";
-import { isAllowedUrl, shellFileUrls } from "./window-policy.mjs";
+import { isAllowedUrl, isOwnDownload, shellFileUrls } from "./window-policy.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,6 +50,10 @@ let quitting = false;
 let webOrigin = "";
 /** The way to stop the services, from the moment there is anything to stop. */
 let stopServices = async () => {};
+/** Starting up, settled once it has finished, failed or been stopped. */
+let starting = Promise.resolve();
+/** How long quitting waits for a start in flight to notice and tidy up after itself. */
+const START_SETTLE_MS = 20_000;
 
 const shellFiles = shellFileUrls(here);
 
@@ -75,6 +79,19 @@ async function createWindow() {
   // No proxy and no proxy discovery: that would be a request to the network.
   await eddy.setProxy({ mode: "direct" });
   eddy.webRequest.onBeforeRequest((details, respond) => respond({ cancel: !allowed(details.url) }));
+  // The one thing Eddy saves to a file is a copy of a profile's data (Settings). Any other
+  // download is refused. The dialog says what is being saved: by default its title is the
+  // address the file came from. Where it goes is always the person's own choice.
+  eddy.on("will-download", (event, item) => {
+    if (!isOwnDownload(item.getURL(), webOrigin)) {
+      event.preventDefault();
+      return;
+    }
+    item.setSaveDialogOptions({
+      title: "Save a copy of your data",
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+  });
 
   const paper = paperColour();
   const created = new BrowserWindow({
@@ -197,10 +214,16 @@ if (app.isPackaged && debugging.some((name) => app.commandLine.hasSwitch(name)))
     if (window?.isMinimized()) window.restore();
     window?.focus();
   });
-  app.whenReady().then(() => start().catch(fail));
+  app.whenReady().then(() => {
+    starting = start().catch(fail);
+  });
 }
 
-app.on("window-all-closed", () => app.quit());
+// Not while quitting: the window is closed as part of quitting, and asking to quit again from
+// there would let Electron end before the services have stopped.
+app.on("window-all-closed", () => {
+  if (!quitting) app.quit();
+});
 // Quitting waits for the services to stop: the database must close cleanly. That holds while
 // Eddy is still starting too, when some of them are already running.
 app.on("before-quit", (event) => {
@@ -209,7 +232,11 @@ app.on("before-quit", (event) => {
   quitting = true;
   // The window goes first: a page still open would ask a server that is being stopped.
   if (window && !window.isDestroyed()) window.destroy();
+  // A start still in flight is waited for as well: a step that was already running when the
+  // services were told to stop (the database being started, say) finishes and is then undone.
+  const settled = new Promise((resolve) => setTimeout(resolve, START_SETTLE_MS));
   stopServices()
     .catch(() => {})
+    .then(() => Promise.race([starting, settled]))
     .finally(() => app.exit(0));
 });

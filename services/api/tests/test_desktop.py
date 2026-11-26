@@ -126,11 +126,37 @@ def test_stopping_the_database_needs_to_be_told_where_it_is(
     assert ran == []
     monkeypatch.setenv("EDDY_PG_CTL", "pg_ctl.exe")
     monkeypatch.setenv("EDDY_PG_DATA", str(tmp_path))
+    monkeypatch.setenv("EDDY_PG_PORT", "50123")
     desktop.stop_database()  # no postmaster.pid: no database is running there
     assert ran == []
-    (tmp_path / "postmaster.pid").write_bytes(b"1234")
+    # The file PostgreSQL keeps while it runs: its process, folder, start time, then its port.
+    running = tmp_path / "postmaster.pid"
+    running.write_bytes(b"1234\nC:/data\n1795720000\n50999\n")
+    desktop.stop_database()  # a newer launch's database, on another port: left alone
+    assert ran == []
+    running.write_bytes(b"1234\n")
+    desktop.stop_database()  # still being written: nothing to go on
+    assert ran == []
+    running.write_bytes(b"1234\nC:/data\n1795720000\n50123\n")
     desktop.stop_database()
     assert ran == [["pg_ctl.exe", "stop", "-D", str(tmp_path), "-m", "fast", "-w", "-t", "30"]]
+
+
+def test_packaged_it_runs_only_the_launcher_shipped_beside_it(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    program = tmp_path / "python" / "eddy-api" / "eddy-api.exe"
+    program.parent.mkdir(parents=True)
+    program.write_bytes(b"")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(program))
+    # Whatever the environment names is ignored: the program must not run just anything.
+    monkeypatch.setenv("EDDY_PG_CTL", str(tmp_path / "another-program.exe"))
+    assert desktop.shipped_pg_ctl() is None
+    shipped = tmp_path / "postgres" / "bin" / "pg_ctl.exe"
+    shipped.parent.mkdir(parents=True)
+    shipped.write_bytes(b"")
+    assert desktop.shipped_pg_ctl() == str(shipped.resolve())
 
 
 def test_the_database_watcher_is_only_for_the_shell(

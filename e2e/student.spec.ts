@@ -106,6 +106,11 @@ test("a student signs up, sets up, starts the diagnostic and learns", async ({ p
   await check(page, "welcome-set-up", info.project.name);
   await page.getByLabel("When do you take your exams?").selectOption({ index: 2 });
   await page.getByLabel("Grade 4").check();
+  // One answer missing: the form says which, and keeps the answers already given.
+  await page.getByRole("button", { name: "Save and continue" }).click();
+  await expect(page.getByText("Say whether you are resitting.")).toBeVisible();
+  await expect(page.getByLabel("When do you take your exams?")).not.toHaveValue("");
+  await expect(page.getByLabel("Grade 4")).toBeChecked();
   await page.getByRole("radio", { name: "No" }).check();
   await page.getByRole("button", { name: "Save and continue" }).click();
 

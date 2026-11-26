@@ -4,7 +4,16 @@
 // its static files, into the desktop app's resources. The result runs with plain Node:
 //   node resources/web/apps/web/server.js   (PORT, HOSTNAME, EDDY_LOCAL_MODE=1 and the secrets)
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 import { repoRoot, resourcesDir } from "./paths.mjs";
@@ -127,6 +136,27 @@ for (const top of packagesIn(path.join(standalone, "apps/web/node_modules"))) {
 if (!existsSync(path.join(app, "server.js"))) {
   console.error("web: the build has no server.js. Is output: standalone still set?");
   process.exit(1);
+}
+
+// Next records where on this computer the build was made (its tracing root), which holds the
+// developer's Windows user name. The standalone server does not use it once built, so it is
+// replaced with a neutral folder: nothing of the build computer ships.
+const NEUTRAL = "C:\\eddy";
+for (const file of [
+  path.join(app, "server.js"),
+  path.join(app, ".next-desktop", "required-server-files.json"),
+]) {
+  if (!existsSync(file)) continue;
+  let text = readFileSync(file, "utf8");
+  for (const [from, to] of [
+    // As JSON writes it (doubled backslashes), as it is, and with forward slashes.
+    [JSON.stringify(repoRoot).slice(1, -1), JSON.stringify(NEUTRAL).slice(1, -1)],
+    [repoRoot, NEUTRAL],
+    [repoRoot.replaceAll("\\", "/"), NEUTRAL.replaceAll("\\", "/")],
+  ]) {
+    text = text.replaceAll(/** @type {string} */ (from), /** @type {string} */ (to));
+  }
+  writeFileSync(file, text);
 }
 
 /** @param {string} dir @returns {number} */

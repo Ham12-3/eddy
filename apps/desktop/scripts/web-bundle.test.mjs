@@ -3,12 +3,12 @@
 // Skips when it has not been built (`pnpm --filter @eddy/desktop build:web`).
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, lstatSync, readdirSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
 
-import { resourcesDir } from "./paths.mjs";
+import { repoRoot, resourcesDir } from "./paths.mjs";
 
 const root = path.join(resourcesDir, "web");
 const app = path.join(root, "apps/web");
@@ -77,6 +77,18 @@ describe("the web server bundle", { skip: !existsSync(app) && "not built" }, () 
 
   it("carries no links: an installer can pack it as plain files", () => {
     assert.deepEqual(links(root), []);
+  });
+
+  it("says nothing of the computer it was built on", () => {
+    // Next records its build folder, which holds the developer's Windows user name.
+    const here = repoRoot.replaceAll("\\", "/").toLowerCase();
+    for (const file of ["server.js", ".next-desktop/required-server-files.json"]) {
+      const text = readFileSync(path.join(app, file), "utf8")
+        .replaceAll("\\\\", "/")
+        .replaceAll("\\", "/")
+        .toLowerCase();
+      assert.ok(!text.includes(here), `${file} names ${repoRoot}`);
+    }
   });
 
   it("carries no settings file of the developer's", () => {

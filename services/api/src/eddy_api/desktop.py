@@ -117,8 +117,8 @@ def exit_with_parent(before: Callable[[], None] | None = None) -> None:
     def wait() -> None:
         try:
             sys.stdin.buffer.read()
-        except (OSError, ValueError):
-            pass  # No usable input at all is treated like a closed one.
+        except (OSError, ValueError, AttributeError):
+            pass  # No usable input, or none at all, is treated like a closed one.
         try:
             if before is not None:
                 before()
@@ -128,16 +128,40 @@ def exit_with_parent(before: Callable[[], None] | None = None) -> None:
     threading.Thread(target=wait, name="exit-with-parent", daemon=True).start()
 
 
+def shipped_pg_ctl() -> str | None:
+    """The PostgreSQL launcher to stop the database with.
+
+    Packaged, it is always the one shipped beside this program
+    (`<resources>/python/eddy-api/` and `<resources>/postgres/bin/`), whatever the environment
+    says: this program must never be a way to run some other program. From source there is no
+    such folder, so the shell names it (EDDY_PG_CTL).
+    """
+    if getattr(sys, "frozen", False):
+        shipped = Path(sys.executable).resolve().parents[2] / "postgres" / "bin" / "pg_ctl.exe"
+        return str(shipped) if shipped.is_file() else None
+    return os.environ.get("EDDY_PG_CTL") or None
+
+
 def stop_database() -> None:
-    """Stops the desktop app's PostgreSQL, when the shell could not (EDDY_PG_CTL, EDDY_PG_DATA).
+    """Stops the desktop app's PostgreSQL, when the shell could not (EDDY_PG_DATA, EDDY_PG_PORT).
 
     The database is not this program's child, so it would otherwise run on, holding the
-    student's data open, until the computer was signed out of.
+    student's data open, until the computer was signed out of. Only the database this launch
+    started is stopped: if Eddy has been opened again since, the one running in the folder now
+    belongs to the newer launch, on another port, and is left alone.
     """
-    pg_ctl, data = os.environ.get("EDDY_PG_CTL"), os.environ.get("EDDY_PG_DATA")
-    if not pg_ctl or not data or not Path(data, "postmaster.pid").exists():
+    pg_ctl, data = shipped_pg_ctl(), os.environ.get("EDDY_PG_DATA")
+    port = os.environ.get("EDDY_PG_PORT")
+    if not pg_ctl or not data or not port:
         return
-    # Both paths come from the shell that started this program, not from anyone's input.
+    try:
+        # PostgreSQL writes its port on the fourth line of the file that says it is running.
+        running = Path(data, "postmaster.pid").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return  # No such file: no database is running there.
+    if len(running) < 4 or running[3].strip() != port:
+        return
+    # The data folder comes from the shell that started this program, not from anyone's input.
     subprocess.run(  # noqa: S603
         [pg_ctl, "stop", "-D", data, "-m", "fast", "-w", "-t", "30"],
         check=False,

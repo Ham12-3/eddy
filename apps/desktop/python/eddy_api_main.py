@@ -1,5 +1,5 @@
 """What PyInstaller packages as eddy-api.exe: the desktop app's one program for services/api
-(`setup`, `serve --port N`, `worker`). See eddy_api/desktop.py."""
+(`setup`, `serve --port N`, `worker`, `watch-database`). See eddy_api/desktop.py."""
 
 import sys
 

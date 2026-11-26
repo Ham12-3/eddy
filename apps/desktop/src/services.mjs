@@ -5,7 +5,7 @@
 //
 // The Electron shell calls this; so does the test that runs the built parts without a window.
 import { spawn } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync, rmSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -210,9 +210,11 @@ export async function startServices({
    * @param {NodeChild} child
    */
   function watch(name, child) {
+    // Two streams share the file, so neither closes it when it ends: the other may still write.
     const out = createWriteStream(logFile(name));
-    child.stdout?.pipe(out);
-    child.stderr?.pipe(out);
+    out.on("error", () => {});
+    child.stdout?.pipe(out, { end: false });
+    child.stderr?.pipe(out, { end: false });
     child.on("exit", (code) => {
       if (stopped || died.has(name)) return;
       died.set(name, `exit code ${code}; see ${logFile(name)}`);
@@ -330,12 +332,22 @@ export async function startServices({
         EDDY_EXIT_WITH_PARENT: "1",
         EDDY_PG_CTL: path.join(binDir, "pg_ctl.exe"),
         EDDY_PG_DATA: cluster,
+        // It stops only the database of this launch: one that Eddy, opened again, has since
+        // started in the same folder listens on another port and is left alone.
+        EDDY_PG_PORT: String(ports.postgres),
       },
       detached: true,
       windowsHide: true,
       stdio: ["pipe", "ignore", "ignore"],
     });
-    watcher.on("error", () => {});
+    // Eddy still runs without it, as it did before there was a watcher. The log says so.
+    watcher.on("error", (error) => {
+      try {
+        writeFileSync(logFile("watcher"), `The database watcher did not start: ${error.message}\n`);
+      } catch {
+        // Nowhere to say it.
+      }
+    });
     await startPostgres({
       binDir,
       dataDir: cluster,

@@ -16,6 +16,8 @@
     "build:python": "node scripts/build-python.mjs",
     "build:postgres": "node scripts/fetch-postgres.mjs",
     "start": "electron .",
+    "dist": "node scripts/dist.mjs",
+    "dist:preview": "node scripts/dist.mjs --preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/*.test.mjs\" \"src/secrets.test.mjs\" \"src/window-policy.test.mjs\"",
@@ -24,8 +26,10 @@
   "devDependencies": {
     "@types/node": "22.20.5",
     "electron": "45.5.0",
+    "electron-builder": "26.18.0",
     "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "typescript": "5.9.3"
-  }
+  },
+  "author": "Eddy"
 }

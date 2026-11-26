@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Desktop app, phase 3: the installer (26 November 2026)
+
+Added:
+
+- `pnpm --filter @eddy/desktop dist` makes one Windows set-up program (`apps/desktop/release/Eddy-Setup-<version>.exe`, about 203 MB). It installs for the Windows account that runs it, with no administrator password and no internet. `dist` makes a build for students, in which the tutor stays locked until the safeguarding script is approved; `dist:preview` makes `Eddy-Preview-Setup-<version>.exe`.
+- The installed program is locked to being Eddy (Electron's fuses): it cannot be run as a bare Node or opened to a debugger, and loads the shell's own code only from the packed archive. A test reads the fuses back from the packed program.
+- Nothing is left running when the app is ended from outside, not closed: the services end with the shell and a small watcher stops the database cleanly. The watcher stops only the database of its own launch.
+- The save dialog for "Download as a file" says what is being saved, and the window refuses any other download.
+- The desktop privacy notice (version 0.5.0) says that removing Eddy leaves the profiles and their work on the computer, how to delete them, and that a downloaded copy is an ordinary file.
+
+Changed:
+
+- The web server and scene-check run in Electron's utility processes, so the app no longer needs to run as a bare Node.
+- The built web server no longer holds the folder path of the computer it was built on.
+- The packaged API reads no settings file: every setting comes from the shell.
+- Quitting waits for the services to stop on every path, including a start that is still in flight.
+
+Fixed:
+
+- The set-up form kept none of the answers already given when one was missing. It now shows the message and keeps them.
+
+Not done:
+
+- Code signing (Windows warns of an unknown publisher), an icon, and a trial on a computer that has never had the development tools on it.
+- Retiring the online-only code (phase 4).
+
 ### Desktop app, phase 2: the packaged parts and the shell (26 November 2026)
 
 Added:

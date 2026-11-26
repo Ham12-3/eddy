@@ -1,7 +1,7 @@
 // pnpm --filter @eddy/desktop build:python
 //
 // Packages the two Python services as programs that need no Python on the student's computer:
-//   resources/python/eddy-api/eddy-api.exe      setup | serve --port N | worker
+//   resources/python/eddy-api/eddy-api.exe      setup | serve --port N | worker | watch-database
 //   resources/python/eddy-maths/eddy-maths.exe  --port N
 // and copies the files the API reads at run time (EDDY_HOME) into resources/data.
 import { spawnSync } from "node:child_process";
