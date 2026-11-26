@@ -8,6 +8,7 @@ llama.cpp, for the routes it can answer. Its sampling is fixed here and applied 
 server starts; requests never carry it.
 """
 
+import os
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -15,7 +16,15 @@ from typing import Any, Literal, cast
 
 import yaml
 
-REPO_ROOT = Path(__file__).resolve().parents[5]
+
+def _home() -> Path:
+    """Where config/, prompts/ and curriculum/ live: the repository, or the folder the desktop
+    app names in EDDY_HOME, as a packaged program has no repository around it (ADR-0036)."""
+    home = os.environ.get("EDDY_HOME")
+    return Path(home).resolve() if home else Path(__file__).resolve().parents[5]
+
+
+REPO_ROOT = _home()
 MODELS_FILE = REPO_ROOT / "config" / "models.yaml"
 
 Thinking = Literal["adaptive", "none"]

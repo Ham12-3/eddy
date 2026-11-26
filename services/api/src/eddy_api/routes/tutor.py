@@ -33,7 +33,13 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from eddy_api.auth import Caller, require_roles
-from eddy_api.config import Settings, development, get_settings, tier_l_enabled
+from eddy_api.config import (
+    Settings,
+    development,
+    get_settings,
+    tier_l_enabled,
+    typed_chat_enabled,
+)
 from eddy_api.db.models import CurriculumNode, LlmCall, SafeguardingEvent, TutorSession
 from eddy_api.db.models import TutorMessage as TutorMessageRow
 from eddy_api.db.session import get_session, session_factory
@@ -65,6 +71,9 @@ class TutorServices:
     limiter: Limiter
     #: Tutor turns this process runs at once (each holds a database connection).
     slots: threading.BoundedSemaphore
+    #: Whether a lesson takes typed messages. Off in the desktop app (`typed_chat_enabled`):
+    #: a lesson there never waits for a message, and one sent anyway is refused.
+    typed_chat: bool = True
 
 
 @lru_cache
@@ -89,6 +98,7 @@ def get_tutor_services() -> TutorServices:
             settings.redis_url, settings.tutor_messages_per_minute, settings.tutor_messages_per_day
         ),
         slots=threading.BoundedSemaphore(settings.tutor_concurrent_turns),
+        typed_chat=typed_chat_enabled(settings),
     )
 
 
@@ -188,16 +198,20 @@ def _deps(
         maths_core=services.maths_core,
         scene_check=services.scene_check,
         llm=llm,
+        typed_chat=services.typed_chat,
         durable=_durable(session),
     )
 
 
-def _waiting(snapshot: Any) -> list[str]:
+def _waiting(snapshot: Any, services: TutorServices) -> list[str]:
+    """What the lesson waits for now. With typed chat off a message is never one of them, so
+    the page offers no box to type in and the route refuses a message sent by hand."""
     for task in getattr(snapshot, "tasks", ()) or ():
         for pending in getattr(task, "interrupts", ()) or ():
             value = getattr(pending, "value", None)
             if isinstance(value, dict):
-                return list(value.get("waiting_for", []))
+                waiting = list(value.get("waiting_for", []))
+                return waiting if services.typed_chat else [w for w in waiting if w != "message"]
     return []
 
 
@@ -278,7 +292,7 @@ def start(
         config,
         _deps(session, services, settings, student),
     )
-    waiting = _waiting(graph.get_state(config))
+    waiting = _waiting(graph.get_state(config), services)
     session.commit()
     return _result(row, values, waiting)
 
@@ -356,7 +370,7 @@ def send(
     if row is None or not _owned(caller, row.student_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No such lesson.")
     if row.ended_at is not None:
-        if row.end_reason == "SAFEGUARDING":
+        if row.end_reason == "SAFEGUARDING" and services.typed_chat:
             return _after_safeguarding(session, row, body)
         raise HTTPException(status.HTTP_409_CONFLICT, detail="This lesson has ended.")
     caught = body.kind == "message" and body.text and safeguarding.tripwire(body.text)
@@ -365,7 +379,7 @@ def send(
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail="Take a short break.")
     config: Any = {"configurable": {"thread_id": str(row.id)}}
     graph = graph_for(session)
-    waiting = _waiting(graph.get_state(config))
+    waiting = _waiting(graph.get_state(config), services)
     if body.kind not in waiting:
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail=f"The lesson is waiting for: {', '.join(waiting)}."
@@ -397,15 +411,17 @@ def send(
         config,
         _deps(session, services, settings, row.student_id),
     )
-    waiting = _waiting(graph.get_state(config))
+    waiting = _waiting(graph.get_state(config), services)
     session.commit()
     return _result(row, values, waiting)
 
 
 @router.get("/sessions/{session_id}", operation_id="getTutorSession")
-def read(session_id: uuid.UUID, caller: StudentOrSystem, session: DbSession) -> LessonOut:
+def read(
+    session_id: uuid.UUID, caller: StudentOrSystem, session: DbSession, services: Services
+) -> LessonOut:
     row = session.get(TutorSession, session_id)
     if row is None or not _owned(caller, row.student_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No such lesson.")
     snapshot = graph_for(session).get_state({"configurable": {"thread_id": str(row.id)}})
-    return _result(row, dict(snapshot.values or {}), _waiting(snapshot), latest=False)
+    return _result(row, dict(snapshot.values or {}), _waiting(snapshot, services), latest=False)

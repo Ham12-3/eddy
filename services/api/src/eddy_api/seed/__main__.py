@@ -25,7 +25,7 @@ from eddy_api.seed.upsert import seed
 @contextmanager
 def owner_session(url: str) -> Iterator[Session]:
     """The seed is a deploy step, so it runs as the schema owner, like the migrations."""
-    engine = create_engine(url)
+    engine = create_engine(url, hide_parameters=True)
     try:
         with Session(engine) as session:
             yield session

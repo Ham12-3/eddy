@@ -93,7 +93,7 @@ describe("mode-dependent values", () => {
   });
 
   it("asks for the notice that matches what Eddy does in this mode", () => {
-    expect(privacyNoticeVersion(true)).toBe("0.3.0");
+    expect(privacyNoticeVersion(true)).toBe("0.4.0");
     expect(privacyNoticeVersion(false)).toBe("0.2.0");
   });
 });

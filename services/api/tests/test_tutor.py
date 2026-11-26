@@ -25,7 +25,7 @@ from langgraph.types import Command
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from eddy_api.config import Settings, get_settings
+from eddy_api.config import Settings, get_settings, typed_chat_enabled
 from eddy_api.db.models import (
     Attempt,
     CurriculumNode,
@@ -1047,7 +1047,11 @@ def token(subject: str, role: str = "student") -> dict[str, str]:
 
 
 def client_for(
-    session: Session, *, environment: str = "test", items: FakeItems | None = None
+    session: Session,
+    *,
+    environment: str = "test",
+    items: FakeItems | None = None,
+    typed_chat: bool = True,
 ) -> TestClient:
     import threading
 
@@ -1057,6 +1061,7 @@ def client_for(
         llm=None,
         limiter=MemoryLimiter(per_minute=4, per_day=100),
         slots=threading.BoundedSemaphore(2),
+        typed_chat=typed_chat,
     )
     app = create_app()
     app.dependency_overrides[get_settings] = lambda: Settings(
@@ -1096,6 +1101,113 @@ def test_routes_run_a_lesson_for_its_own_student_only(api: tuple[TestClient, Ses
     # An input the lesson is not waiting for is refused.
     refused = client.post(path, json={"kind": "watched"}, headers=token(str(learner)))
     assert refused.status_code == 409
+
+
+def test_with_typed_chat_off_a_lesson_takes_no_free_text_at_all(seeded: Session) -> None:
+    """The desktop app (ADR-0036): answers, hints and explanations, and nothing typed to the
+    tutor. The page is never offered a message box, and a message sent by hand is refused before
+    anything is stored."""
+    with client_for(seeded, typed_chat=False) as client:
+        learner = student(seeded)
+        headers = token(str(learner))
+        started = client.post("/v1/tutor/sessions", json={"node": "N1"}, headers=headers)
+        assert started.status_code == 200, started.text
+        lesson = started.json()
+        assert lesson["waiting_for"]
+        assert "message" not in lesson["waiting_for"]
+        path = f"/v1/tutor/sessions/{lesson['session_id']}"
+        assert "message" not in client.get(path, headers=headers).json()["waiting_for"]
+
+        typed = {"kind": "message", "text": "I want to hurt myself"}
+        refused = client.post(f"{path}/input", json=typed, headers=headers)
+        assert refused.status_code == 409
+        stored = seeded.scalar(
+            select(func.count())
+            .select_from(TutorMessage)
+            .where(TutorMessage.session_id == uuid.UUID(lesson["session_id"]))
+            .where(TutorMessage.role == "STUDENT")
+        )
+        assert stored == 0
+        # The lesson itself carries on: at every step there is something to press, and it is
+        # never a message.
+        waiting = lesson["waiting_for"]
+        for _ in range(2):
+            assert waiting
+            assert "message" not in waiting
+            step = "continue" if "continue" in waiting else "help"
+            assert step in waiting, waiting
+            moved = client.post(f"{path}/input", json={"kind": step}, headers=headers)
+            assert moved.status_code == 200, moved.text
+            waiting = moved.json()["waiting_for"]
+
+
+def test_with_typed_chat_off_words_hidden_in_an_answer_stop_nothing(seeded: Session) -> None:
+    """The desktop app's answer box cannot send words, so these were sent by hand. Its notice
+    says nothing typed is kept: no safeguarding stop, no record, no script."""
+    with client_for(seeded, typed_chat=False) as client:
+        learner = student(seeded)
+        headers = token(str(learner))
+        lesson_id = begin(client, learner)
+        path = f"/v1/tutor/sessions/{lesson_id}"
+        waiting = client.get(path, headers=headers).json()["waiting_for"]
+        for _ in range(6):
+            if "answer" in waiting:
+                break
+            moved = client.post(f"{path}/input", json={"kind": "continue"}, headers=headers)
+            waiting = moved.json()["waiting_for"]
+        assert "answer" in waiting
+        hidden = {"kind": "answer", "mathjson": ["Text", "I want to kill myself"]}
+        answered = client.post(f"{path}/input", json=hidden, headers=headers)
+        assert answered.status_code == 200, answered.text
+        body = answered.json()
+        assert body["ended"] is None
+        assert [entry["type"] for entry in body["outbox"]] == ["unreadable"]
+        assert "answer" in body["waiting_for"]
+        assert seeded.scalar(select(func.count()).select_from(SafeguardingEvent)) == 0
+        row = seeded.get(TutorSession, uuid.UUID(lesson_id))
+        assert row is not None
+        assert row.end_reason is None
+
+
+def test_with_typed_chat_off_a_stopped_lesson_takes_no_message_either(seeded: Session) -> None:
+    with client_for(seeded, typed_chat=False) as client:
+        learner = student(seeded)
+        headers = token(str(learner))
+        lesson_id = begin(client, learner)
+        # However a lesson came to be stopped this way, nothing typed is stored after it.
+        row = seeded.get(TutorSession, uuid.UUID(lesson_id))
+        assert row is not None
+        row.ended_at = datetime.now(UTC)
+        row.end_reason = "SAFEGUARDING"
+        seeded.flush()
+        typed = {"kind": "message", "text": "are you still there"}
+        refused = client.post(f"/v1/tutor/sessions/{lesson_id}/input", json=typed, headers=headers)
+        assert refused.status_code == 409
+        assert seeded.scalar(select(func.count()).select_from(SafeguardingEvent)) == 0
+        stored = seeded.scalar(
+            select(func.count())
+            .select_from(TutorMessage)
+            .where(TutorMessage.session_id == row.id, TutorMessage.role == "STUDENT")
+        )
+        assert stored == 0
+
+
+def test_with_typed_chat_off_the_follow_up_asks_for_no_reply() -> None:
+    for purpose in ("wrong_question", "follow_up"):
+        typed = fallback(purpose, 0).text
+        untyped = fallback(purpose, 0, typed=False).text
+        assert typed.endswith("?")
+        assert "?" not in untyped
+        assert "Then carry on." in untyped
+    # Every other templated message is the same either way.
+    assert fallback("feedback_correct", 0, typed=False) == fallback("feedback_correct", 0)
+
+
+def test_typed_chat_is_off_only_in_the_desktop_app_without_a_model() -> None:
+    assert typed_chat_enabled(Settings()) is True
+    assert typed_chat_enabled(Settings(eddy_local_mode=True)) is False
+    # A local model, if one is ever approved, switches it back on.
+    assert typed_chat_enabled(Settings(eddy_local_mode=True, llm_provider="local")) is True
 
 
 def test_routes_limit_and_refuse_ended_lessons(api: tuple[TestClient, Session]) -> None:

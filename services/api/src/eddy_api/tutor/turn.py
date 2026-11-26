@@ -258,14 +258,27 @@ def expected(request: TurnRequest) -> tuple[str, int]:
     return kind, request.hint_level if kind == "hint" else 0
 
 
-def fallback(purpose: Purpose, hint_level: int, *, hints_used: int | None = None) -> TutorMessage:
+#: With typed chat off (the desktop app, ADR-0036) there is nowhere to answer a question, so
+#: these ask the student to think and then carry on.
+UNTYPED_FALLBACKS: dict[Purpose, str] = {
+    "wrong_question": (
+        "Not quite yet. Look at your answer again and find the step you would change. "
+        "Then carry on."
+    ),
+    "follow_up": "Look at your answer again and find the step you would change. Then carry on.",
+}
+
+
+def fallback(
+    purpose: Purpose, hint_level: int, *, hints_used: int | None = None, typed: bool = True
+) -> TutorMessage:
     kind, _ = STEPS[purpose]
     if purpose == "hint":
         level = max(1, min(hint_level, 4))
         text, kind = FALLBACK_HINTS[level], "hint"
     else:
         level = hint_level if kind == "hint" else 0
-        text = FALLBACKS[purpose]
+        text = FALLBACKS[purpose] if typed else UNTYPED_FALLBACKS.get(purpose, FALLBACKS[purpose])
     if purpose == "feedback_correct" and hints_used == 0:
         text = "That is right, and you did it without a hint."
     # A templated worked example has no worked steps, so it is sent as a plain message.

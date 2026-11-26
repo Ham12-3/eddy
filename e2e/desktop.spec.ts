@@ -5,7 +5,7 @@ import { check } from "./helpers";
 /**
  * The desktop app's mode (ADR-0036), on the production server playwright.config.ts starts with
  * EDDY_LOCAL_MODE=1: profiles in place of email sign-in, an optional PIN, the desktop privacy
- * notice, and the online-only pages switched off. No email is sent and no invite is used.
+ * notice, lessons with no typed chat, and the online-only pages switched off. No email is sent and no invite is used.
  */
 const LOCAL = "http://localhost:3303";
 const PIN = "2468";
@@ -76,7 +76,8 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByRole("heading", { name: "Before you start: your privacy" })).toBeVisible();
   await expect(page.getByText("On this computer, and nowhere else.")).toBeVisible();
   await expect(page.getByText("Anthropic")).toHaveCount(0);
-  await expect(page.getByText("Eddy does not tell anyone.")).toBeVisible();
+  await expect(page.getByText("There is nowhere to type a message.")).toBeVisible();
+  await expect(page.getByText("No AI model runs while you use Eddy")).toBeVisible();
   await expect(page.getByText("anyone who uses this computer can open your profile")).toBeVisible();
   await check(page, "desktop-privacy", info.project.name);
   await page.getByRole("button", { name: "I have read this" }).click();
@@ -125,13 +126,42 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByRole("button", { name: /send/i })).toHaveCount(0);
   await check(page, "desktop-concern", info.project.name);
   await page.goto(`${LOCAL}/privacy/full`);
-  await expect(page.getByText("Version 0.3.0.")).toBeVisible();
+  await expect(page.getByText("Version 0.4.0.")).toBeVisible();
   await check(page, "desktop-privacy-full", info.project.name);
+
+  // A lesson with typed chat off: answers and hints, and nowhere to type a message.
+  await page.goto(`${LOCAL}/welcome`);
+  await expect(page.getByRole("heading", { name: "Set up Eddy" })).toBeVisible();
+  await page.getByLabel("When do you take your exams?").selectOption({ index: 2 });
+  await page.getByLabel("Grade 4").check();
+  await page.getByRole("radio", { name: "No" }).check();
+  await page.getByRole("button", { name: "Save and continue" }).click();
+  await expect(page.getByText(/Question 1 of up to/)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "I do not know this yet" }).click();
+  await expect(page.getByText("Not this time")).toBeVisible();
+  await page.getByRole("link", { name: "Stop for now" }).click();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(/\/learn\//);
+  await expect(page.getByRole("heading", { name: "Stuck?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask Eddy" })).toHaveCount(0);
+  await expect(page.getByLabel("Your message")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Give me a hint" })).toBeVisible();
+  await check(page, "desktop-lesson", info.project.name);
+  const said = page.getByText("Eddy", { exact: true });
+  const before = await said.count();
+  await page.getByRole("button", { name: "Give me a hint" }).click();
+  // The hint itself arrives: one more thing Eddy said, and no error.
+  await expect(said).toHaveCount(before + 1, { timeout: 30_000 });
+  await expect(page.getByText("That did not work")).toHaveCount(0);
+  await expect(page.getByLabel("Your message")).toHaveCount(0);
+  await check(page, "desktop-lesson-hint", info.project.name);
 
   // My data is about a profile: no email address, and none of the online-only sections.
   await page.goto(`${LOCAL}/settings/my-data`);
   await expect(page.getByRole("heading", { name: "Your profile" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Parent links" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Safety records" })).toHaveCount(0);
   await expect(page.getByText("local.invalid")).toHaveCount(0);
   await check(page, "desktop-my-data", info.project.name);
 

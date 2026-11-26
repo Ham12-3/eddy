@@ -33,7 +33,7 @@ export async function sendInput(sessionId: string, input: LessonInput): Promise<
   if (response.status === 429) {
     return {
       ok: false,
-      error: "That is a lot of messages. Take a breath and try again in a minute.",
+      error: "That is a lot at once. Take a breath and try again in a minute.",
     };
   }
   if (typeof detail === "string" && response.status < 500) return { ok: false, error: detail };

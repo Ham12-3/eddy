@@ -99,6 +99,10 @@ class Deps:
     #: Claude, or the local model. None when there is no model or it is over its cost guard:
     #: messages are templated and only the tripwires screen input.
     llm: Llm | None
+    #: Whether the lesson takes free text (`typed_chat_enabled`). Off in the desktop app: text
+    #: hidden in an answer is then just an answer Eddy cannot read, never a safeguarding stop,
+    #: and the follow-up does not ask a question the student has no way to answer.
+    typed_chat: bool = True
     target_grade: int = 4
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
     #: Opens a separate session, so a safeguarding event is committed even if the turn fails.
@@ -286,7 +290,9 @@ def _say(
         student_id=uuid.UUID(state["student"]),
     )
     templated = TurnResult(
-        message=fallback(purpose, request.hint_level, hints_used=request.hints_used),
+        message=fallback(
+            purpose, request.hint_level, hints_used=request.hints_used, typed=deps.typed_chat
+        ),
         source="fallback",
     )
     if deps.llm is None:
@@ -594,6 +600,11 @@ def _read_answer(
     response = value.get("mathjson")
     for text in safeguarding.strings_in(response):
         hit = safeguarding.tripwire(text)
+        if hit and not deps.typed_chat:
+            # The desktop app's answer box cannot send words, so this was sent by hand. Nothing
+            # is recorded and no script is shown: its notice says nothing typed is kept.
+            entry = _out(state, "unreadable", text=UNREADABLE_ANSWER, issues=[])
+            return None, Command(goto=here, update={"outbox": [entry]})
         if hit:
             return None, _safeguarding_end(deps, state, hit, text, "tripwire")
     item = _item(state)

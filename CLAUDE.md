@@ -25,6 +25,7 @@ Adaptive GCSE Maths tutor that explains a student's own mistake with a short ani
 | E2E with axe | `pnpm e2e` (first time: `pnpm e2e:install`); screenshots in `e2e-artifacts/screenshots/` |
 | Regenerate API client | `pnpm api-client:generate` after changing any services/api route (CI checks it) |
 | Infra | `pnpm --filter @eddy/infra synth` (never deploy without explicit approval) |
+| Desktop app | `pnpm --filter @eddy/desktop build` (every part into `apps/desktop/resources`; downloads PostgreSQL once), then `start`; `test` runs the built parts (skips what is not built) and `test:app` the whole app without its window (heavy: run it alone). See `apps/desktop/README.md` |
 | Hook tests | `node --test ".claude/hooks/*.test.mjs"` |
 | Format | `pnpm format` |
 

@@ -12,7 +12,13 @@ from eddy_api.config import get_settings
 
 @lru_cache
 def get_engine() -> Engine:
-    return create_engine(get_settings().runtime_database_url.get_secret_value(), pool_pre_ping=True)
+    return create_engine(
+        get_settings().runtime_database_url.get_secret_value(),
+        pool_pre_ping=True,
+        # An error's message never carries a statement's values (names, answers, PIN hashes):
+        # in the desktop app it would be written to a log file on the family's computer.
+        hide_parameters=True,
+    )
 
 
 def session_factory() -> sessionmaker[Session]:

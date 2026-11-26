@@ -15,7 +15,7 @@ export default function DeletedPage() {
       <Page title="That profile is deleted">
         <p className="m-0 mb-4">
           The profile no longer works and is gone from the list on this computer. Eddy will erase
-          its answers, messages and settings. The privacy notice says what stays.
+          its answers, progress and settings. The privacy notice says what stays.
         </p>
         <p className="m-0 mb-8">Good luck with your exams.</p>
         <NextLink href="/profiles" className={buttonClassName("secondary")}>

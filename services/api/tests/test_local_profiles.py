@@ -325,10 +325,10 @@ def test_the_desktop_notice_has_its_own_version(desktop: TestClient, online: Tes
     created = make(desktop)
     student = token(str(created["id"]), "student")
     old = {"notice_key": "privacy", "version": "0.2.0"}
-    new = {"notice_key": "privacy", "version": "0.3.0"}
+    new = {"notice_key": "privacy", "version": "0.4.0"}
     assert desktop.post("/v1/me/notices", json=old, headers=student).status_code == 422
     acked = desktop.post("/v1/me/notices", json=new, headers=student)
-    assert [n["version"] for n in acked.json()["notices"]] == ["0.3.0"]
+    assert [n["version"] for n in acked.json()["notices"]] == ["0.4.0"]
     assert online.post("/v1/me/notices", json=new, headers=student).status_code == 422
 
 

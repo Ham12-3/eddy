@@ -30,7 +30,9 @@ def ensure_database(url: str) -> bool:
     name = target.database or ""
     if not name.replace("_", "").isalnum():
         raise ValueError("the database name may only hold letters, digits and underscores")
-    engine = create_engine(target.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    engine = create_engine(
+        target.set(database="postgres"), isolation_level="AUTOCOMMIT", hide_parameters=True
+    )
     try:
         with engine.connect() as connection:
             exists = connection.scalar(
@@ -54,7 +56,9 @@ def ensure_runtime_login(owner_url: str, runtime_url: str) -> str:
     if not ROLE_NAME.fullmatch(role) or role == owner.username:
         raise ValueError("the runtime role must be its own lower-case role, not the owner")
     password = runtime.password or ""
-    engine = create_engine(owner.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    engine = create_engine(
+        owner.set(database="postgres"), isolation_level="AUTOCOMMIT", hide_parameters=True
+    )
     try:
         with engine.connect() as connection:
             exists = connection.scalar(

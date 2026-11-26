@@ -563,7 +563,7 @@ Status: Accepted (19 November 2026: the product owner chose Vercel, Supabase and
 
 ## ADR-0036: A desktop app with a local model, in place of hosting
 
-Status: Accepted in part (25 November 2026). The product owner chose a Windows desktop app that works with no internet and no API, replacing the hosted service. It replaces ADR-0035; the hosting files stay until the tidy-up phase removes them. Whether typed chat stays on is open (see the last section). The plan is in phases: prove the model, local mode, package the parts, the installer, tidy up.
+Status: Accepted (25 and 26 November 2026). The product owner chose a Windows desktop app that works with no internet and no API, replacing the hosted service. It replaces ADR-0035; the hosting files stay until the tidy-up phase removes them. On 26 November the product owner chose to ship with typed chat off. The plan is in phases: prove the model, local mode, package the parts, the installer, tidy up.
 
 - **Context:**
   - Eddy was built as a hosted service: a Next.js web app, a Python API and worker, maths-core, scene-check, Postgres, Redis, email, and Claude over the internet (ADR-0035).
@@ -604,8 +604,11 @@ Status: Accepted in part (25 November 2026). The product owner chose a Windows d
   - **No processors:** no hosting, email or AI company handles student data. The DPIA, the notices and the compliance drafts need rewriting for a desktop app.
   - **No human sees a safeguarding stop.** The help message is the only response, so it matters more. The script is still a draft that needs a named safeguarding lead's approval, and the tutor stays locked outside development until then.
   - **Parents by email are gone.** A parent view on the same computer comes in the tidy-up phase.
+  - **Typed chat is off in the desktop app** (decided 26 November 2026). The safety thresholds on answer leaks, distress and injections were met, but the false stops and the slow, mostly discarded replies were not good enough for students.
+    - `typed_chat_enabled` is false in local mode unless a local model is switched on. A lesson then never waits for a message, the page shows no box to type in, and a message sent by hand is refused before anything is stored.
+    - No model ships in the installer and none runs: hints are the templated ones, explanations are the Tier D scenes. The local model provider stays in the code for a better model or faster hardware.
+    - Nothing a student types as free text is ever stored, so a lesson is never stopped to show the help script and no safeguarding record is made. The questions below about extracts and the help script matter only if typed chat is switched on, and the notice (version 0.4.0) says there is nowhere to type a message.
   - **Open, for the product owner:**
-    - Whether typed chat ships switched on. The safety thresholds on answer leaks, distress and injections are met, but the false stops and the slow, mostly discarded replies are not good enough for students. The alternative is hint buttons, templated replies and animations only, which already work and are instant.
     - Whether deleting a profile should also erase its safety records, as nobody will ever review them on the computer. The security review recommends erasing them, or at least their extract: the only people who could read one are those with the computer's own account.
     - How an adult clears a profile whose PIN is forgotten, and whether a PIN can be changed or removed in Settings.
     - From the child-safety review, for the safeguarding lead as well:
@@ -614,6 +617,27 @@ Status: Accepted in part (25 November 2026). The product owner chose a Windows d
       - A fixed line under the help script in local mode, saying that Eddy has not told anyone. The script ends "You did the right thing by saying something", which online is followed by a person reading the record. The line needs the lead's approval with the script, so it is not added.
       - The notice now tells a child that Eddy is not a safe place to write something they do not want people at home to read. That sentence needs the lead's sign-off.
     - For legal review: the desktop notice names no contact and no complaint route, as nobody holds the data but the family.
+  - **Packaging (phase 2, 26 November 2026):**
+    - **Shell:** Electron, one window in an in-memory session, so closing Eddy forgets the open profile. No Node in the page, no new windows, no permissions, and every request to anywhere but `127.0.0.1` is cancelled.
+    - **PostgreSQL 16.15,** the version the tests run against, not the 17 first planned. The Windows binaries come from EnterpriseDB, which postgresql.org links to. The programs inside the archive are not code-signed, so the build checks the archive against a SHA-256 fixed when the script was written.
+    - **Python** services are packaged with PyInstaller as folders, not single files, so they start quickly. The web server and scene-check run in Electron's own Node.
+    - **Secrets:** only the two database passwords are kept, in the user's local app-data folder, sealed with the Windows account's own key (Electron safeStorage), so a copied folder does not open elsewhere. The service-token key pair, the cookie secret, the window secret and the two shared tokens are made afresh at every launch and never written down. The database asks for a password on every connection, even from this computer, and only set-up is given the owner's.
+    - **The web server answers only Eddy's own window.** A local port can be reached by every program and every Windows account on the computer, and a profile opens without a password. So at each launch the shell makes a window secret, gives it to the web server and puts it in the window's cookie jar. A request without it gets 403 before any page or action runs, and the Host must name the server's own port.
+    - **The data lives in the local app-data folder,** not the roaming one, which a managed computer may copy to a server.
+    - **A first run that is cut short leaves nothing broken:** the database is made under another name and renamed when it is finished. A database left running by a copy of Eddy that was ended, not closed, is stopped at the next start. Closing Eddy while it starts stops whatever had started.
+    - **Every service must stay alive.** After start-up each one, the worker included, must still be running, or Eddy does not open; one that stops later closes Eddy with a message. A port taken by another program between choosing and using it therefore fails the start, and is not trusted.
+    - **Logs** are begun again at each start, and errors never print a statement's values.
+    - **Children inherit a short allow-list** of the computer's environment, so a key or database URL set on the machine never reaches Eddy.
+    - **Preview builds** run the API in its development environment, and only when `eddy.preview` in the desktop package file is exactly `true`; anything else is a release build. In a release build the tutor stays locked until the safeguarding script is approved. With typed chat off the script is never shown and no free text is taken by any path (text hidden in a hand-made answer is treated as an unreadable answer), so whether that lock should still apply to the desktop app is a question for the product owner and the safeguarding lead.
+    - **PostgreSQL needs Microsoft's Visual C++ runtime.** Its three libraries are copied beside the programs from the build computer. Whether to ship them that way or have the installer install the redistributable, and under which licence terms, is settled in the installer phase.
+    - **Size:** about 250 MB before the installer compresses it.
+    - **Left for the installer phase,** from the second security review and the code review:
+      - Electron's fuses. The web server and scene-check run in Electron's own Node (`ELECTRON_RUN_AS_NODE`), which a hardened build switches off; they should move to `utilityProcess`, and the debugging switches be fused off.
+      - If the shell is ended by Task Manager, the services it started carry on until the next start or sign-out. They answer nothing without the launch's secrets, but they should end with the shell (a job object).
+      - The database owner is PostgreSQL's superuser. A separate, lesser schema owner would be better.
+      - A Windows user name with letters outside the computer's own code page may defeat PostgreSQL's programs. A name such as "Zoë" is tested and works.
+      - The built web server holds the build computer's folder path, and so the developer's user name. Build releases on a neutral path.
+      - A copy of the data before a newer Eddy migrates it, and third-party licence notices (PostgreSQL, Chromium, psycopg).
   - **For the packaging phase** (from the security review):
     - A fresh random `AUTH_SECRET`, service-token key pair and database passwords for each install, never fixed ones.
     - The worker must run inside the app: the 90-day message purge and the 30-day erasure happen only while it does.
