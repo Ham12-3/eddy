@@ -5,12 +5,14 @@
   "type": "module",
   "description": "The Eddy desktop app (ADR-0036): one window, and every service on this computer.",
   "scripts": {
+    "build": "pnpm build:scene-check && pnpm build:web && pnpm build:python && pnpm build:postgres",
     "build:scene-check": "node scripts/build-scene-check.mjs",
     "build:web": "node scripts/build-web.mjs",
     "build:python": "node scripts/build-python.mjs",
+    "build:postgres": "node scripts/fetch-postgres.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"scripts/*.test.mjs\""
+    "test": "node --test \"scripts/*.test.mjs\" \"src/*.test.mjs\""
   },
   "devDependencies": {
     "@types/node": "22.20.5",
