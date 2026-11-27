@@ -143,7 +143,7 @@ def get_me(student: Student, session: DbSession) -> MeOut:
 #: current version can be acknowledged. The desktop app shows its own notice (the data stays on
 #: the computer and no AI company is involved), so it has its own version (ADR-0036).
 PRIVACY_NOTICE_VERSION = "0.2.0"
-LOCAL_PRIVACY_NOTICE_VERSION = "0.4.0"
+LOCAL_PRIVACY_NOTICE_VERSION = "0.5.0"
 
 
 def privacy_notice_version(settings: Settings) -> str:
@@ -152,7 +152,7 @@ def privacy_notice_version(settings: Settings) -> str:
 
 class NoticeIn(BaseModel):
     notice_key: Literal["privacy"]
-    version: Literal["0.2.0", "0.4.0"]
+    version: Literal["0.2.0", "0.5.0"]
 
 
 @router.post("/notices", operation_id="acknowledgeNotice")

@@ -36,8 +36,17 @@ const FIELD_ERRORS: Record<string, string> = {
   narration_speed: "Choose a narration speed.",
 };
 
+const SET_UP_FIELDS = [...Object.keys(FIELD_ERRORS), "dyslexia", "reduce_motion", "captions_only"];
+
 export async function saveSetUp(_: FormState, form: FormData): Promise<FormState> {
   const { api, me } = await requireStudent({ onboarding: true });
+  // What was chosen goes back with any problem: React clears a form once its action has run,
+  // and nobody should have to answer everything again because one answer was missing.
+  const values: Record<string, string> = {};
+  for (const name of SET_UP_FIELDS) {
+    const value = form.get(name);
+    if (typeof value === "string") values[name] = value;
+  }
   const parsed = setupSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) {
     const fields: Record<string, string> = {};
@@ -45,7 +54,7 @@ export async function saveSetUp(_: FormState, form: FormData): Promise<FormState
       const key = String(issue.path[0] ?? "");
       if (FIELD_ERRORS[key]) fields[key] = FIELD_ERRORS[key];
     }
-    return { error: "A few answers are missing.", fields };
+    return { error: "A few answers are missing.", fields, values };
   }
   const value = parsed.data;
   const profile = await api.PUT("/v1/me/profile", {
@@ -68,7 +77,10 @@ export async function saveSetUp(_: FormState, form: FormData): Promise<FormState
     },
   });
   if (!profile.response.ok || !preferences.response.ok) {
-    return { error: "Eddy could not save your answers just now. Try again in a moment." };
+    return {
+      error: "Eddy could not save your answers just now. Try again in a moment.",
+      values,
+    };
   }
   redirect("/diagnostic");
 }

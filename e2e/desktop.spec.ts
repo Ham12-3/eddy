@@ -126,7 +126,7 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByRole("button", { name: /send/i })).toHaveCount(0);
   await check(page, "desktop-concern", info.project.name);
   await page.goto(`${LOCAL}/privacy/full`);
-  await expect(page.getByText("Version 0.4.0.")).toBeVisible();
+  await expect(page.getByText("Version 0.5.0.")).toBeVisible();
   await check(page, "desktop-privacy-full", info.project.name);
 
   // A lesson with typed chat off: answers and hints, and nowhere to type a message.

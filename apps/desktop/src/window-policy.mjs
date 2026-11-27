@@ -39,3 +39,29 @@ export function isAllowedUrl(url, { webOrigin, shellFiles, devtools }) {
     return false;
   }
 }
+
+/** The one page that hands the window a file to save: a copy of the open profile's data. */
+export const DOWNLOAD_PATH = "/settings/my-data/download";
+
+/**
+ * Whether a download is the one Eddy offers. Anything else is refused: a page that made a file
+ * of its own (a `blob:` or `data:` address never passes the request filter) would otherwise be
+ * saved through a dialog that vouches for it.
+ * @param {string} url where the file comes from
+ * @param {string} webOrigin Eddy's own server, or "" before it has started
+ * @returns {boolean}
+ */
+export function isOwnDownload(url, webOrigin) {
+  try {
+    const parsed = new URL(url);
+    return (
+      webOrigin !== "" &&
+      parsed.protocol === "http:" &&
+      parsed.origin === webOrigin &&
+      parsed.pathname === DOWNLOAD_PATH &&
+      parsed.search === ""
+    );
+  } catch {
+    return false;
+  }
+}

@@ -107,6 +107,16 @@ export function LocalChildPrivacyNotice() {
           In Settings you can see and download what Eddy holds in your profile, or delete the
           profile. The list of actions is not in the download.
         </p>
+        <p className="m-0 mt-3">
+          A copy you download is an ordinary file. It stays where you saved it until you delete it
+          yourself.
+        </p>
+      </Section>
+      <Section title="If Eddy is removed from this computer">
+        <p className="m-0">
+          Removing Eddy does not delete your work. It stays on this computer until someone deletes
+          it. The full privacy notice says how.
+        </p>
       </Section>
       <p className="m-0">
         <NextLink href="/privacy/full" className={linkClassName}>
@@ -211,6 +221,22 @@ export function LocalFullPrivacyNotice() {
         <p className="m-0">
           A PIN cannot be recovered. A profile whose PIN is forgotten cannot be opened, downloaded
           or deleted from inside Eddy.
+        </p>
+        <p className="m-0 mt-3">
+          A copy of your data that you download is an ordinary file wherever you saved it. Eddy does
+          not keep track of it or delete it.
+        </p>
+      </Section>
+      <Section title="Removing Eddy from the computer">
+        <p className="m-0 mb-3">
+          Removing Eddy in Windows Settings, under Apps, removes the program. It does not remove the
+          profiles or their work, which stay in the files of the Windows account.
+        </p>
+        <p className="m-0">
+          To remove those too, close Eddy, type %LOCALAPPDATA% into the address bar of File
+          Explorer, and delete the folder named Eddy. That deletes every profile on the computer and
+          the log of actions, and it cannot be undone. It is also the only way to remove a profile
+          whose PIN is forgotten.
         </p>
       </Section>
     </>

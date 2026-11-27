@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { databaseUrl } from "./postgres.mjs";
 import { baseEnv } from "./services.mjs";
-import { isAllowedUrl, shellFileUrls } from "./window-policy.mjs";
+import { isAllowedUrl, isOwnDownload, shellFileUrls } from "./window-policy.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const shellFiles = shellFileUrls(here);
@@ -59,6 +59,29 @@ describe("what the window may ask for", () => {
     const url = "devtools://devtools/bundled/inspector.html";
     assert.equal(isAllowedUrl(url, { ...policy, devtools: true }), true);
     assert.equal(isAllowedUrl(url, policy), false);
+  });
+});
+
+describe("what the window may save to a file", () => {
+  it("is the copy of a profile's data that Settings offers", () => {
+    assert.equal(isOwnDownload(`${webOrigin}/settings/my-data/download`, webOrigin), true);
+  });
+
+  it("is nothing else: not a file a page made, another page, or another program's", () => {
+    for (const url of [
+      `blob:${webOrigin}/0b7c1b0e-5a51-4a55-9d0e-2f6f1c6d2a10`,
+      "data:application/octet-stream;base64,AAAA",
+      `${webOrigin}/settings/my-data`,
+      `${webOrigin}/settings/my-data/download/extra`,
+      `${webOrigin}/settings/my-data/download?as=setup.exe`,
+      "http://127.0.0.1:52002/settings/my-data/download",
+      "https://example.com/settings/my-data/download",
+      "not a url",
+      "",
+    ]) {
+      assert.equal(isOwnDownload(url, webOrigin), false, url);
+    }
+    assert.equal(isOwnDownload(`${webOrigin}/settings/my-data/download`, ""), false);
   });
 });
 

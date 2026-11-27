@@ -1,5 +1,6 @@
 """Runtime settings, read from the environment and then services/api/.env (`pnpm keys:dev`)."""
 
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -9,7 +10,10 @@ from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
-_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+# The packaged desktop program reads no settings file: every setting comes from the shell that
+# starts it. Its own folder can be written to by the Windows account, and a file dropped there
+# must not be able to set anything (ADR-0036).
+_ENV_FILE = None if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[2] / ".env"
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 
