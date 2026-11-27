@@ -1331,7 +1331,7 @@
           "version": {
             "enum": [
               "0.2.0",
-              "0.5.0"
+              "0.6.0"
             ],
             "title": "Version",
             "type": "string"
@@ -2219,6 +2219,105 @@
           "is_resitter"
         ],
         "title": "SetupIn",
+        "type": "object"
+      },
+      "SharedProfile": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "SharedProfile",
+        "type": "object"
+      },
+      "SharedProgress": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Dashboard"
+          }
+        },
+        "required": [
+          "name",
+          "progress"
+        ],
+        "title": "SharedProgress",
+        "type": "object"
+      },
+      "SharingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "on": {
+            "title": "On",
+            "type": "boolean"
+          },
+          "pin": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "minLength": 4,
+                "pattern": "^[0-9]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pin"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "title": "SharingIn",
+        "type": "object"
+      },
+      "SharingOut": {
+        "properties": {
+          "last_opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Opened At"
+          },
+          "on": {
+            "title": "On",
+            "type": "boolean"
+          },
+          "pin_needed": {
+            "title": "Pin Needed",
+            "type": "boolean"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Dashboard"
+          }
+        },
+        "required": [
+          "on",
+          "pin_needed",
+          "last_opened_at",
+          "progress"
+        ],
+        "title": "SharingOut",
         "type": "object"
       },
       "SignupIn": {
@@ -3786,6 +3885,208 @@
           }
         ],
         "summary": "Hello"
+      }
+    },
+    "/v1/local/me/parent-view": {
+      "get": {
+        "operationId": "getMyLocalParentView",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Parent View",
+        "tags": [
+          "local"
+        ]
+      },
+      "put": {
+        "operationId": "setMyLocalParentView",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set My Parent View",
+        "tags": [
+          "local"
+        ]
+      }
+    },
+    "/v1/local/parent-view": {
+      "get": {
+        "description": "The profiles whose owners have switched the summary on.",
+        "operationId": "listSharedProfiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SharedProfile"
+                  },
+                  "title": "Response Listsharedprofiles",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Shared Profiles",
+        "tags": [
+          "local"
+        ]
+      }
+    },
+    "/v1/local/parent-view/{profile_id}": {
+      "get": {
+        "operationId": "getSharedProgress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Shared Progress",
+        "tags": [
+          "local"
+        ]
+      }
+    },
+    "/v1/local/parent-view/{profile_id}/stop": {
+      "post": {
+        "description": "Stops a summary being shown. Anyone at the computer may: it only ever shows less.\n\nIt is also the way out when a profile's PIN is forgotten and its own Settings cannot be\nreached. Only the student, in their open profile, can switch it on again.",
+        "operationId": "stopSharedProgress",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Stopsharedprogress",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stop Shared Progress",
+        "tags": [
+          "local"
+        ]
       }
     },
     "/v1/local/profiles": {

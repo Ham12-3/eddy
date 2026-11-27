@@ -19,6 +19,7 @@ const NAV = {
 /**
  * The wordmark and the places a signed-in person goes. While a parent can see a student's
  * progress, the student always sees so, with a way to see what the parent sees (SPEC.md 4.4).
+ * In the desktop app that is while the student shares it with whoever is at the computer.
  */
 export function SiteHeader({
   role,
@@ -76,7 +77,9 @@ export function SiteHeader({
           className="m-0 border-t border-rule bg-paper-raised px-4 text-caption md:px-8"
         >
           <span className="md:ml-[10vw]">
-            Your parent can see your progress.{" "}
+            {local
+              ? "Your progress is shared with people using this computer."
+              : "Your parent can see your progress."}{" "}
             <NextLink
               href="/settings/parent-view"
               className={`${linkClassName} inline-flex min-h-11 items-center`}

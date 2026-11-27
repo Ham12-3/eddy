@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -131,6 +132,40 @@ export async function openProfile(_: FormState, form: FormData): Promise<FormSta
   if (!data) return { error: NOT_NOW };
   await writeProfile(data.id);
   redirect("/welcome");
+}
+
+/**
+ * Stops a student's progress summary being shown on this computer. Anyone at the computer may:
+ * it only ever shows less, and it is the way out when a profile's PIN is forgotten. Only the
+ * student can switch it on again, in their own Settings.
+ */
+export async function stopSharedProgress(form: FormData): Promise<void> {
+  if (!isLocalMode()) notFound();
+  const id = z.uuid().safeParse(form.get("id"));
+  if (!id.success) redirect("/profiles/parents");
+  /** Whether it is no longer shown: stopped now, or not shared in the first place. */
+  const stop = async (): Promise<boolean> => {
+    const api = await apiClientFor(LOCAL_CALLER);
+    const { response } = await api.POST("/v1/local/parent-view/{profile_id}/stop", {
+      params: { path: { profile_id: id.data } },
+      signal: AbortSignal.timeout(15_000),
+    });
+    return response.ok || response.status === 404;
+  };
+  // Asking twice is harmless, so a request lost on the way (a connection the API had just
+  // closed) is simply asked again. If it still cannot be stopped, the page says so: this is not
+  // something to fail quietly.
+  let stopped = false;
+  for (let tries = 0; tries < 2 && !stopped; tries += 1) {
+    try {
+      stopped = await stop();
+    } catch {
+      stopped = false;
+    }
+  }
+  if (!stopped) redirect(`/profiles/parents/${id.data}?stopped=no`);
+  revalidatePath("/", "layout");
+  redirect("/profiles/parents");
 }
 
 /** Back to the picker: the next person chooses their own profile. */

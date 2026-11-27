@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Desktop app, phase 4: a parent or carer on the same computer (27 November 2026)
+
+Added:
+
+- In the desktop app a student can share a progress summary with a parent or carer (Settings, Sharing your progress). It is off unless the student switches it on, which asks for the profile's PIN if it has one. While it is on, anyone using the computer can open it from "For parents and carers" on the profile list, without the PIN. It shows topics, lesson days, time and reviews, never answers. Migration 0009 adds the switch.
+- Anyone at the computer can stop a summary being shown, from the summary itself: the way out when a PIN is forgotten.
+- While sharing is on, every page tells the student so, with a link to exactly what is shown, and Settings shows the day it was last opened. A look is written to the log of actions, at most once every ten minutes.
+
+Changed:
+
+- The desktop privacy notice is version 0.6.0 and describes the sharing. My data shows whether it is on.
+- "What my parent sees" (`/settings/parent-view`) is no longer an online-only page: in the desktop app it shows what is, or would be, shared.
+- The progress summary (online too) gives lesson days as London days, times a lesson left open to its last answer, and says reviews are "due now or in the next 7 days".
+
 ### Desktop app, phase 3: the installer (26 November 2026)
 
 Added:

@@ -12,17 +12,11 @@ export function isLocalMode(source: Record<string, string | undefined> = process
 }
 
 /**
- * Pages that only make sense online: email sign-in, invites, a parent's own account and what a
- * linked parent sees.
+ * Pages that only make sense online: email sign-in, invites and a parent's own account. The
+ * student's preview of what a parent sees (/settings/parent-view) is in both: in the desktop app
+ * it shows what is shared with whoever is at the computer.
  */
-const ONLINE_ONLY = [
-  "/sign-in",
-  "/join",
-  "/check-your-email",
-  "/parent",
-  "/api/auth",
-  "/settings/parent-view",
-];
+const ONLINE_ONLY = ["/sign-in", "/join", "/check-your-email", "/parent", "/api/auth"];
 /** Pages that only exist in the desktop app. */
 const LOCAL_ONLY = ["/profiles"];
 

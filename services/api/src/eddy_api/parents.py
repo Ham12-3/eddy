@@ -9,6 +9,7 @@ import hashlib
 import secrets
 import uuid
 from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -23,6 +24,9 @@ from eddy_api.db.models import (
     TutorSession,
     User,
 )
+
+#: Days are the student's days, not UTC's: a lesson late on a summer evening is that evening's.
+LONDON = ZoneInfo("Europe/London")
 
 #: Letters and digits that cannot be confused when read aloud or copied from a screen.
 CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -81,13 +85,16 @@ def dashboard(session: Session, student: uuid.UUID, now: datetime | None = None)
         .limit(5)
     ).all()
     for lesson in lessons:
-        answered = session.scalar(
-            select(func.count()).select_from(Attempt).where(Attempt.session_id == lesson.id)
-        )
-        end = lesson.ended_at or lesson.started_at
+        answered, last_answer = session.execute(
+            select(func.count(), func.max(Attempt.created_at)).where(
+                Attempt.session_id == lesson.id
+            )
+        ).one()
+        # A lesson left without being ended lasted until its last answer.
+        end = lesson.ended_at or last_answer or lesson.started_at
         recent.append(
             Activity(
-                day=lesson.started_at.date(),
+                day=lesson.started_at.astimezone(LONDON).date(),
                 kind="lesson",
                 minutes=max(0, int((end - lesson.started_at).total_seconds() // 60)),
                 questions=int(answered or 0),
@@ -106,7 +113,9 @@ def dashboard(session: Session, student: uuid.UUID, now: datetime | None = None)
         minutes_this_week=int((milliseconds or 0) // 60000),
         recent=recent,
         reviews_due_this_week=len(upcoming),
-        next_review=next((d.date() for d in due if d is not None and d >= now), None),
+        next_review=next(
+            (d.astimezone(LONDON).date() for d in due if d is not None and d >= now), None
+        ),
     )
 
 

@@ -401,6 +401,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/local/me/parent-view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Parent View */
+        get: operations["getMyLocalParentView"];
+        /** Set My Parent View */
+        put: operations["setMyLocalParentView"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/local/parent-view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Shared Profiles
+         * @description The profiles whose owners have switched the summary on.
+         */
+        get: operations["listSharedProfiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/local/parent-view/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shared Progress */
+        get: operations["getSharedProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/local/parent-view/{profile_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Shared Progress
+         * @description Stops a summary being shown. Anyone at the computer may: it only ever shows less.
+         *
+         *     It is also the way out when a profile's PIN is forgotten and its own Settings cannot be
+         *     reached. Only the student, in their open profile, can switch it on again.
+         */
+        post: operations["stopSharedProgress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/local/profiles": {
         parameters: {
             query?: never;
@@ -1415,7 +1493,7 @@ export interface components {
              * Version
              * @enum {string}
              */
-            version: "0.2.0" | "0.5.0";
+            version: "0.2.0" | "0.6.0";
         };
         /** NoticeOut */
         NoticeOut: {
@@ -1743,6 +1821,39 @@ export interface components {
              * @constant
              */
             tier: "FOUNDATION";
+        };
+        /** SharedProfile */
+        SharedProfile: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** SharedProgress */
+        SharedProgress: {
+            /** Name */
+            name: string;
+            progress: components["schemas"]["Dashboard"];
+        };
+        /** SharingIn */
+        SharingIn: {
+            /** On */
+            on: boolean;
+            /** Pin */
+            pin?: string | null;
+        };
+        /** SharingOut */
+        SharingOut: {
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /** On */
+            on: boolean;
+            /** Pin Needed */
+            pin_needed: boolean;
+            progress: components["schemas"]["Dashboard"];
         };
         /** SignupIn */
         SignupIn: {
@@ -2627,6 +2738,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HelloResponse"];
+                };
+            };
+        };
+    };
+    getMyLocalParentView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharingOut"];
+                };
+            };
+        };
+    };
+    setMyLocalParentView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listSharedProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedProfile"][];
+                };
+            };
+        };
+    };
+    getSharedProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stopSharedProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

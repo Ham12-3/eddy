@@ -90,6 +90,14 @@ export function LocalChildPrivacyNotice() {
           find Eddy&apos;s files, with or without your PIN. Eddy cannot show or reset a PIN: if you
           forget it, the profile cannot be opened again.
         </p>
+        <p className="m-0 mt-3">
+          In Settings you can choose to share your progress with a parent or carer. While it is on,
+          anyone using this computer can see it without your PIN: the topics you have secured and
+          the ones you are still working on, the days of your last few lessons with how many
+          questions and minutes, how long you spent this week, and when reviews are due. Never your
+          answers. It is off unless you switch it on. You can switch it off again, and so can anyone
+          else using this computer.
+        </p>
       </Section>
       <Section title="How long Eddy keeps it">
         <p className="m-0 mb-3">
@@ -98,8 +106,8 @@ export function LocalChildPrivacyNotice() {
         </p>
         <p className="m-0">
           One thing stays on this computer after a profile is deleted: a plain list of actions, such
-          as when a profile was made or opened, without your profile name. You cannot see or delete
-          it from inside Eddy.
+          as when a profile was made or opened or its progress looked at, without your profile name.
+          You cannot see or delete it from inside Eddy.
         </p>
       </Section>
       <Section title="What you can do">
@@ -149,8 +157,9 @@ export function LocalFullPrivacyNotice() {
             year.
           </li>
           <li>
-            Set-up: exam board, tier, exam series, target grade, whether you are resitting, and your
-            accessibility and display settings.
+            Set-up: exam board, tier, exam series, target grade, whether you are resitting, your
+            accessibility and display settings, and whether you have switched on sharing your
+            progress.
           </li>
           <li>
             Learning: every answer you give, how sure you said you were, hints used, time taken, the
@@ -195,6 +204,18 @@ export function LocalFullPrivacyNotice() {
           in the files of the Windows account Eddy was installed in. Anyone who can sign in to that
           account, or to an administrator account, could reach those files, so a PIN is not strong
           protection.
+        </p>
+        <p className="m-0 mt-3">
+          A student can switch on a progress summary in Settings, for a parent or carer. Eddy has no
+          accounts for parents, so while it is on anyone using Eddy on this computer can open the
+          summary from the profile list, without the profile&apos;s PIN. It shows the topics secured
+          and being learned, the time spent in the last week, the days of the last five lessons with
+          the number of questions and minutes in each, and the reviews due. It never shows an
+          answer. It is off unless the student switches it on, which asks for the profile&apos;s PIN
+          if it has one. Anyone using the computer can stop a summary being shown, from the summary
+          itself: that is also how to stop one when a PIN is forgotten. When a summary is opened,
+          Eddy adds a line to the log of actions (at most one every ten minutes), and Settings shows
+          the student the day it was last opened.
         </p>
       </Section>
       <Section title="How long it is kept">

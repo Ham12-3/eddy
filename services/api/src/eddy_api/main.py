@@ -65,6 +65,7 @@ def create_app() -> FastAPI:
     # Email sign-up and parents exist only online: the desktop app has neither (ADR-0036).
     app.include_router(accounts.router, dependencies=[Depends(online_only)])
     app.include_router(local.router)
+    app.include_router(local.student_router)
     app.include_router(me.router)
     app.include_router(learning.router)
     app.include_router(parents.router, dependencies=[Depends(online_only)])

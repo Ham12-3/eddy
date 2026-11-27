@@ -26,7 +26,6 @@ describe("isPathOff", () => {
       "/parent/child/abc",
       "/parent/account/download",
       "/api/auth/callback/nodemailer",
-      "/settings/parent-view",
     ]) {
       expect(isPathOff(path, true), path).toBe(true);
       expect(isPathOff(path, false), path).toBe(false);
@@ -34,7 +33,13 @@ describe("isPathOff", () => {
   });
 
   it("switches the profile pages off everywhere else", () => {
-    for (const path of ["/profiles", "/profiles/new", "/profiles/stop"]) {
+    for (const path of [
+      "/profiles",
+      "/profiles/new",
+      "/profiles/stop",
+      "/profiles/parents",
+      "/profiles/parents/3f0e4c0a-7b1d-4a55-9a43-0d3f6a8f2b11",
+    ]) {
       expect(isPathOff(path, false), path).toBe(true);
       expect(isPathOff(path, true), path).toBe(false);
     }
@@ -93,7 +98,7 @@ describe("mode-dependent values", () => {
   });
 
   it("asks for the notice that matches what Eddy does in this mode", () => {
-    expect(privacyNoticeVersion(true)).toBe("0.5.0");
+    expect(privacyNoticeVersion(true)).toBe("0.6.0");
     expect(privacyNoticeVersion(false)).toBe("0.2.0");
   });
 });

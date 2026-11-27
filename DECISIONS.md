@@ -603,7 +603,7 @@ Status: Accepted (25 and 26 November 2026). The product owner chose a Windows de
 - **Consequences:**
   - **No processors:** no hosting, email or AI company handles student data. The DPIA, the notices and the compliance drafts need rewriting for a desktop app.
   - **No human sees a safeguarding stop.** The help message is the only response, so it matters more. The script is still a draft that needs a named safeguarding lead's approval, and the tutor stays locked outside development until then.
-  - **Parents by email are gone.** A parent view on the same computer comes in the tidy-up phase.
+  - **Parents by email are gone.** A parent or carer sees a student's progress on the same computer, if the student switches it on (see below).
   - **Typed chat is off in the desktop app** (decided 26 November 2026). The safety thresholds on answer leaks, distress and injections were met, but the false stops and the slow, mostly discarded replies were not good enough for students.
     - `typed_chat_enabled` is false in local mode unless a local model is switched on. A lesson then never waits for a message, the page shows no box to type in, and a message sent by hand is refused before anything is stored.
     - No model ships in the installer and none runs: hints are the templated ones, explanations are the Tier D scenes. The local model provider stays in the code for a better model or faster hardware.
@@ -651,6 +651,20 @@ Status: Accepted (25 and 26 November 2026). The product owner chose a Windows de
       - A second Windows account on one computer, and a computer with no network at all. The laptop was online; the window cancels every request that is not to Eddy's own server.
       - Installing a newer copy over a running Eddy, or removing Eddy while it is open. The set-up program ends every program in the install folder at once, the database included, so the next start would recover from an unclean stop. PostgreSQL is built for that, but it has not been tried.
     - **Open, for the product owner:** the licence terms for shipping the three Visual C++ libraries beside PostgreSQL (or having the set-up program install Microsoft's redistributable), code signing, and an icon.
+  - **A parent or carer on the same computer (phase 4, 27 November 2026):**
+    - **No parent accounts.** Online, a parent has an account and a student accepts a link (ADR-0033). A computer has neither email nor accounts, so there is nobody to link to.
+    - **The student switches a progress summary on** in Settings, under Sharing your progress (`student_profile.parent_view_on`, migration 0009). It is off unless they do.
+    - **While it is on, anyone at the computer can open it** from "For parents and carers" on the profile list, without the profile's PIN. The Settings card says so, and lists everything that is shown, before anything is switched on. A profile that has not switched it on is not named there at all, and its address answers the same as one that does not exist.
+    - **It is the summary a linked parent sees online** (`parents.dashboard`, the same `ParentDashboard` page): topics secured and being learned, time in the last week, the days of the last five lessons with their questions and minutes, and the reviews due. Never an answer. Days are now London days, and a lesson left open is timed to its last answer.
+    - **Switching on asks for the PIN** of a profile that has one, and needs the current notice to have been read. A profile left open cannot be opened up for good by someone else. A wrong PIN counts towards the profile's pause, as at the picker. Switching off never asks.
+    - **Anyone at the computer can stop a summary being shown,** from the summary itself. It only ever shows less, and it is the way out when a PIN is forgotten and the profile's own Settings cannot be reached. Only the student can switch it on again.
+    - **The student is always told.** While sharing is on every page carries a note saying so, with a link to exactly what is shown (`/settings/parent-view`, now in both modes), and Settings shows the day it was last opened.
+    - **A look is written to the log of actions** (`parent_view.opened`), with no actor, as nobody is signed in: at most one line every ten minutes for a profile, so the log cannot be filled by opening the page again and again.
+    - **The notice says all of this** (version 0.6.0), and My data shows whether sharing is on.
+    - **Not done:**
+      - A lock on the parents' page itself. A brother or sister at the computer can open a summary that has been shared. The student is told this in the same words before switching it on.
+      - Sharing does not lapse by itself. A profile nobody opens again stays shared until someone stops it from the summary.
+      - `compliance/childrens-code.md` and the DPIA still describe only parents linked by email. They need the product owner's go-ahead to change.
   - **For the packaging phase** (from the security review):
     - A fresh random `AUTH_SECRET`, service-token key pair and database passwords for each install, never fixed ones.
     - The worker must run inside the app: the 90-day message purge and the 30-day erasure happen only while it does.
