@@ -65,6 +65,48 @@ export async function makeParentCode(): Promise<CodeState> {
   return { code: data.code, expires: data.expires_at };
 }
 
+const sharingSchema = z.object({
+  on: z.enum(["true", "false"]).transform((value) => value === "true"),
+  pin: z.union([z.literal(""), z.string().regex(/^[0-9]{4,8}$/)]),
+});
+
+/**
+ * Switches the progress summary for people at this computer on or off (the desktop app,
+ * ADR-0036). Only the student whose profile is open can, and switching on asks for the PIN of a
+ * profile that has one.
+ */
+export async function setProgressSharing(_: FormState, form: FormData): Promise<FormState> {
+  if (!isLocalMode()) notFound();
+  const { api } = await requireStudent({ onboarding: true });
+  const parsed = sharingSchema.safeParse({
+    on: form.get("on"),
+    pin: String(form.get("pin") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: "That PIN did not work.", fields: { pin: "A PIN is 4 to 8 digits." } };
+  }
+  const { on, pin } = parsed.data;
+  const { response } = await api.PUT("/v1/local/me/parent-view", {
+    body: { on, pin: on && pin ? pin : null },
+  });
+  if (response.status === 403) {
+    return {
+      error: "Eddy needs your PIN to share your progress.",
+      fields: { pin: pin ? "That PIN is not right. Try again." : "Type your PIN." },
+    };
+  }
+  if (response.status === 429) {
+    return { error: "Too many wrong tries. Wait a while, then try again." };
+  }
+  if (response.status === 409) {
+    return { error: "Read the privacy notice first. It says what sharing means." };
+  }
+  if (!response.ok) return { error: "Eddy could not change that just now. Try again in a moment." };
+  // The header's note that progress is shared lives in the layout.
+  revalidatePath("/", "layout");
+  return {};
+}
+
 export async function answerParentLink(linkId: string, accept: boolean): Promise<string | null> {
   if (isLocalMode()) notFound();
   const { api } = await requireStudent({ onboarding: true });

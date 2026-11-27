@@ -110,6 +110,8 @@ def export(session: Session, user_id: uuid.UUID, *, local: bool = False) -> dict
             "preferences": profile.preferences,
             # Whether a PIN is set: the PIN itself is never stored, only a scrambled form.
             **({"pin_set": profile.pin_hash is not None} if local else {}),
+            # Whether the progress summary is switched on for people at this computer.
+            **({"progress_shared_on_this_computer": profile.parent_view_on} if local else {}),
         },
         "notices_acknowledged": [
             {"notice": n.notice_key, "version": n.version, "at": _iso(n.acknowledged_at)}

@@ -34,7 +34,7 @@ from eddy_api.db.models import (
 )
 from eddy_api.db.models import Session as SessionRow
 from eddy_api.db.session import get_session
-from eddy_api.students import Student, profile_of
+from eddy_api.students import Student, is_local_profile, profile_of
 
 router = APIRouter(prefix="/v1/me", tags=["me"])
 DbSession = Annotated[Session, Depends(get_session)]
@@ -91,7 +91,8 @@ class MeOut(BaseModel):
     profile: ProfileOut
     preferences: Preferences
     notices: list[NoticeOut]
-    #: A parent can see this student's progress: the page always says so (ADR-0033).
+    #: A parent can see this student's progress: the page always says so (ADR-0033). In the
+    #: desktop app, the student shares it with whoever is at the computer (ADR-0036).
     parent_visible: bool
 
 
@@ -130,7 +131,10 @@ def _me(session: Session, student: Student) -> MeOut:
             NoticeOut(notice_key=n.notice_key, version=n.version, acknowledged_at=n.acknowledged_at)
             for n in notices
         ],
-        parent_visible=parents.active_link(session, student.id),
+        # Online, a linked parent. In the desktop app, the summary the student switched on for
+        # whoever is at the computer (routes/local.py).
+        parent_visible=parents.active_link(session, student.id)
+        or (is_local_profile(student) and profile.parent_view_on),
     )
 
 
@@ -143,7 +147,7 @@ def get_me(student: Student, session: DbSession) -> MeOut:
 #: current version can be acknowledged. The desktop app shows its own notice (the data stays on
 #: the computer and no AI company is involved), so it has its own version (ADR-0036).
 PRIVACY_NOTICE_VERSION = "0.2.0"
-LOCAL_PRIVACY_NOTICE_VERSION = "0.5.0"
+LOCAL_PRIVACY_NOTICE_VERSION = "0.6.0"
 
 
 def privacy_notice_version(settings: Settings) -> str:
@@ -152,7 +156,7 @@ def privacy_notice_version(settings: Settings) -> str:
 
 class NoticeIn(BaseModel):
     notice_key: Literal["privacy"]
-    version: Literal["0.2.0", "0.5.0"]
+    version: Literal["0.2.0", "0.6.0"]
 
 
 @router.post("/notices", operation_id="acknowledgeNotice")

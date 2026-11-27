@@ -1,4 +1,4 @@
-import { buttonClassName, Feedback } from "@eddy/ui";
+import { buttonClassName, Feedback, linkClassName } from "@eddy/ui";
 import type { Metadata } from "next";
 import NextLink from "next/link";
 
@@ -65,6 +65,15 @@ export default async function ProfilesPage() {
       <p className="m-0 mt-8">
         <NextLink href="/profiles/new" className={buttonClassName("quiet")}>
           Add a profile
+        </NextLink>
+      </p>
+      {/* A parent or carer has no profile: this is their way to a summary a student shares. */}
+      <p className="m-0 mt-4">
+        <NextLink
+          href="/profiles/parents"
+          className={`${linkClassName} inline-flex min-h-11 items-center`}
+        >
+          For parents and carers
         </NextLink>
       </p>
     </Page>

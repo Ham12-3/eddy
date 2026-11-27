@@ -325,10 +325,10 @@ def test_the_desktop_notice_has_its_own_version(desktop: TestClient, online: Tes
     created = make(desktop)
     student = token(str(created["id"]), "student")
     old = {"notice_key": "privacy", "version": "0.2.0"}
-    new = {"notice_key": "privacy", "version": "0.5.0"}
+    new = {"notice_key": "privacy", "version": "0.6.0"}
     assert desktop.post("/v1/me/notices", json=old, headers=student).status_code == 422
     acked = desktop.post("/v1/me/notices", json=new, headers=student)
-    assert [n["version"] for n in acked.json()["notices"]] == ["0.5.0"]
+    assert [n["version"] for n in acked.json()["notices"]] == ["0.6.0"]
     assert online.post("/v1/me/notices", json=new, headers=student).status_code == 422
 
 
@@ -397,3 +397,207 @@ def test_with_no_redis_limits_are_counted_in_this_process() -> None:
     assert isinstance(limiter_for("redis://127.0.0.1:6390/0", 3, 10), RedisLimiter)
     limiter = limiter_for("", 2, 10)
     assert [limiter.allow("a"), limiter.allow("a"), limiter.allow("a")] == [True, True, False]
+
+
+# A progress summary for a parent or carer at the same computer.
+
+NOTICE = {"notice_key": "privacy", "version": "0.6.0"}
+SHARE = "/v1/local/me/parent-view"
+
+
+def sharer(client: TestClient, name: str = "Sam", **extra: object) -> tuple[str, dict[str, str]]:
+    """A profile that has read the notice: its id, and its student headers."""
+    created = make(client, name, **extra)
+    student = token(str(created["id"]), "student")
+    assert client.post("/v1/me/notices", json=NOTICE, headers=student).status_code == 200
+    return str(created["id"]), student
+
+
+def parent_actions(db_session: Session, profile_id: str) -> list[str]:
+    actions = db_session.scalars(
+        select(AuditLog.action).where(AuditLog.target_id == profile_id).order_by(AuditLog.id)
+    ).all()
+    return [action for action in actions if action.startswith("parent")]
+
+
+def test_nothing_is_shared_until_the_student_switches_it_on(
+    desktop: TestClient, db_session: Session
+) -> None:
+    profile_id, student = sharer(desktop)
+    assert desktop.get("/v1/local/parent-view", headers=local()).json() == []
+    path = f"/v1/local/parent-view/{profile_id}"
+    assert desktop.get(path, headers=local()).status_code == 404
+    mine = desktop.get(SHARE, headers=student).json()
+    assert (mine["on"], mine["pin_needed"], mine["last_opened_at"]) == (False, False, None)
+    assert desktop.get("/v1/me", headers=student).json()["parent_visible"] is False
+
+    on = desktop.put(SHARE, json={"on": True}, headers=student)
+    assert on.status_code == 200, on.text
+    assert on.json()["on"] is True
+    # Whoever is at the computer can now open it from the picker.
+    listed = desktop.get("/v1/local/parent-view", headers=local()).json()
+    assert listed == [{"id": profile_id, "name": "Sam"}]
+    shared = desktop.get(path, headers=local())
+    assert shared.status_code == 200, shared.text
+    assert shared.json()["name"] == "Sam"
+    # The summary is what the student is shown, and it holds no answer and no PIN.
+    assert shared.json()["progress"] == mine["progress"]
+    assert set(shared.json()["progress"]) == {
+        "secured",
+        "learning",
+        "minutes_this_week",
+        "recent",
+        "reviews_due_this_week",
+        "next_review",
+    }
+    # The student is always told that it is on, and when it was last opened.
+    assert desktop.get("/v1/me", headers=student).json()["parent_visible"] is True
+    assert desktop.get(SHARE, headers=student).json()["last_opened_at"] is not None
+    exported = desktop.get("/v1/me/export", headers=student).json()
+    assert exported["profile"]["progress_shared_on_this_computer"] is True
+
+    # Saying the same thing twice changes nothing and writes nothing.
+    assert desktop.put(SHARE, json={"on": True}, headers=student).json()["on"] is True
+    off = desktop.put(SHARE, json={"on": False}, headers=student)
+    assert off.json()["on"] is False
+    assert desktop.get("/v1/local/parent-view", headers=local()).json() == []
+    assert desktop.get(path, headers=local()).status_code == 404
+    assert parent_actions(db_session, profile_id) == [
+        "parent_view.on",
+        "parent_view.opened",
+        "parent_view.off",
+    ]
+
+
+def test_looking_again_and_again_is_written_down_once(
+    desktop: TestClient, db_session: Session
+) -> None:
+    profile_id, student = sharer(desktop)
+    desktop.put(SHARE, json={"on": True}, headers=student)
+    path = f"/v1/local/parent-view/{profile_id}"
+    for _ in range(5):
+        assert desktop.get(path, headers=local()).status_code == 200
+    assert parent_actions(db_session, profile_id).count("parent_view.opened") == 1
+
+
+def test_switching_on_asks_for_the_pin_and_switching_off_never_does(
+    desktop: TestClient, db_session: Session
+) -> None:
+    profile_id, student = sharer(desktop, pin="2468")
+    assert desktop.get(SHARE, headers=student).json()["pin_needed"] is True
+    # A profile left open is not enough: no PIN is not a guess, a wrong one is.
+    assert desktop.put(SHARE, json={"on": True}, headers=student).status_code == 403
+    assert desktop.put(SHARE, json={"on": True, "pin": "0000"}, headers=student).status_code == 403
+    profile = db_session.get(StudentProfile, uuid.UUID(profile_id))
+    assert profile is not None
+    db_session.refresh(profile)
+    assert (profile.parent_view_on, profile.pin_failed_tries) == (False, 1)
+    on = desktop.put(SHARE, json={"on": True, "pin": "2468"}, headers=student)
+    assert on.status_code == 200, on.text
+    db_session.refresh(profile)
+    assert (profile.parent_view_on, profile.pin_failed_tries) == (True, 0)
+    # The summary itself needs no PIN: that is what the student agreed to.
+    assert desktop.get(f"/v1/local/parent-view/{profile_id}", headers=local()).status_code == 200
+    assert desktop.put(SHARE, json={"on": False}, headers=student).json()["on"] is False
+
+
+def test_wrong_pins_for_sharing_pause_the_profile_like_any_other(desktop: TestClient) -> None:
+    _, student = sharer(desktop, pin="2468")
+    for _ in range(PIN_FREE_TRIES + 1):
+        assert (
+            desktop.put(SHARE, json={"on": True, "pin": "0000"}, headers=student).status_code == 403
+        )
+    # Paused: even the right PIN waits.
+    assert desktop.put(SHARE, json={"on": True, "pin": "2468"}, headers=student).status_code == 429
+
+
+def test_the_notice_is_read_before_anything_is_shared(desktop: TestClient) -> None:
+    created = make(desktop)
+    student = token(str(created["id"]), "student")
+    refused = desktop.put(SHARE, json={"on": True}, headers=student)
+    assert refused.status_code == 409
+    assert refused.json()["detail"] == "notice_first"
+    assert desktop.get(SHARE, headers=student).json()["on"] is False
+
+
+def test_anyone_at_the_computer_can_stop_a_summary_being_shown(
+    desktop: TestClient, db_session: Session
+) -> None:
+    # The way out when a PIN is forgotten: the profile's own Settings cannot be reached.
+    profile_id, student = sharer(desktop, pin="2468")
+    desktop.put(SHARE, json={"on": True, "pin": "2468"}, headers=student)
+    stop = f"/v1/local/parent-view/{profile_id}/stop"
+    assert desktop.post(stop, headers=student).status_code == 403
+    stopped = desktop.post(stop, headers=local())
+    assert stopped.status_code == 200, stopped.text
+    assert desktop.get("/v1/local/parent-view", headers=local()).json() == []
+    assert desktop.get(f"/v1/local/parent-view/{profile_id}", headers=local()).status_code == 404
+    assert desktop.get(SHARE, headers=student).json()["on"] is False
+    # Nothing to stop any more, and nothing can be switched on from there.
+    assert desktop.post(stop, headers=local()).status_code == 404
+    assert parent_actions(db_session, profile_id) == ["parent_view.on", "parent_view.off"]
+
+
+def test_only_the_student_switches_sharing_on_and_only_the_picker_reads_it(
+    desktop: TestClient,
+) -> None:
+    profile_id, student = sharer(desktop)
+    other = make(desktop, name="Alex")
+    desktop.put(SHARE, json={"on": True}, headers=student)
+    # The picker's caller cannot switch it on, and a student cannot read another's summary.
+    assert desktop.put(SHARE, json={"on": True}, headers=local()).status_code == 403
+    path = f"/v1/local/parent-view/{profile_id}"
+    assert desktop.get(path, headers=token(str(other["id"]), "student")).status_code == 403
+    assert desktop.get("/v1/local/parent-view", headers={}).status_code == 401
+    for body in ({"on": "maybe"}, {"on": "true"}, {"on": 1}, {"on": True, "profile": other["id"]}):
+        assert desktop.put(SHARE, json=body, headers=student).status_code == 422, body
+
+
+def test_a_deleted_profile_is_no_longer_shared(desktop: TestClient) -> None:
+    profile_id, student = sharer(desktop)
+    desktop.put(SHARE, json={"on": True}, headers=student)
+    deleted = desktop.post(
+        "/v1/me/data-requests", json={"kind": "DELETE", "confirm": True}, headers=student
+    )
+    assert deleted.status_code in (200, 201), deleted.text
+    assert desktop.get("/v1/local/parent-view", headers=local()).json() == []
+    assert desktop.get(f"/v1/local/parent-view/{profile_id}", headers=local()).status_code == 404
+
+
+def test_an_account_made_by_email_is_never_shared(desktop: TestClient, db_session: Session) -> None:
+    user = User(email="someone@example.com", role="student")
+    db_session.add(user)
+    db_session.flush()
+    db_session.add(
+        StudentProfile(
+            user_id=user.id,
+            birth_year=OLD_ENOUGH,
+            birth_month=6,
+            preferences={},
+            parent_view_on=True,
+        )
+    )
+    db_session.commit()
+    student = token(str(user.id), "student")
+    assert desktop.get("/v1/local/parent-view", headers=local()).json() == []
+    assert desktop.get(f"/v1/local/parent-view/{user.id}", headers=local()).status_code == 404
+    assert desktop.post(f"/v1/local/parent-view/{user.id}/stop", headers=local()).status_code == 404
+    assert desktop.get(SHARE, headers=student).status_code == 404
+    # Its own pages say nothing of sharing either.
+    assert desktop.get("/v1/me", headers=student).json()["parent_visible"] is False
+    exported = desktop.get("/v1/me/export", headers=student).json()
+    assert "progress_shared_on_this_computer" not in exported["profile"]
+
+
+def test_sharing_on_a_computer_does_not_exist_online(
+    desktop: TestClient, online: TestClient
+) -> None:
+    profile_id, student = sharer(desktop)
+    desktop.put(SHARE, json={"on": True}, headers=student)
+    assert online.get("/v1/local/parent-view", headers=local()).status_code == 404
+    assert online.get(f"/v1/local/parent-view/{profile_id}", headers=local()).status_code == 404
+    assert (
+        online.post(f"/v1/local/parent-view/{profile_id}/stop", headers=local()).status_code == 404
+    )
+    assert online.get(SHARE, headers=student).status_code == 404
+    assert online.put(SHARE, json={"on": True}, headers=student).status_code == 404

@@ -46,8 +46,8 @@ export function ParentDashboard({ data }: { data: Dashboard }) {
           {data.reviews_due_this_week === 0
             ? "No reviews due in the next 7 days."
             : `${data.reviews_due_this_week} ${
-                data.reviews_due_this_week === 1 ? "review" : "reviews"
-              } due in the next 7 days.`}
+                data.reviews_due_this_week === 1 ? "review is" : "reviews are"
+              } due now or in the next 7 days.`}
           {data.next_review ? ` The next is on ${day.format(new Date(data.next_review))}.` : ""}
         </p>
       </Card>
@@ -57,8 +57,9 @@ export function ParentDashboard({ data }: { data: Dashboard }) {
         </h2>
         {data.recent.length ? (
           <ul className="m-0 flex flex-col gap-2 pl-6">
-            {data.recent.map((activity) => (
-              <li key={activity.day}>
+            {data.recent.map((activity, index) => (
+              // Two lessons can fall on one day.
+              <li key={`${activity.day}-${index}`}>
                 {day.format(new Date(activity.day))}: {activity.questions}{" "}
                 {activity.questions === 1 ? "question" : "questions"}, about {activity.minutes}{" "}
                 {activity.minutes === 1 ? "minute" : "minutes"}

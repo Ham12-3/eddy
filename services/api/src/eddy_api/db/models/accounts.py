@@ -115,6 +115,9 @@ class StudentProfile(Base):
     # Wrong PINs in a row, and until when the profile is paused because of them.
     pin_failed_tries: Mapped[int] = mapped_column(SmallInteger, server_default="0")
     pin_locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The desktop app only: the student has switched on a progress summary that a parent or carer
+    # can open from the profile picker, without the PIN (routes/local.py).
+    parent_view_on: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

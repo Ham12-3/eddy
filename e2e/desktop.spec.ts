@@ -102,13 +102,7 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByRole("heading", { name: "Set up Eddy" })).toBeVisible();
 
   // The online-only pages are off: a visit goes to the start, anything else is a 404.
-  for (const path of [
-    "/sign-in",
-    "/join",
-    "/parent",
-    "/check-your-email",
-    "/settings/parent-view",
-  ]) {
+  for (const path of ["/sign-in", "/join", "/parent", "/check-your-email"]) {
     await page.goto(`${LOCAL}${path}`);
     await expect(page, path).toHaveURL(/\/welcome\/set-up$/);
   }
@@ -126,7 +120,7 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByRole("button", { name: /send/i })).toHaveCount(0);
   await check(page, "desktop-concern", info.project.name);
   await page.goto(`${LOCAL}/privacy/full`);
-  await expect(page.getByText("Version 0.5.0.")).toBeVisible();
+  await expect(page.getByText("Version 0.6.0.")).toBeVisible();
   await check(page, "desktop-privacy-full", info.project.name);
 
   // A lesson with typed chat off: answers and hints, and nowhere to type a message.
@@ -165,11 +159,78 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
   await expect(page.getByText("local.invalid")).toHaveCount(0);
   await check(page, "desktop-my-data", info.project.name);
 
-  // Settings has no parent access, and deleting the profile takes it off the picker.
+  // Settings has no parent accounts. A student can share a progress summary with whoever is
+  // at this computer instead, and nothing is shared until they say so.
   await page.goto(`${LOCAL}/settings`);
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Parent access" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Sharing your progress" })).toBeVisible();
+  await expect(page.getByText("Your progress is not shared.")).toBeVisible();
   await check(page, "desktop-settings", info.project.name);
+  await page.goto(`${LOCAL}/profiles/parents`);
+  await expect(page.getByRole("heading", { name: "For parents and carers" })).toBeVisible();
+  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await page.goto(`${LOCAL}/settings`);
+  // The card says everything that would be shown, before anything is switched on.
+  await expect(page.getByText("the ones you are still working on")).toBeVisible();
+  await expect(page.getByText("with how many questions and minutes")).toBeVisible();
+  // Sharing shows it without the PIN, so switching on asks for the PIN: an open profile is not
+  // enough.
+  await page.getByRole("button", { name: "Share my progress" }).click();
+  await expect(page.getByText("Type your PIN.")).toBeVisible();
+  await expect(page.getByText("Your progress is not shared.")).toBeVisible();
+  await page.getByLabel("Your PIN").fill(PIN);
+  await page.getByRole("button", { name: "Share my progress" }).click();
+  await expect(page.getByText("Your progress is shared on this computer.")).toBeVisible();
+  await expect(page.getByText("Nobody has opened it yet.")).toBeVisible();
+  // While it is on, every page says so, with the way to see exactly what is shown.
+  const note = page.getByRole("note");
+  await expect(note).toContainText("shared with people using this computer");
+  await check(page, "desktop-settings-sharing", info.project.name);
+  await note.getByRole("link", { name: "See what they see" }).click();
+  await expect(page.getByRole("heading", { name: "What a parent or carer sees" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Topics secured" })).toBeVisible();
+  await check(page, "desktop-parent-preview", info.project.name);
+
+  // A parent or carer opens it from the profile list, with no profile open and no PIN.
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  await page.getByRole("link", { name: "For parents and carers" }).click();
+  await expect(page.getByRole("heading", { name: "For parents and carers" })).toBeVisible();
+  await check(page, "desktop-parents", info.project.name);
+  await page.getByRole("link", { name }).click();
+  await expect(page.getByRole("heading", { name: `How ${name} is getting on` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Topics secured" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent lessons" })).toBeVisible();
+  await check(page, "desktop-parent-progress", info.project.name);
+  const shared = page.url();
+
+  // Anyone at the computer can stop it being shown, which is the way out if a PIN is forgotten.
+  // The summary is then gone from the list and from its own address.
+  await page.getByRole("button", { name: "Stop showing this" }).click();
+  await expect(page).toHaveURL(/\/profiles\/parents$/);
+  await expect(page.getByRole("link", { name })).toHaveCount(0);
+  await page.goto(shared);
+  await expect(page).toHaveURL(/\/profiles\/parents$/);
+
+  // The student finds it off, and is told the day it was looked at while it was on.
+  await page.goto(`${LOCAL}/profiles`);
+  await page.getByRole("link", { name: new RegExp(name) }).click();
+  await page.getByLabel("PIN").fill(PIN);
+  await page.getByRole("button", { name: "Open my profile" }).click();
+  await expect(page.getByRole("navigation", { name: "Main" }).getByText(name)).toBeVisible();
+  await expect(page.getByRole("note")).toHaveCount(0);
+  await page.goto(`${LOCAL}/settings`);
+  await expect(page.getByText("Your progress is not shared.")).toBeVisible();
+  // Switching it on again and off again from Settings needs the PIN only to switch on.
+  await page.getByLabel("Your PIN").fill(PIN);
+  await page.getByRole("button", { name: "Share my progress" }).click();
+  await expect(page.getByText(/It was last opened on \d+ \w+\./)).toBeVisible();
+  await page.getByRole("button", { name: "Stop sharing" }).click();
+  await expect(page.getByText("Your progress is not shared.")).toBeVisible();
+  await expect(page.getByRole("note")).toHaveCount(0);
+
+  // Deleting the profile takes it off the picker.
+  await page.goto(`${LOCAL}/settings`);
   await page.getByLabel("Type DELETE to confirm").fill("DELETE");
   await page.getByRole("button", { name: "Delete this profile" }).click();
   await expect(page.getByRole("heading", { name: "That profile is deleted" })).toBeVisible();
@@ -180,7 +241,7 @@ test("a student makes a profile, locks it with a PIN, switches and deletes it", 
 });
 
 test("the profile pages do not exist online", async ({ request }) => {
-  for (const path of ["/profiles", "/profiles/new", "/profiles/stop"]) {
+  for (const path of ["/profiles", "/profiles/new", "/profiles/stop", "/profiles/parents"]) {
     for (const headers of [{}, { RSC: "1" }] as Record<string, string>[]) {
       const response = await request.get(path, { headers });
       expect(response.status(), path).toBe(404);
